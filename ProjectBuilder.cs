@@ -1,0 +1,291 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using OpenAI_API;
+using MathNet.Numerics.LinearAlgebra;
+using OpenAI_API.Embedding;
+using OpenAI_API.Completions;
+using OpenAI_API.Chat;
+using ConsoleApp1;
+
+public class ProjectBuilder
+{
+    private string openaiApiKey = "your api key here";
+
+    public async Task<string> Ask(string folderPath, string embeddingsFile, string historyFile, string query, bool generateEmbeddings = true)
+    {
+        if (generateEmbeddings)
+        {
+            await CreateEmbeddings(folderPath, embeddingsFile);
+        }
+
+        return await AnswerQuestion(folderPath, embeddingsFile, query, historyFile);
+    }
+
+    public async Task<string> Run(string folderPath, string embeddingsFile, string historyFile, string query, bool generateEmbeddings = true)
+    {
+        if(generateEmbeddings)
+        {
+            await CreateEmbeddings(folderPath, embeddingsFile);
+        }
+
+        // Step 2: Answer User Query
+        var result = await GetUpdateCodeResponse(folderPath, embeddingsFile, query, historyFile);
+        Console.WriteLine(result.Message);
+        result.Changes.ForEach(item =>
+        {
+            var filePath = $@"{folderPath}\{item.File}";
+            var file = new FileInfo(filePath);
+            if (!file.Directory.Exists)
+            {
+                Directory.CreateDirectory(file.Directory.FullName);
+            }
+            File.WriteAllText($@"{folderPath}\{item.File}", item.Content);
+        });
+        result.Deletions.ForEach(item =>
+        {
+            File.Delete($@"{folderPath}\{item}");
+        });
+        return result.Message;
+    }
+
+    private async Task CreateEmbeddings(string folderPath, string embeddingsFile)
+    {
+        var openai = new OpenAIAPI(openaiApiKey);
+        var documents = new Dictionary<string, string>();
+
+        ProjectLoader loader = new ProjectLoader();
+        var allFiles = loader.GetAllProjectFiles(folderPath);
+        foreach (var file in allFiles)
+        {
+            var relativePath = Path.GetRelativePath(folderPath, file);
+
+            if (File.Exists(file))
+            {
+                documents[relativePath] = await File.ReadAllTextAsync(file);
+            }
+        }
+
+        var embeddings = new Dictionary<string, List<double>>();
+
+        foreach (var doc in documents)
+        {
+            try
+            {
+                var embedding = await GetEmbedding(openai, $@"{doc.Key}: {doc.Value}");
+                embeddings[doc.Key] = embedding;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($@"Cannot embed file {doc.Key}");
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        string json = JsonConvert.SerializeObject(embeddings, Formatting.Indented);
+        await File.WriteAllTextAsync(embeddingsFile, json);
+
+        Console.WriteLine($"Embeddings saved to {embeddingsFile}");
+    }
+
+    private async Task<List<double>> GetEmbedding(OpenAIAPI openai, string text)
+    {
+        var response = await openai.Embeddings.CreateEmbeddingAsync(new EmbeddingRequest { Input = text, Model = "text-embedding-ada-002" });
+        return new List<double>(response.Data[0].Embedding.Select(e => (double)e));
+    }
+
+
+    private async Task<string> AnswerQuestion(string folderPath, string embeddingsFile, string query, string historyFile = null)
+    {
+        var openai = new OpenAIAPI(openaiApiKey);
+        List<string> topSimilarDocumentsContent = await GetRelevantDocuments(folderPath, embeddingsFile, query, openai);
+
+        List<ChatMessage>? history = await GetHistory(historyFile);
+
+        var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
+        var message = await AnswerQuestionFromDocument(openai, mostRelevantDocContent, query, history.ToArray());
+
+        //await UpdateHistory(historyFile, history, queryResponse);
+
+        return message;
+    }
+
+    private async Task<Response> GetUpdateCodeResponse(string folderPath, string embeddingsFile, string query, string historyFile = null)
+    {
+        var openai = new OpenAIAPI(openaiApiKey);
+        List<string> topSimilarDocumentsContent = await GetRelevantDocuments(folderPath, embeddingsFile, query, openai);
+
+        List<ChatMessage>? history = await GetHistory(historyFile);
+
+        var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
+        var queryResponse = await GetUpdateCodeResponseFromDocument(openai, mostRelevantDocContent, query, history.ToArray());
+
+        await UpdateHistory(historyFile, history, queryResponse);
+
+        return queryResponse;
+    }
+
+    public class HistoryEntry
+    {
+        public string Role {  get; set; }
+        public string Content {  get; set; }
+    }
+
+    private static async Task UpdateHistory(string historyFile, List<ChatMessage> history, Response queryResponse)
+    {
+        if (historyFile != null)
+        {
+            history.Add(new ChatMessage(ChatMessageRole.User, queryResponse.Message));
+            var entries = history.Select(h => new HistoryEntry { Role = h.Role.ToString(), Content = h.TextContent });
+            await File.WriteAllTextAsync(historyFile, JsonConvert.SerializeObject(entries));
+        }
+    }
+
+    private static async Task<List<ChatMessage>> GetHistory(string historyFile)
+    {
+        var history = new List<ChatMessage>();
+        if (historyFile != null && File.Exists(historyFile))
+        {
+            try
+            {
+                var entries = JsonConvert.DeserializeObject<List<HistoryEntry>>(await File.ReadAllTextAsync(historyFile));
+                history = entries.Select(e => new ChatMessage(ChatMessageRole.FromString(e.Role), e.Content)).ToList();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Cannot read history file {historyFile}");
+                history = new List<ChatMessage>();
+            }
+        }
+
+        return history;
+    }
+
+    private async Task<List<string>> GetRelevantDocuments(string folderPath, string embeddingsFile, string query, OpenAIAPI openai)
+    {
+        var embeddings = JsonConvert.DeserializeObject<Dictionary<string, List<double>>>(await File.ReadAllTextAsync(embeddingsFile));
+
+        var queryEmbedding = await GetEmbedding(openai, query);
+        var queryVector = Vector<double>.Build.DenseOfArray(queryEmbedding.ToArray());
+
+        var similarities = new List<(double similarity, string documentName)>();
+
+        foreach (var kvp in embeddings)
+        {
+            var docVector = Vector<double>.Build.DenseOfArray(kvp.Value.ToArray());
+            var similarity = CosineSimilarity(queryVector, docVector);
+
+            similarities.Add((similarity, kvp.Key));
+        }
+
+        similarities.Sort((x, y) => y.similarity.CompareTo(x.similarity));
+
+        const int numTopDocuments = 5;
+        var topSimilarDocumentsContent = new List<string>();
+
+        for (int i = 0; i < Math.Min(numTopDocuments, similarities.Count); i++)
+        {
+            string docName = similarities[i].documentName;
+            string docContent = await File.ReadAllTextAsync(Path.Combine(folderPath, docName));
+            topSimilarDocumentsContent.Add($@"{docName}:
+
+{docContent}");
+        }
+
+        return topSimilarDocumentsContent;
+    }
+        
+    private async Task<string> AnswerQuestionFromDocument(OpenAIAPI openai, string document, string query, ChatMessage[] history)
+    {
+        string content;
+        try
+        {
+            var systemInstructions = $@"You are an assistant with the goal of creation a software application.
+        Your data source will be a list of all files that are currently in the project and their contents.";
+            var historyStr = history.Any() ? $@"\n\nAnd the conversation history:\n\n{history.Select(h => $"{h.Role}: {h.TextContent}\n")}" : "";
+
+            var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
+            {
+                Messages = new ChatMessage[] { new ChatMessage(ChatMessageRole.User, $@"{systemInstructions}\nBased on the following document:\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}") },
+                Model = "gpt-4o",
+                ResponseFormat = ChatRequest.ResponseFormats.Text
+            });
+
+            content = response.Choices[0].Message.TextContent.Trim();
+            return content;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            throw new Exception("Error getting the message from OpenAI");
+        }
+    }
+
+    private async Task<Response> GetUpdateCodeResponseFromDocument(OpenAIAPI openai, string document, string query, ChatMessage[] history)
+    {
+        string content;
+        try
+        {
+            var systemInstructions = $@"You are an assistant with the goal of creation a software application.
+        Your data source will be a list of all files that are currently in the project and their contents.
+        The user will task you with writing a component.
+        You will provide the necessary code changes and a description of those changes.
+        Then the compiler will write you the compilation result. If the result is an error, you will provide code changes to solve the error.";
+            var formattingInstructions = $@"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ ""message"": ""a description of what is changed"", ""changes"": [{{ ""file"": ""the path of the file that is changed"", ""content"": ""the content of the WHOLE file. ALWAYS WRITE THE WHOLE FILE."" }}], ""deletions"": [""file that is deleted. empty array if no deletions""] }}";
+            var historyStr = history.Any() ? $@"\n\nAnd the conversation history:\n\n{string.Join('\n',history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}" : "";
+            var fullQuery = $@"{systemInstructions}\n{formattingInstructions}\nBased on the following document:\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n{formattingInstructions}";
+
+            var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
+            {
+                Messages = new ChatMessage[] { new ChatMessage(ChatMessageRole.User, fullQuery) },
+                Model = "gpt-4o",
+                ResponseFormat = ChatRequest.ResponseFormats.JsonObject
+            });
+
+            content = response.Choices[0].Message.TextContent.Trim();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            throw new Exception("Error getting the message from OpenAI");
+        }
+
+        try 
+        {
+            var start = content.IndexOf('{');
+            var end = content.LastIndexOf('}');
+
+            var jsonPart = content.Substring(start, end - start + 1);
+            var json = JsonConvert.DeserializeObject<Response>(jsonPart);
+
+            return json;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            Console.WriteLine(content);
+            throw new Exception("Error parsing the message from OpenAI");
+        }
+    }
+
+    private double CosineSimilarity(Vector<double> v1, Vector<double> v2)
+    {
+        return v1.DotProduct(v2) / (v1.L2Norm() * v2.L2Norm());
+    }
+}
+
+public class Response
+{
+    public string Message { get; set; }
+    public List<Change> Changes { get; set; }
+    public List<string> Deletions { get; set; }
+}
+
+public class Change
+{
+    public string File { get; set; }
+    public string Content { get; set; }
+}
