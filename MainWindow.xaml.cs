@@ -38,6 +38,7 @@ namespace ConsoleApp1
                 ProjectBuilder builder = new ProjectBuilder();
                 var message = await builder.Ask(folderPath, embeddingsFile, historyFile, query, generateEmbeddings);
                 MessageBox.Show(message);
+                AnswerOutput.Text += message + "\n";
             }
             catch (Exception ex)
             {

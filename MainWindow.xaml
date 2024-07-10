@@ -27,6 +27,7 @@
             <Button x:Name="AskButton" Content="Ask Question" Click="AskButton_Click" Margin="0,10,0,10" />
 
             <TextBlock x:Name="LogView" TextWrapping="Wrap" />
+            <TextBox x:Name="AnswerOutput" Margin="0,10,0,10" AcceptsReturn="True" Height="100" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
         </StackPanel>
     </Grid>
 </Window>
