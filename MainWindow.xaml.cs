@@ -29,14 +29,18 @@ namespace ConsoleApp1
             SetFormEnabled(false);
             try
             {
-                string folderPath = FolderPathInput.Text;
-                string embeddingsFile = EmbeddingsFileInput.Text;
-                string historyFile = HistoryFileInput.Text;
-                string query = QueryInput.Text;
-                bool generateEmbeddings = GenerateEmbeddings.IsChecked == true;
+                var config = new AppBuilderConfig
+                {
+                    FolderPath = FolderPathInput.Text,
+                    EmbeddingsFile = EmbeddingsFileInput.Text,
+                    HistoryFile = HistoryFileInput.Text,
+                    Query = QueryInput.Text,
+                    GenerateEmbeddings = GenerateEmbeddings.IsChecked == true,
+                    UseHistory = GenerateHistory.IsChecked == true
+                };
 
-                ProjectBuilder builder = new ProjectBuilder();
-                var message = await builder.Ask(folderPath, embeddingsFile, historyFile, query, generateEmbeddings);
+                ProjectBuilder builder = new ProjectBuilder(config);
+                var message = await builder.Ask();
                 MessageBox.Show(message);
                 AnswerOutput.Text += message + "\n";
             }
@@ -52,14 +56,18 @@ namespace ConsoleApp1
             SetFormEnabled(false);
             try
             {
-                string folderPath = FolderPathInput.Text;
-                string embeddingsFile = EmbeddingsFileInput.Text;
-                string historyFile = HistoryFileInput.Text;
-                string query = QueryInput.Text;
-                bool generateEmbeddings = GenerateEmbeddings.IsChecked == true;
+                var config = new AppBuilderConfig
+                {
+                    FolderPath = FolderPathInput.Text,
+                    EmbeddingsFile = EmbeddingsFileInput.Text,
+                    HistoryFile = HistoryFileInput.Text,
+                    Query = QueryInput.Text,
+                    GenerateEmbeddings = GenerateEmbeddings.IsChecked == true,
+                    UseHistory = GenerateHistory.IsChecked == true
+                };
 
-                ProjectBuilder builder = new ProjectBuilder();
-                var message = await builder.Run(folderPath, embeddingsFile, historyFile, query, generateEmbeddings);
+                ProjectBuilder builder = new ProjectBuilder(config);
+                var message = await builder.Run();
                 MessageBox.Show(message);
             }
             catch(Exception ex)

@@ -14,40 +14,46 @@ using ConsoleApp1;
 public class ProjectBuilder
 {
     private string openaiApiKey = "your api key here";
+    private AppBuilderConfig config;
 
-    public async Task<string> Ask(string folderPath, string embeddingsFile, string historyFile, string query, bool generateEmbeddings = true)
+    public ProjectBuilder(AppBuilderConfig config)
     {
-        if (generateEmbeddings)
-        {
-            await CreateEmbeddings(folderPath, embeddingsFile);
-        }
-
-        return await AnswerQuestion(folderPath, embeddingsFile, query, historyFile);
+        this.config = config;
     }
 
-    public async Task<string> Run(string folderPath, string embeddingsFile, string historyFile, string query, bool generateEmbeddings = true)
+    public async Task<string> Ask()
     {
-        if(generateEmbeddings)
+        if (config.GenerateEmbeddings)
         {
-            await CreateEmbeddings(folderPath, embeddingsFile);
+            await CreateEmbeddings(config.FolderPath, config.EmbeddingsFile);
+        }
+
+        return await AnswerQuestion(config.FolderPath, config.EmbeddingsFile, config.Query, config.UseHistory? config.HistoryFile : "");
+    }
+
+    public async Task<string> Run()
+    {
+        if (config.GenerateEmbeddings)
+        {
+            await CreateEmbeddings(config.FolderPath, config.EmbeddingsFile);
         }
 
         // Step 2: Answer User Query
-        var result = await GetUpdateCodeResponse(folderPath, embeddingsFile, query, historyFile);
+        var result = await GetUpdateCodeResponse(config.FolderPath, config.EmbeddingsFile, config.Query, config.UseHistory ? config.HistoryFile : "");
         Console.WriteLine(result.Message);
         result.Changes.ForEach(item =>
         {
-            var filePath = $@"{folderPath}\{item.File}";
+            var filePath = $@"{config.FolderPath}\{item.File}";
             var file = new FileInfo(filePath);
             if (!file.Directory.Exists)
             {
                 Directory.CreateDirectory(file.Directory.FullName);
             }
-            File.WriteAllText($@"{folderPath}\{item.File}", item.Content);
+            File.WriteAllText($@"{config.FolderPath}\{item.File}", item.Content);
         });
         result.Deletions.ForEach(item =>
         {
-            File.Delete($@"{folderPath}\{item}");
+            File.Delete($@"{config.FolderPath}\{item}");
         });
         return result.Message;
     }
@@ -88,7 +94,7 @@ public class ProjectBuilder
         string json = JsonConvert.SerializeObject(embeddings, Formatting.Indented);
         await File.WriteAllTextAsync(embeddingsFile, json);
 
-        Console.WriteLine($"Embeddings saved to {embeddingsFile}");
+        Console.WriteLine($@"Embeddings saved to {embeddingsFile}");
     }
 
     private async Task<List<double>> GetEmbedding(OpenAIAPI openai, string text)
@@ -108,7 +114,7 @@ public class ProjectBuilder
         var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
         var message = await AnswerQuestionFromDocument(openai, mostRelevantDocContent, query, history.ToArray());
 
-        //await UpdateHistory(historyFile, history, queryResponse);
+        //await UpdateHistory(historyFile, history, message);
 
         return message;
     }
@@ -123,7 +129,7 @@ public class ProjectBuilder
         var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
         var queryResponse = await GetUpdateCodeResponseFromDocument(openai, mostRelevantDocContent, query, history.ToArray());
 
-        await UpdateHistory(historyFile, history, queryResponse);
+        //await UpdateHistory(historyFile, history, queryResponse);
 
         return queryResponse;
     }
@@ -156,7 +162,7 @@ public class ProjectBuilder
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Cannot read history file {historyFile}");
+                Console.WriteLine($@"Cannot read history file {historyFile}");
                 history = new List<ChatMessage>();
             }
         }
@@ -275,6 +281,16 @@ public class ProjectBuilder
     {
         return v1.DotProduct(v2) / (v1.L2Norm() * v2.L2Norm());
     }
+}
+
+public class AppBuilderConfig
+{
+    public string FolderPath { get; set; }
+    public string EmbeddingsFile { get; set; }
+    public string HistoryFile { get; set; }
+    public string Query { get; set; }
+    public bool GenerateEmbeddings { get; set; }
+    public bool UseHistory { get; set; }
 }
 
 public class Response
