@@ -281,26 +281,3 @@ public class ProjectBuilder
         return v1.DotProduct(v2) / (v1.L2Norm() * v2.L2Norm());
     }
 }
-
-public class AppBuilderConfig
-{
-    public string FolderPath { get; set; }
-    public string EmbeddingsFile { get; set; }
-    public string HistoryFile { get; set; }
-    public string Query { get; set; }
-    public bool GenerateEmbeddings { get; set; }
-    public bool UseHistory { get; set; }
-}
-
-public class Response
-{
-    public string Message { get; set; }
-    public List<Change> Changes { get; set; }
-    public List<string> Deletions { get; set; }
-}
-
-public class Change
-{
-    public string File { get; set; }
-    public string Content { get; set; }
-}

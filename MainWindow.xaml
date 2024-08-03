@@ -5,29 +5,37 @@
     <Grid>
         <StackPanel Margin="10">
 
-            <Label Content="Project Folder Path" />
-            <StackPanel Orientation="Horizontal">
-                <TextBox x:Name="FolderPathInput" Margin="0,0,10,10" Text="Project Folder Path" Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" />
-                <Button x:Name="BrowseButton" Content="Browse" Margin="0,0,0,10" />
+            <ComboBox x:Name="ConfigDropdown" SelectionChanged="ConfigDropdown_SelectionChanged" Margin="0,0,0,10" Width="200" />
+
+            <Label Content="Project Name" />
+            <TextBox x:Name="ProjectNameInput" Margin="0,0,0,10" Text="Project Name" Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" Width="200" />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="RunButton" Content="Update Project Code" Click="RunButton_Click" Margin="0,0,10,0" />
+                <Button x:Name="AskButton" Content="Ask Question" Click="AskButton_Click" Margin="0,0,10,0" />
+                <Button x:Name="SaveButton" Content="Save Configuration" Click="SaveButton_Click" />
             </StackPanel>
 
-            <Label Content="Generate new embeddings" />
-            <CheckBox x:Name="GenerateEmbeddings" Margin="0,0,0,10" Foreground="Gray" IsChecked="True" />
+            <Label Content="Project Folder Path" />
+            <StackPanel Orientation="Horizontal">
+                <TextBox x:Name="FolderPathInput" Margin="0,0,10,10" Text="Project Folder Path" Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" Width="600" />
+                <Button x:Name="BrowseButton" Content="Browse" Margin="0,0,0,10" Click="BrowseButton_Click" />
+            </StackPanel>
 
-            <Label Content="Embeddings file" />
-            <TextBox x:Name="EmbeddingsFileInput" Margin="0,0,0,10" Text="Embeddings File" Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <CheckBox x:Name="GenerateEmbeddings" Foreground="Gray" IsChecked="True" Margin="0,0,10,0" VerticalAlignment="Center" />
+                <TextBox x:Name="EmbeddingsFileInput" Margin="0,0,10,0" Text="Embeddings File" Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" Width="540" />
+                <Button x:Name="BrowseEmbeddingsFileButton" Content="Browse" Click="BrowseEmbeddingsFileButton_Click" />
+            </StackPanel>
 
-            <Label Content="Use/write message history" />
-            <CheckBox x:Name="GenerateHistory" Margin="0,0,0,10" Foreground="Gray" IsChecked="True" />
-
-            <Label Content="History file" />
-            <TextBox x:Name="HistoryFileInput" Margin="0,0,0,10" Text="History File (optional)" Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <CheckBox x:Name="GenerateHistory" Foreground="Gray" IsChecked="True" Margin="0,0,10,0" VerticalAlignment="Center" />
+                <TextBox x:Name="HistoryFileInput" Margin="0,0,10,0" Text="History File (optional)" Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" Width="540" />
+                <Button x:Name="BrowseHistoryFileButton" Content="Browse" Click="BrowseHistoryFileButton_Click" />
+            </StackPanel>
 
             <Label Content="Enter your query here..." />
             <TextBox x:Name="QueryInput" Margin="0,0,0,10" AcceptsReturn="True" Height="100" Text="Enter your query here..." Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" />
-
-            <Button x:Name="RunButton" Content="Update Project Code" Click="RunButton_Click" Margin="0,10,0,10" />
-            <Button x:Name="AskButton" Content="Ask Question" Click="AskButton_Click" Margin="0,10,0,10" />
 
             <TextBlock x:Name="LogView" TextWrapping="Wrap" />
             <TextBox x:Name="AnswerOutput" Margin="0,10,0,10" AcceptsReturn="True" Height="100" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />

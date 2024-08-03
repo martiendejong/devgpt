@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UseWPF>True</UseWPF>
+    <UseWindowsForms>True</UseWindowsForms>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="appsettings.json" />
