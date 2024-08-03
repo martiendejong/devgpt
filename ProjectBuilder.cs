@@ -189,7 +189,7 @@ public class ProjectBuilder
 
         similarities.Sort((x, y) => y.similarity.CompareTo(x.similarity));
 
-        const int numTopDocuments = 5;
+        const int numTopDocuments = 8;
         var topSimilarDocumentsContent = new List<string>();
 
         for (int i = 0; i < Math.Min(numTopDocuments, similarities.Count); i++)
