@@ -9,7 +9,7 @@ using MathNet.Numerics.LinearAlgebra;
 using OpenAI_API.Embedding;
 using OpenAI_API.Completions;
 using OpenAI_API.Chat;
-using ConsoleApp1;
+using DevGPT;
 using Microsoft.Extensions.Configuration;
 
 public class ProjectBuilder
@@ -27,7 +27,7 @@ public class ProjectBuilder
         openaiApiKey = configuration["OpenAI:ApiKey"];
     }
 
-    public async Task<string> Ask()
+    public async Task<string> AnswerQuestion()
     {
         if (config.GenerateEmbeddings)
         {
@@ -37,7 +37,7 @@ public class ProjectBuilder
         return await AnswerQuestion(config.FolderPath, config.EmbeddingsFile, config.Query, config.UseHistory? config.HistoryFile : "");
     }
 
-    public async Task<string> Run()
+    public async Task<string> UpdateCode()
     {
         if (config.GenerateEmbeddings)
         {
@@ -70,7 +70,7 @@ public class ProjectBuilder
         var documents = new Dictionary<string, string>();
 
         ProjectLoader loader = new ProjectLoader();
-        var allFiles = loader.GetAllProjectFiles(folderPath);
+        var allFiles = loader.GetFiles(folderPath);
         foreach (var file in allFiles)
         {
             var relativePath = Path.GetRelativePath(folderPath, file);

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Windows;
 
-namespace ConsoleApp1
+namespace DevGPT
 {
     public partial class PromptsWindow : Window
     {

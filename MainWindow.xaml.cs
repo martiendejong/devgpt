@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using DevGPT;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
-namespace ConsoleApp1
+namespace DevGPT
 {
     public partial class MainWindow : Window
     {
@@ -144,7 +144,7 @@ namespace ConsoleApp1
                 };
 
                 ProjectBuilder builder = new ProjectBuilder(config);
-                var message = await builder.Ask();
+                var message = await builder.AnswerQuestion();
                 System.Windows.Forms.MessageBox.Show(message);
                 AnswerOutput.Text += message + "\n";
             }
@@ -171,7 +171,7 @@ namespace ConsoleApp1
                 };
 
                 ProjectBuilder builder = new ProjectBuilder(config);
-                var message = await builder.Run();
+                var message = await builder.UpdateCode();
                 System.Windows.Forms.MessageBox.Show(message);
             }
             catch (Exception ex)

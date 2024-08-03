@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace ConsoleApp1
+namespace DevGPT
 {
     public partial class App : System.Windows.Application
     {
