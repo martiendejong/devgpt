@@ -18,9 +18,6 @@ namespace ConsoleApp1
             if (_configurations?.Count > 0)
             {
                 var config = _configurations[0]; // assume we have one config to keep things simple
-                Prompt1.Text = config.Prompt1;
-                Prompt2.Text = config.Prompt2;
-                Prompt3.Text = config.Prompt3;
                 SystemInstructions1.Text = config.SystemInstructions1;
                 SystemInstructions2.Text = config.SystemInstructions2;
             }
@@ -29,9 +26,6 @@ namespace ConsoleApp1
         private void SavePromptsButton_Click(object sender, RoutedEventArgs e)
         {
             var config = _configurations[0]; // assume we have one config to keep things simple
-            config.Prompt1 = Prompt1.Text;
-            config.Prompt2 = Prompt2.Text;
-            config.Prompt3 = Prompt3.Text;
             config.SystemInstructions1 = SystemInstructions1.Text;
             config.SystemInstructions2 = SystemInstructions2.Text;
 

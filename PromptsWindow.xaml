@@ -4,9 +4,6 @@
         Title="Configure Prompts" Height="500" Width="600">
     <Grid>
         <StackPanel Margin="10">
-            <TextBox x:Name="Prompt1" Margin="0,10,0,10" AcceptsReturn="True" Height="80" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
-            <TextBox x:Name="Prompt2" Margin="0,10,0,10" AcceptsReturn="True" Height="80" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
-            <TextBox x:Name="Prompt3" Margin="0,10,0,10" AcceptsReturn="True" Height="80" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
             <TextBox x:Name="SystemInstructions1" Margin="0,10,0,10" AcceptsReturn="True" Height="80" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
             <TextBox x:Name="SystemInstructions2" Margin="0,10,0,10" AcceptsReturn="True" Height="80" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
             <Button x:Name="SavePromptsButton" Content="Save Prompts" Click="SavePromptsButton_Click" HorizontalAlignment="Right" Margin="0,10,0,10" Width="100" />
