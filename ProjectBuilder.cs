@@ -213,7 +213,7 @@ public class ProjectBuilder
         string content;
         try
         {
-            var systemInstructions = $@"You are an assistant with the goal of creation a software application.\nYour data source will be a list of all files that are currently in the project and their contents.";
+            var systemInstructions = config.SystemInstructions1;
             var historyStr = history.Any() ? $@"\n\nAnd the conversation history:\n\n{history.Select(h => $"{h.Role}: {h.TextContent}\n")}." : "";
 
             var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
@@ -238,9 +238,9 @@ public class ProjectBuilder
         string content;
         try
         {
-            var systemInstructions = $@"You are an assistant with the goal of creation a software application.\nYour data source will be a list of all files that are currently in the project and their contents.\nThe user will task you with writing a component.\nYou will provide the necessary code changes and a description of those changes.\nThen the compiler will write you the compilation result. If the result is an error, you will provide code changes to solve the error.";
+            var systemInstructions = config.SystemInstructions2;
             var formattingInstructions = $@"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ ""message"": ""a description of what is changed"", ""changes"": [{{ ""file"": ""the path of the file that is changed"", ""content"": ""the content of the WHOLE file. ALWAYS WRITE THE WHOLE FILE."" }}], ""deletions"": [""file that is deleted. empty array if no deletions""] }}";
-            var historyStr = history.Any() ? $@"\n\nAnd the conversation history:\n\n{string.Join('\n',history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}." : "";
+            var historyStr = history.Any() ? $@"\n\nAnd the conversation history:\n\n{string.Join('\n', history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}." : "";
             var fullQuery = $@"{systemInstructions}\n{formattingInstructions}\nBased on the following document:\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n{formattingInstructions}";
 
             var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
