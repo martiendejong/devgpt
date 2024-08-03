@@ -64,7 +64,7 @@ namespace ConsoleApp1
             }
         }
 
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        public void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             var config = new AppBuilderConfig
             {
@@ -101,7 +101,7 @@ namespace ConsoleApp1
             }
         }
 
-        private void SaveConfigurations()
+        public void SaveConfigurations()
         {
             var json = JsonConvert.SerializeObject(_configurations, Formatting.Indented);
             File.WriteAllText(ConfigFilePath, json);
@@ -203,6 +203,12 @@ namespace ConsoleApp1
                 else if (textBox == ProjectNameInput) textBox.Text = "Project Name";
                 else if (textBox == QueryInput) textBox.Text = "Enter your query here...";
             }
+        }
+
+        private void PromptsButton_Click(object sender, RoutedEventArgs e)
+        {
+            PromptsWindow promptsWindow = new PromptsWindow(_configurations);
+            promptsWindow.Show();
         }
     }
 }
