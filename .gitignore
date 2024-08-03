@@ -1,7 +1,17 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
+*.DS_Store
+*.log
+*.log.*
+__MACOSX/
+.idea/
+.vscode/
+node_modules/
+dist/
+build/
+harmonizerdist/
+harmonizerbuild/
+*local.settings.json
+.DS_Store
+appsettings.json
 /.vs
 /bin/Debug/net6.0-windows
 /obj
