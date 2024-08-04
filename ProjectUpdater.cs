@@ -188,6 +188,15 @@ public partial class ProjectUpdater
 
         var result = await GetRunWithPlanResponse(config.FolderPath, config.EmbeddingsFile, config.Query, config.UseHistory ? config.HistoryFile : "");
 
+        foreach(var task in result.Tasks)
+        {
+            var response = await GetUpdateCodeFromPlanResponse(config.FolderPath, task.Files, task.Query);
+            await codeUpdater.UpdateProject(response);
+        }
+
+
+        // todo message
+
         return "";
     }
 
@@ -258,6 +267,17 @@ public partial class ProjectUpdater
             Console.WriteLine(content);
             throw new Exception("Error parsing the message from OpenAI");
         }
+    }
+    private async Task<Response> GetUpdateCodeFromPlanResponse(string folderPath, List<string> files, string query, string historyFile = null)
+    {
+        List<string> topSimilarDocumentsContent = await RelevanceService.GetDocuments(folderPath, files);
+
+        List<ChatMessage>? history = await HistoryManager.GetHistory(historyFile);
+
+        var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
+        var queryResponse = await GetUpdateCodeResponseFromDocument(mostRelevantDocContent, query, history.ToArray());
+
+        return queryResponse;
     }
 
     #endregion

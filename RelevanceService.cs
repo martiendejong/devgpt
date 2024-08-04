@@ -32,15 +32,27 @@ public class RelevanceService
         similarities.Sort((x, y) => y.similarity.CompareTo(x.similarity));
 
         const int numTopDocuments = 8;
-        var topSimilarDocumentsContent = new List<string>();
+
+        List<string> docNames = new List<string>();
 
         for (int i = 0; i < Math.Min(numTopDocuments, similarities.Count); i++)
         {
-            string docName = similarities[i].documentName;
-            string docContent = await File.ReadAllTextAsync(Path.Combine(folderPath, docName));
-            topSimilarDocumentsContent.Add($"{docName}:\n\n{docContent}");
+            docNames.Add(similarities[i].documentName);
         }
 
+        List<string> topSimilarDocumentsContent = await GetDocuments(folderPath, docNames);
+
+        return topSimilarDocumentsContent;
+    }
+
+    public async Task<List<string>> GetDocuments(string folderPath, List<string> docNames)
+    {
+        var topSimilarDocumentsContent = new List<string>();
+        docNames.ForEach(async docName =>
+        {
+            string docContent = await File.ReadAllTextAsync(Path.Combine(folderPath, docName));
+            topSimilarDocumentsContent.Add($"{docName}:\n\n{docContent}");
+        });
         return topSimilarDocumentsContent;
     }
 
