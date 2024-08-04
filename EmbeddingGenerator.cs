@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 using OpenAI_API;
 using OpenAI_API.Embedding;
 using DevGPT;
+using System.Runtime.CompilerServices;
+
 public class EmbeddingGenerator 
 { 
     private readonly string openaiApiKey; 
@@ -16,7 +18,7 @@ public class EmbeddingGenerator
         openaiApiKey = apiKey; 
         embeddingHandler = new EmbeddingHandler(apiKey); 
     } 
-    public async Task GenerateAndStoreEmbeddings(string folderPath, string embeddingsFile) 
+    public async Task<bool> GenerateAndStoreEmbeddings(string folderPath, string embeddingsFile) 
     {
         Dictionary<string, List<double>> embeddings;
         if (File.Exists(embeddingsFile))
@@ -39,7 +41,9 @@ public class EmbeddingGenerator
 
         var json = JsonConvert.SerializeObject(embeddings, Formatting.Indented); 
         await File.WriteAllTextAsync(embeddingsFile, json); 
-        Console.WriteLine($"Embeddings saved to {embeddingsFile}"); 
+        Console.WriteLine($"Embeddings saved to {embeddingsFile}");
+
+        return true;
     }
 
     private async Task<Dictionary<string, string>> GetAllFilesContents(string folderPath)

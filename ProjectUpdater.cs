@@ -191,7 +191,7 @@ public partial class ProjectUpdater
         return "";
     }
 
-    private async Task<Response> GetRunWithPlanResponse(string folderPath, string embeddingsFile, string query, string historyFile = null)
+    private async Task<Plan> GetRunWithPlanResponse(string folderPath, string embeddingsFile, string query, string historyFile = null)
     {
         List<string> topSimilarDocumentsContent = await RelevanceService.GetRelevantDocuments(folderPath, embeddingsFile, query);
 
@@ -203,7 +203,7 @@ public partial class ProjectUpdater
         return queryResponse;
     }
 
-    private async Task<Response> GetRunWithPlanResponseFromDocument(string document, string query, ChatMessage[] history)
+    private async Task<Plan> GetRunWithPlanResponseFromDocument(string document, string query, ChatMessage[] history)
     {
         string content = "";
         bool isComplete = false;
@@ -214,7 +214,7 @@ public partial class ProjectUpdater
         {
             try
             {
-                var systemInstructions = config.SystemInstructions2;
+                var systemInstructions = config.SystemInstructions3;
                 var files = new ProjectLoader().GetFiles(config.FolderPath);
                 var formattingInstructions = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ \"tasks\": [{{ \"title\": \"a description of the task\", \"query\": \"the prompt for completing the task\", \"files\": [{{ \"file 1\", \"file 2\" }}] }}] }}";
                 var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{string.Join('\n', history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}." : "";
@@ -248,7 +248,7 @@ public partial class ProjectUpdater
             var end = content.LastIndexOf('}');
 
             var jsonPart = content.Substring(start, end - start + 1);
-            var json = JsonConvert.DeserializeObject<Response>(jsonPart);
+            var json = JsonConvert.DeserializeObject<Plan>(jsonPart);
 
             return json;
         }
