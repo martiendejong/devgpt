@@ -181,6 +181,32 @@ namespace DevGPT
             SetFormEnabled(true);
         }
 
+        private async void RunWithPlanButton_Click(object sender, RoutedEventArgs e)
+        {
+            SetFormEnabled(false);
+            try
+            {
+                var config = new AppBuilderConfig
+                {
+                    FolderPath = FolderPathInput.Text,
+                    EmbeddingsFile = EmbeddingsFileInput.Text,
+                    HistoryFile = HistoryFileInput.Text,
+                    Query = QueryInput.Text,
+                    GenerateEmbeddings = GenerateEmbeddings.IsChecked == true,
+                    UseHistory = GenerateHistory.IsChecked == true
+                };
+
+                ProjectUpdater builder = new ProjectUpdater(config);
+                var message = await builder.RunWithPlan();
+                System.Windows.Forms.MessageBox.Show(message);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show("An error occurred: " + ex.Message);
+            }
+            SetFormEnabled(true);
+        }
+
         private void ClearPlaceholderText(object sender, RoutedEventArgs e)
         {
             System.Windows.Controls.TextBox textBox = (TextBox)sender;

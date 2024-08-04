@@ -167,10 +167,10 @@ public partial class ProjectUpdater
     {
         string content = "";
         bool isComplete = false;
-        int retryCount = 0;
+        int continuationCount = 0;
         const int maxRetries = 3;
 
-        while (!isComplete && retryCount < maxRetries)
+        while (!isComplete && continuationCount < maxRetries)
         {
             try
             {
@@ -178,7 +178,16 @@ public partial class ProjectUpdater
                 var files = GetFiles(config.FolderPath);
                 var formattingInstructions = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ \"message\": \"a description of what is changed\", \"changes\": [{{ \"file\": \"the path of the file that is changed\", \"content\": \"the content of the WHOLE file. ALWAYS WRITE THE WHOLE FILE.\" }}], \"deletions\": [\"file that is deleted. empty array if no deletions\"] }}";
                 var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{string.Join('\n', history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}." : "";
-                var fullQuery = $"{systemInstructions}\n{formattingInstructions}\nBased on the following documents:\n\nFiles:{files}\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n{formattingInstructions}";
+
+                var fullQuery = "";
+                if (continuationCount > 0)
+                {
+                    fullQuery = $"Continue this message: {systemInstructions}\nBased on the following documents:\n\nFiles:{files}\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n\nContinue your response:\n {content}";
+                }
+                else
+                {
+                    fullQuery = $"{systemInstructions}\n{formattingInstructions}\nBased on the following documents:\n\nFiles:{files}\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n{formattingInstructions}";
+                }
 
                 var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
                 {
@@ -189,7 +198,7 @@ public partial class ProjectUpdater
 
                 content += response.Choices[0].Message.TextContent.Trim();
                 isComplete = response.Choices[0].FinishReason != "length";
-                retryCount++;
+                continuationCount++;
             }
             catch (Exception e)
             {
