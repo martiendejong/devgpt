@@ -165,31 +165,40 @@ public partial class ProjectUpdater
 
     private async Task<Response> GetUpdateCodeResponseFromDocument(OpenAIAPI openai, string document, string query, ChatMessage[] history)
     {
-        string content;
-        try
-        {
-            var systemInstructions = config.SystemInstructions2;
-            var files = GetFiles(config.FolderPath);
-            var formattingInstructions = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ \"message\": \"a description of what is changed\", \"changes\": [{{ \"file\": \"the path of the file that is changed\", \"content\": \"the content of the WHOLE file. ALWAYS WRITE THE WHOLE FILE.\" }}], \"deletions\": [\"file that is deleted. empty array if no deletions\"] }}";
-            var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{string.Join('\n', history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}.": "";
-            var fullQuery = $"{systemInstructions}\n{formattingInstructions}\nBased on the following documents:\n\nFiles:{files}\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n{formattingInstructions}";
+        string content = "";
+        bool isComplete = false;
+        int retryCount = 0;
+        const int maxRetries = 3;
 
-            var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
+        while (!isComplete && retryCount < maxRetries)
+        {
+            try
             {
-                Messages = new ChatMessage[] { new ChatMessage(ChatMessageRole.User, fullQuery) },
-                Model = "gpt-4o",
-                ResponseFormat = ChatRequest.ResponseFormats.JsonObject
-            });
+                var systemInstructions = config.SystemInstructions2;
+                var files = GetFiles(config.FolderPath);
+                var formattingInstructions = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ \"message\": \"a description of what is changed\", \"changes\": [{{ \"file\": \"the path of the file that is changed\", \"content\": \"the content of the WHOLE file. ALWAYS WRITE THE WHOLE FILE.\" }}], \"deletions\": [\"file that is deleted. empty array if no deletions\"] }}";
+                var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{string.Join('\n', history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}." : "";
+                var fullQuery = $"{systemInstructions}\n{formattingInstructions}\nBased on the following documents:\n\nFiles:{files}\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n{formattingInstructions}";
 
-            content = response.Choices[0].Message.TextContent.Trim();
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e.Message);
-            throw new Exception("Error getting the message from OpenAI");
+                var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
+                {
+                    Messages = new ChatMessage[] { new ChatMessage(ChatMessageRole.User, fullQuery) },
+                    Model = "gpt-4o",
+                    ResponseFormat = ChatRequest.ResponseFormats.JsonObject
+                });
+
+                content += response.Choices[0].Message.TextContent.Trim();
+                isComplete = response.Choices[0].FinishReason != "length";
+                retryCount++;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw new Exception("Error getting the message from OpenAI");
+            }
         }
 
-        try 
+        try
         {
             var start = content.IndexOf('{');
             var end = content.LastIndexOf('}');
