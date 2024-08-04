@@ -5,28 +5,25 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using OpenAI_API;
-using MathNet.Numerics.LinearAlgebra;
-using OpenAI_API.Embedding;
 using OpenAI_API.Completions;
 using OpenAI_API.Chat;
 using DevGPT;
-using Microsoft.Extensions.Configuration;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Http;
 
 public partial class ProjectUpdater
 {
     private string openaiApiKey;
     private AppBuilderConfig config;
     private CodeUpdater codeUpdater;
-
+    private RelevanceService RelevanceService;
+    private OpenAIAPI OpenAIAPI => new OpenAIAPI(openaiApiKey);
     public ProjectUpdater(AppBuilderConfig config)
     {
         this.config = config;
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
-        openaiApiKey = configuration["OpenAI:ApiKey"];
+        openaiApiKey = Settings.OpenAIApiKey;
+        RelevanceService = new RelevanceService(OpenAIAPI);
         codeUpdater = new CodeUpdater(config);
     }
 
@@ -45,34 +42,28 @@ public partial class ProjectUpdater
 
     private async Task<string> AnswerQuestion(string folderPath, string embeddingsFile, string query, string historyFile = null)
     {
-        var openai = new OpenAIAPI(openaiApiKey);
-        List<string> topSimilarDocumentsContent = await GetRelevantDocuments(folderPath, embeddingsFile, query, openai);
+        List<string> topSimilarDocumentsContent = await RelevanceService.GetRelevantDocuments(folderPath, embeddingsFile, query);
 
-        List<ChatMessage>? history = await GetHistory(historyFile);
+        List<ChatMessage>? history = await HistoryManager.GetHistory(historyFile);
 
         var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
-        var message = await AnswerQuestionFromDocument(openai, mostRelevantDocContent, query, history.ToArray());
+        var message = await AnswerQuestionFromDocument(mostRelevantDocContent, query, history.ToArray());
 
         return message;
     }
 
-    private async Task<string> AnswerQuestionFromDocument(OpenAIAPI openai, string document, string query, ChatMessage[] history)
+    private async Task<string> AnswerQuestionFromDocument(string document, string query, ChatMessage[] history)
     {
         string content;
         try
         {
             var systemInstructions = config.SystemInstructions1;
             var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{history.Select(h => $"{h.Role}: {h.TextContent}\n")}." : "";
+            var fullQuery = $"{systemInstructions}\nBased on the following document:\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}";
 
-            var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
-            {
-                Messages = new ChatMessage[] { new ChatMessage(ChatMessageRole.User, $"{systemInstructions}\nBased on the following document:\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}") },
-                Model = "gpt-4o",
-                ResponseFormat = ChatRequest.ResponseFormats.Text
-            });
+            var contentResponse = await GetResponseContent(OpenAIAPI, fullQuery);
 
-            content = response.Choices[0].Message.TextContent.Trim();
-            return content;
+            return contentResponse.Content;
         }
         catch (Exception e)
         {
@@ -100,17 +91,16 @@ public partial class ProjectUpdater
 
     private async Task<Response> GetUpdateCodeResponse(string folderPath, string embeddingsFile, string query, string historyFile = null)
     {
-        var openai = new OpenAIAPI(openaiApiKey);
-        List<string> topSimilarDocumentsContent = await GetRelevantDocuments(folderPath, embeddingsFile, query, openai);
+        List<string> topSimilarDocumentsContent = await RelevanceService.GetRelevantDocuments(folderPath, embeddingsFile, query);
 
-        List<ChatMessage>? history = await GetHistory(historyFile);
+        List<ChatMessage>? history = await HistoryManager.GetHistory(historyFile);
 
         var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
-        var queryResponse = await GetUpdateCodeResponseFromDocument(openai, mostRelevantDocContent, query, history.ToArray());
+        var queryResponse = await GetUpdateCodeResponseFromDocument(mostRelevantDocContent, query, history.ToArray());
 
         return queryResponse;
     }
-    private async Task<Response> GetUpdateCodeResponseFromDocument(OpenAIAPI openai, string document, string query, ChatMessage[] history)
+    private async Task<Response> GetUpdateCodeResponseFromDocument(string document, string query, ChatMessage[] history)
     {
         string content = "";
         bool isComplete = false;
@@ -136,15 +126,10 @@ public partial class ProjectUpdater
                     fullQuery = $"{systemInstructions}\n{formattingInstructions}\nBased on the following documents:\n\nFiles:{files}\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n{formattingInstructions}";
                 }
 
-                var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
-                {
-                    Messages = new ChatMessage[] { new ChatMessage(ChatMessageRole.User, fullQuery) },
-                    Model = "gpt-4o",
-                    ResponseFormat = ChatRequest.ResponseFormats.JsonObject
-                });
+                ResponseContent reponseContent = await GetResponseContent(OpenAIAPI, fullQuery);
 
-                content += response.Choices[0].Message.TextContent.Trim();
-                isComplete = response.Choices[0].FinishReason != "length";
+                content += reponseContent.Content;
+                isComplete = reponseContent.IsComplete;
                 continuationCount++;
             }
             catch (Exception e)
@@ -170,6 +155,23 @@ public partial class ProjectUpdater
             Console.WriteLine(content);
             throw new Exception("Error parsing the message from OpenAI");
         }
+    }
+
+    private static async Task<ResponseContent> GetResponseContent(OpenAIAPI openai, string fullQuery)
+    {
+        var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
+        {
+            Messages = new ChatMessage[] { new ChatMessage(ChatMessageRole.User, fullQuery) },
+            Model = "gpt-4o",
+            ResponseFormat = ChatRequest.ResponseFormats.JsonObject
+        });
+
+        var reponseContent = new ResponseContent
+        {
+            Content = response.Choices[0].Message.TextContent.Trim(),
+            IsComplete = response.Choices[0].FinishReason != "length"
+        };
+        return reponseContent;
     }
 
     #endregion
@@ -186,23 +188,22 @@ public partial class ProjectUpdater
 
         var result = await GetRunWithPlanResponse(config.FolderPath, config.EmbeddingsFile, config.Query, config.UseHistory ? config.HistoryFile : "");
 
-        return;
+        return "";
     }
 
     private async Task<Response> GetRunWithPlanResponse(string folderPath, string embeddingsFile, string query, string historyFile = null)
     {
-        var openai = new OpenAIAPI(openaiApiKey);
-        List<string> topSimilarDocumentsContent = await GetRelevantDocuments(folderPath, embeddingsFile, query, openai);
+        List<string> topSimilarDocumentsContent = await RelevanceService.GetRelevantDocuments(folderPath, embeddingsFile, query);
 
-        List<ChatMessage>? history = await GetHistory(historyFile);
+        List<ChatMessage>? history = await HistoryManager.GetHistory(historyFile);
 
         var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
-        var queryResponse = await GetRunWithPlanResponseFromDocument(openai, mostRelevantDocContent, query, history.ToArray());
+        var queryResponse = await GetRunWithPlanResponseFromDocument(mostRelevantDocContent, query, history.ToArray());
 
         return queryResponse;
     }
 
-    private async Task<Response> GetRunWithPlanResponseFromDocument(OpenAIAPI openai, string document, string query, ChatMessage[] history)
+    private async Task<Response> GetRunWithPlanResponseFromDocument(string document, string query, ChatMessage[] history)
     {
         string content = "";
         bool isComplete = false;
@@ -214,7 +215,7 @@ public partial class ProjectUpdater
             try
             {
                 var systemInstructions = config.SystemInstructions2;
-                var files = GetFiles(config.FolderPath);
+                var files = new ProjectLoader().GetFiles(config.FolderPath);
                 var formattingInstructions = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ \"message\": \"a description of what is changed\", \"changes\": [{{ \"file\": \"the path of the file that is changed\", \"content\": \"the content of the WHOLE file. ALWAYS WRITE THE WHOLE FILE.\" }}], \"deletions\": [\"file that is deleted. empty array if no deletions\"] }}";
                 var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{string.Join('\n', history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}." : "";
 
@@ -228,15 +229,10 @@ public partial class ProjectUpdater
                     fullQuery = $"{systemInstructions}\n{formattingInstructions}\nBased on the following documents:\n\nFiles:{files}\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n{formattingInstructions}";
                 }
 
-                var response = await openai.Chat.CreateChatCompletionAsync(new ChatRequest
-                {
-                    Messages = new ChatMessage[] { new ChatMessage(ChatMessageRole.User, fullQuery) },
-                    Model = "gpt-4o",
-                    ResponseFormat = ChatRequest.ResponseFormats.JsonObject
-                });
+                var contentResponse = await GetResponseContent(OpenAIAPI, fullQuery);
 
-                content += response.Choices[0].Message.TextContent.Trim();
-                isComplete = response.Choices[0].FinishReason != "length";
+                content += contentResponse.Content;
+                isComplete = contentResponse.IsComplete;
                 continuationCount++;
             }
             catch (Exception e)
@@ -262,76 +258,6 @@ public partial class ProjectUpdater
             Console.WriteLine(content);
             throw new Exception("Error parsing the message from OpenAI");
         }
-    }
-    #endregion
-
-    #region history
-
-    private static async Task<List<ChatMessage>> GetHistory(string historyFile)
-    {
-        var history = new List<ChatMessage>();
-        if (historyFile != null && File.Exists(historyFile))
-        {
-            try
-            {
-                var entries = JsonConvert.DeserializeObject<List<HistoryEntry>>(await File.ReadAllTextAsync(historyFile));
-                history = entries.Select(e => new ChatMessage(ChatMessageRole.FromString(e.Role), e.Content)).ToList();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Cannot read history file {historyFile}");
-                history = new List<ChatMessage>();
-            }
-        }
-
-        return history;
-    }
-
-    #endregion
-
-    #region relevancesearch
-
-    private async Task<List<string>> GetRelevantDocuments(string folderPath, string embeddingsFile, string query, OpenAIAPI openai)
-    {
-        var embeddings = JsonConvert.DeserializeObject<Dictionary<string, List<double>>>(await File.ReadAllTextAsync(embeddingsFile));
-
-        var queryEmbedding = await GetEmbedding(openai, query);
-        var queryVector = Vector<double>.Build.DenseOfArray(queryEmbedding.ToArray());
-
-        var similarities = new List<(double similarity, string documentName)>();
-
-        foreach (var kvp in embeddings)
-        {
-            var docVector = Vector<double>.Build.DenseOfArray(kvp.Value.ToArray());
-            var similarity = CosineSimilarity(queryVector, docVector);
-
-            similarities.Add((similarity, kvp.Key));
-        }
-
-        similarities.Sort((x, y) => y.similarity.CompareTo(x.similarity));
-
-        const int numTopDocuments = 8;
-        var topSimilarDocumentsContent = new List<string>();
-
-        for (int i = 0; i < Math.Min(numTopDocuments, similarities.Count); i++)
-        {
-            string docName = similarities[i].documentName;
-            string docContent = await File.ReadAllTextAsync(Path.Combine(folderPath, docName));
-            topSimilarDocumentsContent.Add($"{docName}:\n\n{docContent}");
-        }
-
-        return topSimilarDocumentsContent;
-    }
-
-    private double CosineSimilarity(Vector<double> v1, Vector<double> v2)
-    {
-        return v1.DotProduct(v2) / (v1.L2Norm() * v2.L2Norm());
-    }
-
-    private async Task<List<double>> GetEmbedding(OpenAIAPI openai, string text)
-    {
-        var response = await openai.Embeddings.CreateEmbeddingAsync(new EmbeddingRequest { Input = text, Model = "text-embedding-ada-002" });
-        return new List<double>(response.Data[0].Embedding.Select(e => (double)e));
     }
 
     #endregion

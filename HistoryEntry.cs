@@ -1,8 +1,5 @@
-﻿public partial class ProjectUpdater
+﻿public class HistoryEntry
 {
-    public class HistoryEntry
-    {
-        public string Role { get; set; }
-        public string Content { get; set; }
-    }
+    public string Role { get; set; }
+    public string Content { get; set; }
 }
