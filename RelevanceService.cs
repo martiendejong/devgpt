@@ -47,13 +47,23 @@ public class RelevanceService
 
     public async Task<List<string>> GetDocuments(string folderPath, List<string> docNames)
     {
-        var topSimilarDocumentsContent = new List<string>();
-        docNames.ForEach(async docName =>
+        var topSimilarDocumentsContent = docNames.Select(docName =>
         {
-            string docContent = await File.ReadAllTextAsync(Path.Combine(folderPath, docName));
-            topSimilarDocumentsContent.Add($"{docName}:\n\n{docContent}");
+            string docContent = File.ReadAllText(Path.Combine(folderPath, docName));
+            return $"{docName}:\n\n{docContent}";
         });
-        return topSimilarDocumentsContent;
+        return topSimilarDocumentsContent.ToList();
+    }
+
+    public async Task<List<string>> GetDocumentsRelative(string folderPath, List<string> docNames)
+    {
+        var topSimilarDocumentsContent = docNames.Select(docName =>
+        {
+            string docContent = File.ReadAllText(Path.Combine(docName));
+            var relativeDocName = docName.Substring(folderPath.Length + 1);
+            return $"{relativeDocName}:\n\n{docContent}";
+        });
+        return topSimilarDocumentsContent.ToList();
     }
 
     private double CosineSimilarity(Vector<double> v1, Vector<double> v2)
