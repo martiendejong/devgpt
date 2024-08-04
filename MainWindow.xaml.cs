@@ -143,7 +143,7 @@ namespace DevGPT
                     UseHistory = GenerateHistory.IsChecked == true
                 };
 
-                ProjectBuilder builder = new ProjectBuilder(config);
+                ProjectUpdater builder = new ProjectUpdater(config);
                 var message = await builder.AnswerQuestion();
                 System.Windows.Forms.MessageBox.Show(message);
                 AnswerOutput.Text += message + "\n";
@@ -170,7 +170,7 @@ namespace DevGPT
                     UseHistory = GenerateHistory.IsChecked == true
                 };
 
-                ProjectBuilder builder = new ProjectBuilder(config);
+                ProjectUpdater builder = new ProjectUpdater(config);
                 var message = await builder.UpdateCode();
                 System.Windows.Forms.MessageBox.Show(message);
             }

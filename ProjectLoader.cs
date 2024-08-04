@@ -7,7 +7,7 @@ namespace DevGPT
 {
     public class ProjectLoader
     {
-        private readonly string[] excludeDirs = new[] { @"\bin\", @"\obj\", @"\node_modules\", ".git", ".vs", "dist", ".d.ts", "appsettings.json" };
+        private readonly string[] excludeDirs = new[] { @"\bin\", @"\obj\", @"\node_modules\", ".git", ".vs", "dist", ".d.ts", "appsettings.json", ".quasar" };
         private readonly string[] includeExtensions = new[] { ".cs", ".xaml", ".xaml.cs", ".cshtml", ".html", ".json", ".js", ".ts", ".tt", ".md" };
 
         public List<string> GetFiles(string folderPath)

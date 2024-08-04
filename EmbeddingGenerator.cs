@@ -1,4 +1,5 @@
-using System;using System.IO;
+using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -16,13 +17,50 @@ public class EmbeddingGenerator
         embeddingHandler = new EmbeddingHandler(apiKey); 
     } 
     public async Task GenerateAndStoreEmbeddings(string folderPath, string embeddingsFile) 
-    { 
-        var documentContents = GetChangedFilesContents(folderPath); 
-        var embeddings = await embeddingHandler.GenerateEmbeddings(documentContents); 
+    {
+        Dictionary<string, List<double>> embeddings;
+        if (File.Exists(embeddingsFile))
+        {
+            var existingEmbeddings = JsonConvert.DeserializeObject<Dictionary<string, List<double>>>(await File.ReadAllTextAsync(embeddingsFile));
+            var documentContents = GetChangedFilesContents(folderPath);
+            var newEmbeddings = await embeddingHandler.GenerateEmbeddings(documentContents);
+            foreach (var key in newEmbeddings.Keys)
+            {
+                existingEmbeddings[key] = newEmbeddings[key];
+            }
+            embeddings = existingEmbeddings;
+        }
+        else
+        {
+            var documentContents = await GetAllFilesContents(folderPath);
+            embeddings = await embeddingHandler.GenerateEmbeddings(documentContents);
+        }
+
+
         var json = JsonConvert.SerializeObject(embeddings, Formatting.Indented); 
         await File.WriteAllTextAsync(embeddingsFile, json); 
         Console.WriteLine($"Embeddings saved to {embeddingsFile}"); 
-    } 
+    }
+
+    private async Task<Dictionary<string, string>> GetAllFilesContents(string folderPath)
+    {
+        var documents = new Dictionary<string, string>();
+
+        ProjectLoader loader = new ProjectLoader();
+        var allFiles = loader.GetFiles(folderPath);
+        foreach (var file in allFiles)
+        {
+            var relativePath = Path.GetRelativePath(folderPath, file);
+
+            if (File.Exists(file))
+            {
+                documents[relativePath] = await File.ReadAllTextAsync(file);
+            }
+        }
+
+        return documents;
+    }
+
     private Dictionary<string, string> GetChangedFilesContents(string folderPath) 
     { 
         var result = new Dictionary<string, string>(); 
