@@ -37,14 +37,14 @@ public partial class ProjectUpdater
             await embeddings.GenerateAndStoreEmbeddings(config.FolderPath, config.EmbeddingsFile);
         }
 
-        return await AnswerQuestion(config.FolderPath, config.EmbeddingsFile, config.Query, config.UseHistory ? config.HistoryFile : "");
+        return await AnswerQuestion(config.Query);
     }
 
-    private async Task<string> AnswerQuestion(string folderPath, string embeddingsFile, string query, string historyFile = null)
+    private async Task<string> AnswerQuestion(string query)
     {
-        List<string> topSimilarDocumentsContent = await RelevanceService.GetRelevantDocuments(folderPath, embeddingsFile, query);
+        List<string> topSimilarDocumentsContent = await RelevanceService.GetRelevantDocuments(config.FolderPath, config.EmbeddingsFile, query);
 
-        List<ChatMessage>? history = await HistoryManager.GetHistory(historyFile);
+        List<ChatMessage>? history = await HistoryManager.GetHistory(config.UseHistory ? config.HistoryFile : null);
 
         var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
         var message = await AnswerQuestionFromDocument(mostRelevantDocContent, query, history.ToArray());
@@ -84,16 +84,16 @@ public partial class ProjectUpdater
             await embeddings.GenerateAndStoreEmbeddings(config.FolderPath, config.EmbeddingsFile);
         }
 
-        var result = await GetUpdateCodeResponse(config.FolderPath, config.EmbeddingsFile, config.Query, config.UseHistory ? config.HistoryFile : "");
+        var result = await GetUpdateCodeResponse(config.Query);
 
         return await codeUpdater.UpdateProject(result);
     }
 
-    private async Task<Response> GetUpdateCodeResponse(string folderPath, string embeddingsFile, string query, string historyFile = null)
+    private async Task<Response> GetUpdateCodeResponse(string query)
     {
-        List<string> topSimilarDocumentsContent = await RelevanceService.GetRelevantDocuments(folderPath, embeddingsFile, query);
+        List<string> topSimilarDocumentsContent = await RelevanceService.GetRelevantDocuments(config.FolderPath, config.EmbeddingsFile, query);
 
-        List<ChatMessage>? history = await HistoryManager.GetHistory(historyFile);
+        List<ChatMessage>? history = await HistoryManager.GetHistory(config.UseHistory ? config.HistoryFile : null);
 
         var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
         var queryResponse = await GetUpdateCodeResponseFromDocument(mostRelevantDocContent, query, history.ToArray());
@@ -186,11 +186,11 @@ public partial class ProjectUpdater
             await embeddings.GenerateAndStoreEmbeddings(config.FolderPath, config.EmbeddingsFile);
         }
 
-        var result = await GetRunWithPlanResponse(config.FolderPath, config.EmbeddingsFile, config.Query, config.UseHistory ? config.HistoryFile : "");
+        var result = await GetRunWithPlanResponse(config.Query);
 
         foreach(var task in result.Tasks)
         {
-            var response = await GetUpdateCodeFromPlanResponse(config.FolderPath, task.Files, task.Query);
+            var response = await GetUpdateCodeFromPlanResponse(task.Files, task.Query);
             await codeUpdater.UpdateProject(response);
         }
 
@@ -200,11 +200,11 @@ public partial class ProjectUpdater
         return "";
     }
 
-    private async Task<Plan> GetRunWithPlanResponse(string folderPath, string embeddingsFile, string query, string historyFile = null)
+    private async Task<Plan> GetRunWithPlanResponse(string query)
     {
-        List<string> topSimilarDocumentsContent = await RelevanceService.GetRelevantDocuments(folderPath, embeddingsFile, query);
+        List<string> topSimilarDocumentsContent = await RelevanceService.GetRelevantDocuments(config.FolderPath, config.EmbeddingsFile, query);
 
-        List<ChatMessage>? history = await HistoryManager.GetHistory(historyFile);
+        List<ChatMessage>? history = await HistoryManager.GetHistory(config.UseHistory ? config.HistoryFile : null);
 
         var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
         var queryResponse = await GetRunWithPlanResponseFromDocument(mostRelevantDocContent, query, history.ToArray());
@@ -268,9 +268,9 @@ public partial class ProjectUpdater
             throw new Exception("Error parsing the message from OpenAI");
         }
     }
-    private async Task<Response> GetUpdateCodeFromPlanResponse(string folderPath, List<string> files, string query, string historyFile = null)
+    private async Task<Response> GetUpdateCodeFromPlanResponse(List<string> files, string query, string historyFile = null)
     {
-        List<string> topSimilarDocumentsContent = await RelevanceService.GetDocuments(folderPath, files);
+        List<string> topSimilarDocumentsContent = await RelevanceService.GetDocuments(config.FolderPath, files);
 
         List<ChatMessage>? history = await HistoryManager.GetHistory(historyFile);
 
