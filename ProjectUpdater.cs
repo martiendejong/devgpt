@@ -112,7 +112,7 @@ public partial class ProjectUpdater
             try
             {
                 var systemInstructions = config.SystemInstructions2;
-                var files = string.Join("\n", new ProjectLoader().GetFiles(config.FolderPath));
+                var files = string.Join("\n", new ProjectLoader().GetFilesRelative(config.FolderPath));
                 var formattingInstructions = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ \"message\": \"a description of what is changed\", \"changes\": [{{ \"file\": \"the path of the file that is changed\", \"content\": \"the content of the WHOLE file. ALWAYS WRITE THE WHOLE FILE.\" }}], \"deletions\": [\"file that is deleted. empty array if no deletions\"] }}";
                 var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{string.Join('\n', history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}." : "";
 
@@ -224,7 +224,7 @@ public partial class ProjectUpdater
             try
             {
                 var systemInstructions = config.SystemInstructions3;
-                var files = string.Join("\n", new ProjectLoader().GetFiles(config.FolderPath));
+                var files = string.Join("\n", new ProjectLoader().GetFilesRelative(config.FolderPath));
                 var formattingInstructions = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ \"tasks\": [{{ \"title\": \"a description of the task\", \"query\": \"the prompt for completing the task\", \"files\": [{{ \"file 1\", \"file 2\" }}] }}] }}";
                 var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{string.Join('\n', history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}." : "";
 
