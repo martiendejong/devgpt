@@ -23,12 +23,14 @@
                 <Button x:Name="BrowseButton" Content="Browse" Margin="0,0,0,10" Click="BrowseButton_Click" />
             </StackPanel>
 
+            <Label Content="Generate new embeddings" />
             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                 <CheckBox x:Name="GenerateEmbeddings" Foreground="Gray" IsChecked="True" Margin="0,0,10,0" VerticalAlignment="Center" />
                 <TextBox x:Name="EmbeddingsFileInput" Margin="0,0,10,0" Text="Embeddings File" Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" Width="540" />
                 <Button x:Name="BrowseEmbeddingsFileButton" Content="Browse" Click="BrowseEmbeddingsFileButton_Click" />
             </StackPanel>
 
+            <Label Content="History file" />
             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                 <CheckBox x:Name="GenerateHistory" Foreground="Gray" IsChecked="True" Margin="0,0,10,0" VerticalAlignment="Center" />
                 <TextBox x:Name="HistoryFileInput" Margin="0,0,10,0" Text="History File (optional)" Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" Width="540" />
