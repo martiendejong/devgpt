@@ -49,7 +49,10 @@ public class RelevanceService
     {
         var topSimilarDocumentsContent = docNames.Select(docName =>
         {
-            string docContent = File.ReadAllText(Path.Combine(folderPath, docName));
+            var path = Path.Combine(folderPath, docName);
+            var docContent = "";
+            if (File.Exists(path))
+                docContent = File.ReadAllText(path);
             return $"{docName}:\n\n{docContent}";
         });
         return topSimilarDocumentsContent.ToList();
