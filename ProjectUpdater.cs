@@ -11,6 +11,8 @@ using DevGPT;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Http;
+using System.Collections;
+using System.Reflection.Metadata;
 
 public partial class ProjectUpdater
 {
@@ -186,18 +188,17 @@ public partial class ProjectUpdater
             await embeddings.GenerateAndStoreEmbeddings(config.FolderPath, config.EmbeddingsFile);
         }
 
-        var result = await GetRunWithPlanResponse(config.Query);
-
-        foreach(var task in result.Tasks)
+        var plan = await GetRunWithPlanResponse(config.Query);
+        foreach(var task in plan.Tasks)
         {
-            var response = await GetUpdateCodeFromPlanResponse(task.Files, task.Query);
+            var docs = await RelevanceService.GetDocuments(config.FolderPath, task.Files);
+            var mostRelevantDocContent = string.Join("\n\n", docs);
+
+            var response = await GetUpdateCodeResponseFromDocument(mostRelevantDocContent, task.Query, new ChatMessage[] { });
             await codeUpdater.UpdateProject(response);
         }
 
-
-        // todo message
-
-        return "";
+        return string.Join("\n", plan.Tasks.Select(t => t.Title));
     }
 
     private async Task<Plan> GetRunWithPlanResponse(string query)
@@ -207,48 +208,33 @@ public partial class ProjectUpdater
         List<ChatMessage>? history = await HistoryManager.GetHistory(config.UseHistory ? config.HistoryFile : null);
 
         var mostRelevantDocContent = string.Join("\n\n", topSimilarDocumentsContent);
-        var queryResponse = await GetRunWithPlanResponseFromDocument(mostRelevantDocContent, query, history.ToArray());
+        var plan = await GetRunWithPlanResponseFromDocument(mostRelevantDocContent, query, history.ToArray());
 
-        return queryResponse;
+        return plan;
     }
 
     private async Task<Plan> GetRunWithPlanResponseFromDocument(string document, string query, ChatMessage[] history)
     {
         string content = "";
-        bool isComplete = false;
-        int continuationCount = 0;
-        const int maxRetries = 3;
 
-        while (!isComplete && continuationCount < maxRetries)
+        try
         {
-            try
-            {
-                var systemInstructions = config.SystemInstructions3;
-                var files = string.Join("\n", new ProjectLoader().GetFilesRelative(config.FolderPath));
-                var formattingInstructions = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ \"tasks\": [{{ \"title\": \"a description of the task\", \"query\": \"the prompt for completing the task\", \"files\": [{{ \"file 1\", \"file 2\" }}] }}] }}";
-                var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{string.Join('\n', history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}." : "";
+            var systemInstructions = config.SystemInstructions3;
+            var files = string.Join("\n", new ProjectLoader().GetFilesRelative(config.FolderPath));
+            var formattingInstructions = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {{ \"tasks\": [{{ \"title\": \"a description of the task\", \"query\": \"the prompt for completing the task\", \"files\": [{{ \"file 1\", \"file 2\" }}] }}] }}";
+            var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{string.Join('\n', history.Select(h => $"{h.Role.ToString()}: {h.TextContent}\n"))}." : "";
 
-                var fullQuery = "";
-                if (continuationCount > 0)
-                {
-                    fullQuery = $"Continue this message: {systemInstructions}\nBased on the following documents:\n\nFiles:{files}\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n\nContinue your response:\n {content}";
-                }
-                else
-                {
-                    fullQuery = $"{systemInstructions}\n{formattingInstructions}\nBased on the following documents:\n\nFiles:{files}\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n{formattingInstructions}";
-                }
+            var fullQuery = "";
+            fullQuery = $"{systemInstructions}\n{formattingInstructions}\nBased on the following documents:\n\nFiles:{files}\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}\n{formattingInstructions}";
 
-                var contentResponse = await GetResponseContent(OpenAIAPI, fullQuery);
+            var contentResponse = await GetResponseContent(OpenAIAPI, fullQuery);
 
-                content += contentResponse.Content;
-                isComplete = contentResponse.IsComplete;
-                continuationCount++;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                throw new Exception("Error getting the message from OpenAI");
-            }
+            content = contentResponse.Content;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            throw new Exception("Error getting the message from OpenAI");
         }
 
         try
@@ -268,6 +254,7 @@ public partial class ProjectUpdater
             throw new Exception("Error parsing the message from OpenAI");
         }
     }
+
     private async Task<Response> GetUpdateCodeFromPlanResponse(List<string> files, string query, string historyFile = null)
     {
         List<string> topSimilarDocumentsContent = await RelevanceService.GetDocumentsRelative(config.FolderPath, files);
