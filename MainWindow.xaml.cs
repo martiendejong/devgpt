@@ -18,11 +18,11 @@ namespace DevGPT
         public MainWindow()
         {
             InitializeComponent();
-            FolderPathInput.Text = @"C:\projects\ParisProof";
+            FolderPathInput.Text = @"Select your project folder, eg. c:\projects\myproject";
             FolderPathInput.Foreground = Brushes.Black;
-            EmbeddingsFileInput.Text = @"c:\projects\embeddings.json";
+            EmbeddingsFileInput.Text = @"Select your embeddings file, eg. c:\projects\myproject.embeddings.json";
             EmbeddingsFileInput.Foreground = Brushes.Black;
-            HistoryFileInput.Text = @"c:\projects\history.json";
+            HistoryFileInput.Text = @"Select your embeddings file, eg. c:\projects\myproject.history.json";
             HistoryFileInput.Foreground = Brushes.Black;
             LoadConfigurations();
         }
