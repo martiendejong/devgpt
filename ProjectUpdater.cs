@@ -189,6 +189,8 @@ public partial class ProjectUpdater
             await embeddings.GenerateAndStoreEmbeddings(config.FolderPath, config.EmbeddingsFile);
         }
 
+        var taskResponses = new Dictionary<string, string>();
+
         var plan = await GetRunWithPlanResponse(config.Query);
         foreach(var task in plan.Tasks)
         {
@@ -198,13 +200,22 @@ public partial class ProjectUpdater
 
 //            var files = await RelevanceService.GetRelevantDocuments(config.FolderPath, config.EmbeddingsFile, task.Query);
             var docs = await RelevanceService.GetDocuments(config.FolderPath, fileNames);
+            docs.AddRange(taskResponses.Select(t => $"{t.Key}: {t.Value}"));
             var mostRelevantDocContent = string.Join("\n\n", docs);
 
-            var response = await GetUpdateCodeResponseFromDocument(mostRelevantDocContent, task.Query, new ChatMessage[] { });
-            await codeUpdater.UpdateProject(response);
+            try
+            {
+                var response = await GetUpdateCodeResponseFromDocument(mostRelevantDocContent, task.Query, new ChatMessage[] { });
+                taskResponses.Add(task.Query, response.Message);
+                await codeUpdater.UpdateProject(response);
+            }
+            catch (Exception ex)
+            {
+                taskResponses.Add(task.Query, ex.Message);
+            }
         }
 
-        return string.Join("\n", plan.Tasks.Select(t => t.Title));
+        return string.Join("\n", taskResponses.Select(t => $"{t.Key}: {t.Value}"));
     }
 
     private async Task<Plan> GetRunWithPlanResponse(string query)

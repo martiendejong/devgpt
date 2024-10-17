@@ -24,7 +24,7 @@ public class EmbeddingGenerator
         if (File.Exists(embeddingsFile))
         {
             var existingEmbeddings = JsonConvert.DeserializeObject<Dictionary<string, List<double>>>(await File.ReadAllTextAsync(embeddingsFile));
-            var documentContents = GetChangedFilesContents(folderPath);
+            var documentContents = GetChangedAndAddedFilesContents(folderPath);
             var newEmbeddings = await embeddingHandler.GenerateEmbeddings(documentContents);
             foreach (var key in newEmbeddings.Keys)
             {
@@ -93,5 +93,78 @@ public class EmbeddingGenerator
             } 
         } 
         return result; 
-    } 
+    }
+
+    private Dictionary<string, string> GetChangedAndAddedFilesContents(string folderPath)
+    {
+        var result = new Dictionary<string, string>();
+
+        // Command to get modified and added files
+        var gitDiffCmd = new System.Diagnostics.ProcessStartInfo("git", "diff --name-status HEAD")
+        {
+            RedirectStandardOutput = true,
+            WorkingDirectory = folderPath,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        // Command to get untracked (newly added) files
+        var gitUntrackedCmd = new System.Diagnostics.ProcessStartInfo("git", "ls-files --others --exclude-standard")
+        {
+            RedirectStandardOutput = true,
+            WorkingDirectory = folderPath,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        // Process for modified and added files (tracked)
+        using (var process = System.Diagnostics.Process.Start(gitDiffCmd))
+        {
+            if (process != null)
+            {
+                using (var reader = process.StandardOutput)
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        var line = reader.ReadLine();
+                        if (string.IsNullOrWhiteSpace(line)) continue;
+
+                        var split = line.Split('\t');
+                        var status = split[0]; // A for added, M for modified
+                        var relativePath = split[1];
+
+                        var fullPath = Path.Combine(folderPath, relativePath);
+                        if ((status == "A" || status == "M") && File.Exists(fullPath))
+                        {
+                            result[relativePath] = File.ReadAllText(fullPath);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Process for untracked files (newly added but unversioned)
+        using (var process = System.Diagnostics.Process.Start(gitUntrackedCmd))
+        {
+            if (process != null)
+            {
+                using (var reader = process.StandardOutput)
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        var relativePath = reader.ReadLine();
+                        if (string.IsNullOrWhiteSpace(relativePath)) continue;
+
+                        var fullPath = Path.Combine(folderPath, relativePath);
+                        if (File.Exists(fullPath))
+                        {
+                            result[relativePath] = File.ReadAllText(fullPath);
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
 }
