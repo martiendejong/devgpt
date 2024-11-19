@@ -14,6 +14,24 @@ public class RelevanceService
 
     public async Task<List<string>> GetRelevantDocuments(string folderPath, string embeddingsFile, string query)
     {
+        const int numTopDocuments = 8;
+
+        List<string> docNames = await GetRelevantDocNames(embeddingsFile, query, numTopDocuments);
+
+        List<string> topSimilarDocumentsContent = await GetDocuments(folderPath, docNames);
+
+        return topSimilarDocumentsContent;
+    }
+
+    public async Task<List<string>> GetRelevantDocNames(string embeddingsFile, string query, int numTopDocuments)
+    {
+        List<(double similarity, string documentName)> similarities = await GetRelevantDocumentNamesBySimilarity(embeddingsFile, query);
+        var docNames = similarities.Select(sim => sim.documentName).Take(numTopDocuments).ToList();
+        return docNames;
+    }
+
+    public async Task<List<(double similarity, string documentName)>> GetRelevantDocumentNamesBySimilarity(string embeddingsFile, string query)
+    {
         var embeddings = JsonConvert.DeserializeObject<Dictionary<string, List<double>>>(await File.ReadAllTextAsync(embeddingsFile));
 
         var queryEmbedding = await GetEmbedding(openai, query);
@@ -30,19 +48,7 @@ public class RelevanceService
         }
 
         similarities.Sort((x, y) => y.similarity.CompareTo(x.similarity));
-
-        const int numTopDocuments = 8;
-
-        List<string> docNames = new List<string>();
-
-        for (int i = 0; i < Math.Min(numTopDocuments, similarities.Count); i++)
-        {
-            docNames.Add(similarities[i].documentName);
-        }
-
-        List<string> topSimilarDocumentsContent = await GetDocuments(folderPath, docNames);
-
-        return topSimilarDocumentsContent;
+        return similarities;
     }
 
     public async Task<List<string>> GetDocuments(string folderPath, List<string> docNames)

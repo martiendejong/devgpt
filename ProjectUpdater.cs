@@ -13,6 +13,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Net.Http;
 using System.Collections;
 using System.Reflection.Metadata;
+using Microsoft.VisualBasic;
 
 public partial class ProjectUpdater
 {
@@ -61,7 +62,7 @@ public partial class ProjectUpdater
         {
             var systemInstructions = config.SystemInstructions1;
             var historyStr = history.Any() ? $"\n\nAnd the conversation history:\n\n{history.Select(h => $"{h.Role}: {h.TextContent}\n")}." : "";
-            var fullQuery = $"{systemInstructions}\nBased on the following document:\n\n{document}{historyStr}\n\nAnswer the following query:\n\n{query}";
+            var fullQuery = $"{systemInstructions}\nAnswer the following query:\n\n{query}\n\nBased on the following documents:\n\n{document}{historyStr}\n\n";
 
             var contentResponse = await GetResponseContent(OpenAIAPI, fullQuery);
 
@@ -165,7 +166,7 @@ public partial class ProjectUpdater
         {
             Messages = new ChatMessage[] { new ChatMessage(ChatMessageRole.User, fullQuery) },
             Model = "gpt-4o",
-            ResponseFormat = ChatRequest.ResponseFormats.JsonObject
+            ResponseFormat = ChatRequest.ResponseFormats.Text
         });
 
         var reponseContent = new ResponseContent
@@ -191,7 +192,12 @@ public partial class ProjectUpdater
         var plan = await GetRunWithPlanResponse(config.Query);
         foreach(var task in plan.Tasks)
         {
-            var docs = await RelevanceService.GetDocuments(config.FolderPath, task.Files);
+            var fileNames = await RelevanceService.GetRelevantDocNames(config.EmbeddingsFile, task.Query, 5);
+            fileNames = fileNames.Concat(task.Files).ToList();
+            fileNames = new List<string>(new HashSet<string>(fileNames));
+
+//            var files = await RelevanceService.GetRelevantDocuments(config.FolderPath, config.EmbeddingsFile, task.Query);
+            var docs = await RelevanceService.GetDocuments(config.FolderPath, fileNames);
             var mostRelevantDocContent = string.Join("\n\n", docs);
 
             var response = await GetUpdateCodeResponseFromDocument(mostRelevantDocContent, task.Query, new ChatMessage[] { });
