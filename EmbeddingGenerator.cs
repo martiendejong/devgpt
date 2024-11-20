@@ -17,19 +17,40 @@ public class EmbeddingGenerator
     { 
         openaiApiKey = apiKey; 
         embeddingHandler = new EmbeddingHandler(apiKey); 
-    } 
-    public async Task<bool> GenerateAndStoreEmbeddings(string folderPath, string embeddingsFile) 
+    }
+
+    public async Task<bool> UpdateEmbeddings(string folderPath, string embeddingsFile, string[] files)
+    {
+        var documentContents = GetFilesContents(folderPath, files);
+        var existingEmbeddings = await LoadEmbeddings(embeddingsFile);
+        var newEmbeddings = await embeddingHandler.GenerateEmbeddings(documentContents);
+        AddEmbeddings(existingEmbeddings, newEmbeddings);
+        var embeddings = existingEmbeddings;
+
+        await SaveEmbeddings(embeddingsFile, embeddings);
+        
+        return true;
+    }
+
+    private Dictionary<string, string> GetFilesContents(string folderPath, string[] files)
+    {
+        var result = new Dictionary<string, string>();
+        foreach (var file in files)
+        {
+            result[file] = File.ReadAllText(Path.Combine(folderPath, file));
+        }
+        return result;
+    }
+
+    public async Task<bool> GenerateAndStoreEmbeddings(string folderPath, string embeddingsFile)
     {
         Dictionary<string, List<double>> embeddings;
         if (File.Exists(embeddingsFile))
         {
-            var existingEmbeddings = JsonConvert.DeserializeObject<Dictionary<string, List<double>>>(await File.ReadAllTextAsync(embeddingsFile));
             var documentContents = GetChangedFilesContents(folderPath);
+            var existingEmbeddings = await LoadEmbeddings(embeddingsFile);
             var newEmbeddings = await embeddingHandler.GenerateEmbeddings(documentContents);
-            foreach (var key in newEmbeddings.Keys)
-            {
-                existingEmbeddings[key] = newEmbeddings[key];
-            }
+            AddEmbeddings(existingEmbeddings, newEmbeddings);
             embeddings = existingEmbeddings;
         }
         else
@@ -38,12 +59,29 @@ public class EmbeddingGenerator
             embeddings = await embeddingHandler.GenerateEmbeddings(documentContents);
         }
 
-
-        var json = JsonConvert.SerializeObject(embeddings, Formatting.Indented); 
-        await File.WriteAllTextAsync(embeddingsFile, json); 
-        Console.WriteLine($"Embeddings saved to {embeddingsFile}");
+        await SaveEmbeddings(embeddingsFile, embeddings);
 
         return true;
+    }
+
+    private static void AddEmbeddings(Dictionary<string, List<double>> existingEmbeddings, Dictionary<string, List<double>> newEmbeddings)
+    {
+        foreach (var key in newEmbeddings.Keys)
+        {
+            existingEmbeddings[key] = newEmbeddings[key];
+        }
+    }
+
+    private static async Task<Dictionary<string, List<double>>> LoadEmbeddings(string embeddingsFile)
+    {
+        return JsonConvert.DeserializeObject<Dictionary<string, List<double>>>(await File.ReadAllTextAsync(embeddingsFile));
+    }
+
+    private static async System.Threading.Tasks.Task SaveEmbeddings(string embeddingsFile, Dictionary<string, List<double>> embeddings)
+    {
+        var json = JsonConvert.SerializeObject(embeddings, Formatting.Indented);
+        await File.WriteAllTextAsync(embeddingsFile, json);
+        Console.WriteLine($"Embeddings saved to {embeddingsFile}");
     }
 
     private async Task<Dictionary<string, string>> GetAllFilesContents(string folderPath)

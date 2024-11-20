@@ -38,7 +38,7 @@
             </StackPanel>
 
             <Label Content="Enter your query here..." />
-            <TextBox x:Name="QueryInput" Margin="0,0,0,10" AcceptsReturn="True" Height="100" Text="Enter your query here..." Foreground="Gray" GotFocus="ClearPlaceholderText" LostFocus="RestorePlaceholderText" />
+            <TextBox x:Name="QueryInput" Margin="0,0,0,10" AcceptsReturn="True" Height="100" Text="Enter your query here..." Foreground="Gray" />
 
             <Label Content="Logs" />
             <TextBlock x:Name="LogView" TextWrapping="Wrap" />

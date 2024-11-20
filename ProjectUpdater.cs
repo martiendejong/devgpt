@@ -183,9 +183,10 @@ public partial class ProjectUpdater
 
     public async Task<string> RunWithPlan()
     {
+        var embeddings = new EmbeddingGenerator(openaiApiKey);
+
         if (config.GenerateEmbeddings)
         {
-            var embeddings = new EmbeddingGenerator(openaiApiKey);
             await embeddings.GenerateAndStoreEmbeddings(config.FolderPath, config.EmbeddingsFile);
         }
 
@@ -202,6 +203,8 @@ public partial class ProjectUpdater
 
             var response = await GetUpdateCodeResponseFromDocument(mostRelevantDocContent, task.Query, new ChatMessage[] { });
             await codeUpdater.UpdateProject(response);
+
+            await embeddings.UpdateEmbeddings(config.FolderPath, config.EmbeddingsFile, response.Changes.Select(c => c.File).ToArray());
         }
 
         return string.Join("\n", plan.Tasks.Select(t => t.Title));
