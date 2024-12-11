@@ -28,7 +28,7 @@ public class EmbeddingGenerator
             var newEmbeddings = await embeddingHandler.GenerateEmbeddings(documentContents);
             foreach (var key in newEmbeddings.Keys)
             {
-                existingEmbeddings[key] = newEmbeddings[key];
+                existingEmbeddings[key.Replace("/", "\\")] = newEmbeddings[key];
             }
             embeddings = existingEmbeddings;
         }
