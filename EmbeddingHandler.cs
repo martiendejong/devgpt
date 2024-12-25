@@ -20,7 +20,7 @@ public class EmbeddingHandler
         } 
         return embeddings; 
     } 
-    private async Task<List<double>> FetchEmbedding(OpenAIAPI openai, string key, string text) { 
+    private async static Task<List<double>> FetchEmbedding(OpenAIAPI openai, string key, string text) { 
         var response = await openai.Embeddings.CreateEmbeddingAsync(new EmbeddingRequest { 
             Input = text, Model = "text-embedding-ada-002" }); 
         return new List<double>(response.Data[0].Embedding.Select(e => (double)e)); 
