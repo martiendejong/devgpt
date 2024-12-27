@@ -48,6 +48,8 @@ namespace DevGPT.NewAPI
 
         protected string CalculateChecksum(string filePath)
         {
+            if (!File.Exists(filePath))
+                return "";
             using (var sha256 = SHA256.Create())
             using (var fileStream = File.OpenRead(filePath))
             {

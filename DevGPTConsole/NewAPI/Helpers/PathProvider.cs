@@ -8,7 +8,7 @@
             BasePath = basePath;
         }
 
-        public bool IsRelative => string.IsNullOrWhiteSpace(BasePath);
+        public bool IsRelative => !string.IsNullOrWhiteSpace(BasePath);
 
         public string GetPath(string path)
         {

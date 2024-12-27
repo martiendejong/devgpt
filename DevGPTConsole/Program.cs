@@ -5,4 +5,4 @@ using OpenAI_API.Chat;
 Console.WriteLine("Hello, World!");
 
 //await hoi.beheerportaal_controllers();
-await hoi.x();
+await hoi.converseWithChat();
