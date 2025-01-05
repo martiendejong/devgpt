@@ -15,4 +15,7 @@ appsettings.json
 /.vs
 /bin/Debug/net6.0-windows
 /obj
-/DevGPTConsole
+/DevGPTConsole/bin/Debug/net8.0
+/DevGPTConsole/obj
+/DevGPTConsole/bin/Debug/net7.0/DevGPTConsole.deps.json
+/DevGPTConsole/bin/Debug/net7.0/DevGPTConsole.runtimeconfig.json
