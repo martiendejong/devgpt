@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 
 namespace DevGPT.NewAPI
 {
@@ -7,6 +8,16 @@ namespace DevGPT.NewAPI
         public BaseStore(StoreConfig config)
             : base(config)
         {
+        }
+
+        public async Task<bool> UpdateEmbeddings()
+        {
+            var e = Embeddings.ToList();
+            foreach (var embedding in e)
+            {
+                await UpdateEmbedding(embedding.Name, embedding.Path);
+            }
+            return true;
         }
 
         public async Task<bool> UpdateEmbedding(string name, string path)
@@ -23,6 +34,8 @@ namespace DevGPT.NewAPI
                     return true;
                 }
                 Embeddings.Remove(embedding);
+                if (checksum == "") 
+                    return true;
             }
 
             var data = await FetchEmbeddingData(name, path, absNewPath);
@@ -49,7 +62,8 @@ namespace DevGPT.NewAPI
             if (PathProvider.IsRelative)
             {
                 absNewPath = PathProvider.GetPath(relPath);
-                File.Copy(absOrgPath, absNewPath);
+                if(absOrgPath != absNewPath)
+                    File.Copy(absOrgPath, absNewPath);
             }
             else
             {
@@ -57,6 +71,51 @@ namespace DevGPT.NewAPI
             }
 
             return await UpdateEmbedding(name, relPath);
+        }
+
+        public async Task<bool> SplitAndAddDocument(string absOrgPath, string name, string relPath = "")
+        {
+            var tokensPerPart = 1000;
+            var partNr = 0;
+            var tokenCounter = new TokenCounter();
+            var content = File.ReadAllText(absOrgPath);
+            var remainingLines = content.Split("\n").ToList();
+            //var totalTokens = tokenCounter.CountTokens(content);
+            var relPathPeriodIndex = relPath.IndexOf(".");
+            var relPathNoExtension = relPath.Substring(0, relPathPeriodIndex);
+            var relPathExtension = relPath.Substring(relPathPeriodIndex + 1);
+
+            while (remainingLines.Count > 0)
+            {
+                var partName = $"{name} part {partNr}";
+                var partPath = $"{relPathNoExtension}.{partNr}.{relPathExtension}";
+
+                var partLines = new List<string>();
+                bool partComplete = false;
+                var moveLineToPart = () => {
+                    partLines.Add(remainingLines[0]);
+                    remainingLines.RemoveAt(0);
+                    var partTokens = tokenCounter.CountTokens(string.Join("\n", partLines));
+                    partComplete = partTokens >= tokensPerPart;
+                };
+                //partLines.Add(remainingLines[0]);
+                //remainingLines.RemoveAt(0);
+                //var partContent = partLines.Join("\n");
+                //var partTokens = tokenCounter.CountTokens(partContent);
+                moveLineToPart();
+                while (!partComplete && remainingLines.Count > 0)
+                {
+                    moveLineToPart();
+                    //partLines.Add(remainingLines[0]);
+                    //remainingLines.RemoveAt(0);
+                    //partContent = partLines.Join("\n");
+                    //partTokens = tokenCounter.CountTokens(partContent);
+                }
+
+                await ModifyDocument(partName, partPath, string.Join("\n", partLines));
+                partNr++;
+            }
+            return true;
         }
 
         public async Task<bool> ModifyDocument(string name, string path, string contents)

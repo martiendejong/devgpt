@@ -1,6 +1,6 @@
 ﻿using OpenAI_API.Chat;
 using OpenAI_API;
-
+using OpenAI_API.Completions;
 
 namespace DevGPT.NewAPI
 {
@@ -14,7 +14,7 @@ namespace DevGPT.NewAPI
         }
 
         public string GetFormatInstruction<ResponseType>() where ResponseType : ChatResponse<ResponseType>, new()
-            => $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {ChatResponse<ResponseType>.Example.Serialize()}";
+            => $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {ChatResponse<ResponseType>.Signature} EXAMPLE: {ChatResponse<ResponseType>.Example.Serialize()}";
 
         public async Task<ResponseType> GenerateObject<ResponseType>(IList<ChatMessage> messages) where ResponseType : ChatResponse<ResponseType>, new()
         {

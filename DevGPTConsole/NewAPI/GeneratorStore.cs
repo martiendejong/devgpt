@@ -13,10 +13,14 @@ namespace DevGPT.NewAPI
         public Generator Generator { get; set; }
         public GeneratorStore(StoreConfig config) : base(config)
         {
-            var openai = new OpenAIAPI(config.OpenAiApiKey);
-            Generator = new Generator(openai);
+            Generator = CreateGenerator();
         }
 
+        public Generator CreateGenerator()
+        {
+            var openai = new OpenAIAPI(Config.OpenAiApiKey);
+            return new Generator(openai);
+        }
 
 
         public async Task<string> Generator_Question(string m, IEnumerable<ChatMessage>? messages = null)
@@ -44,20 +48,22 @@ namespace DevGPT.NewAPI
             var docsString = await GetRelevantDocuments(m);
             //var docsString = await s.RelevantDocumentsProvider.GetRelevantDocuments(m, s.Embeddings);
             var filesList = string.Join("\n", Embeddings.Select(e => $"{e.Path}"));
-            var query = $"{m}\n\nDocuments:\n{docsString}\n\nFiles:\n{filesList}";
+            var query = $"{m}\n\nFiles:\n{filesList}\n\nDocuments:\n{docsString}";
 
             sendMessages.Add(new ChatMessage(ChatMessageRole.User, query));
 
             var response = await Generator.GenerateObject<UpdateStoreResponse>(sendMessages);
 
-            foreach(var modification in response.Modifications)
-            {
-                await ModifyDocument(modification.Name, modification.Path, modification.Contents);
-            }
-            foreach (var deletion in response.Deletions)
-            {
-                await RemoveDocument(deletion.Path);
-            }
+            if(response.Modifications != null)
+                foreach(var modification in response.Modifications)
+                {
+                    await ModifyDocument(modification.Name, modification.Path, modification.Contents);
+                }
+            if (response.Deletions != null)
+                foreach (var deletion in response.Deletions)
+                {
+                    await RemoveDocument(deletion.Path);
+                }
             SaveEmbeddings();
 
             return response.ResponseMessage;
@@ -88,5 +94,7 @@ namespace DevGPT.NewAPI
             Deletions = new List<DeleteDocumentRequest>() { new DeleteDocumentRequest { Path = "The relative path, ie. info\\olddocument.txt" } },
             ResponseMessage = "The response to the user"
         };
+
+        public override string _signature => @"{Modifications: [] or null, Deletions: [] or null, ResponseMessage: string}";
     }
 }
