@@ -19,7 +19,7 @@ namespace DevGPT.NewAPI
 
         public async Task<string> GetRelevantDocuments(string query, List<Embedding> embeddings)
         {
-            int maxTokens = 20000;
+            int maxTokens = 8000;
 
             var documents = await GetDocumentsWithSimilarity(query, embeddings);
 

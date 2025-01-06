@@ -141,7 +141,7 @@ namespace DevGPT.NewAPI
             var c = new StoreConfig(path, embeddingsFilePath, Settings.OpenAIApiKey);
             var s = new GeneratorStore(c);
 
-            
+            s.UpdateEmbeddings();
 
             //var files = GitFileSelector.GetMatchingFiles(path, ["*", "!*.csr", "!*.docx", "!*.exe", "!*.pem", "!*.jpg", "!*.png", "!*.mp4", "!*.svg", "!*.ico", "!*.drawio"]);
             //await AddFiles(path, s, files);
@@ -153,7 +153,7 @@ namespace DevGPT.NewAPI
 
 
 
-            Console.WriteLine("Start conversing");
+            Console.WriteLine("Start conversing with Beheerportaal");
 
 
             var messages = new List<ChatMessage>();
@@ -203,13 +203,19 @@ namespace DevGPT.NewAPI
             var messages = new List<ChatMessage>();
             while (true)
             {
+                var text = "";
                 var m = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(m)) break;
+                while (m != "^X")
+                {
+                    text += m;
+                    m = Console.ReadLine();
+                }
+                if (string.IsNullOrWhiteSpace(text)) break;
 
                 //var sendMessages = messages.ToList();
 
-                var result = await s.Generator_Question(m, messages);
-                messages.Add(new ChatMessage(ChatMessageRole.User, m));
+                var result = await s.Generator_Question(text, messages);
+                messages.Add(new ChatMessage(ChatMessageRole.User, text));
                 messages.Add(new ChatMessage(ChatMessageRole.Assistant, result));
 
                 //RunGitCommand("add .", path);
