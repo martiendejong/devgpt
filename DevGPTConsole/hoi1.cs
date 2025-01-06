@@ -65,6 +65,28 @@ namespace DevGPT.NewAPI
             return true;
         }
 
+
+        private static async Task<bool> AddFiles(string path, GeneratorStore s, IEnumerable<string> files)
+        {
+            var remove = new DirectoryInfo(path).FullName;
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    await s.UpdateEmbedding(new FileInfo(file).Name, file);
+                    s.SaveEmbeddings();
+                }
+                catch(Exception ex) 
+                {
+                    Console.WriteLine($"Embedding failed for file {file}");
+                    Console.WriteLine(ex.ToString());
+                }
+            }
+
+            return true;
+        }
+
         public static async Task x()
         {
             var path = @"c:\projects\test";
@@ -84,6 +106,54 @@ namespace DevGPT.NewAPI
 
             //s.UpdateEmbedding("Kenya house plan", "/investment/kenya_house_plan.txt");
             //s.SaveEmbeddings();
+            var messages = new List<ChatMessage>();
+            while (true)
+            {
+                var m = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(m)) break;
+
+                //var sendMessages = messages.ToList();
+
+                var result = await s.Generator_UpdateStore(m, messages);
+                messages.Add(new ChatMessage(ChatMessageRole.User, m));
+                messages.Add(new ChatMessage(ChatMessageRole.Assistant, result));
+
+
+                //var result = await s.Generator.GenerateObject<UpdateStoreResponse>(sendMessages);
+
+                //result.Modifications.ForEach(m => s.ModifyDocument(m.Name, m.Path, m.Contents));
+                //result.Deletions.ForEach(m => s.RemoveDocument(m.Path));
+
+
+                Console.WriteLine(result);
+            }
+
+        }
+
+
+
+        public static async Task gitrepo()
+        {
+            var path = @"c:\projects\beheerportaal";
+            var embeddingsFilePath = @"c:\projects\beheerportaal.embeddings.v2.json";
+            var c = new StoreConfig(path, embeddingsFilePath, Settings.OpenAIApiKey);
+            var s = new GeneratorStore(c);
+
+            
+
+            //var files = GitFileSelector.GetMatchingFiles(path, ["*", "!*.csr", "!*.docx", "!*.exe", "!*.pem", "!*.jpg", "!*.png", "!*.mp4", "!*.svg", "!*.ico", "!*.drawio"]);
+            //await AddFiles(path, s, files);
+            //s.SaveEmbeddings();
+
+
+
+            s.Generator.SystemPrompt = "Converse with the user as normal. Based on the conversation and the supplied documents update the code by modifying existing files or creating new ones.";
+
+
+
+            Console.WriteLine("Start conversing");
+
+
             var messages = new List<ChatMessage>();
             while (true)
             {

@@ -13,35 +13,70 @@ public class GitFileSelector
             throw new ArgumentException("The provided folder is not a valid Git repository.");
         }
 
-        var matchingFiles = new List<string>();
-
         using (var repo = new Repository(folderPath))
         {
-            var allFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
-                                    .Select(f => Path.GetRelativePath(folderPath, f).Replace("\\", "/"));
+            // Retrieve all tracked files in the repository
+            var allTrackedFiles = repo.Index
+                                      .Select(entry => entry.Path)
+                                      .ToList();
 
-            foreach (var selector in fileSelectors)
+            // Separate positive and negative selectors
+            var positiveSelectors = fileSelectors.Where(s => !s.StartsWith("!")).ToList();
+            var negativeSelectors = fileSelectors.Where(s => s.StartsWith("!"))
+                                                 .Select(s => s.Substring(1)) // Remove '!'
+                                                 .ToList();
+
+            var matchingFiles = new HashSet<string>();
+
+            // Apply positive selectors
+            foreach (var selector in positiveSelectors)
             {
-                // Handle directory-based selectors
                 string basePath = Path.GetDirectoryName(selector) ?? string.Empty;
                 string pattern = Path.GetFileName(selector) ?? "*";
 
-                var matched = allFiles.Where(f =>
-                    f.StartsWith(basePath, StringComparison.OrdinalIgnoreCase) &&
-                    (Path.GetFileName(f)?.EndsWith(pattern, StringComparison.OrdinalIgnoreCase) ?? false));
+                var matched = allTrackedFiles.Where(f =>
+                    (string.IsNullOrEmpty(basePath) || f.StartsWith(basePath, StringComparison.OrdinalIgnoreCase)) &&
+                    (string.IsNullOrEmpty(pattern) || MatchesPattern(Path.GetFileName(f), pattern)));
 
-                matchingFiles.AddRange(matched);
+                foreach (var file in matched)
+                {
+                    matchingFiles.Add(file);
+                }
             }
-        }
 
-        // Deduplicate the result
-        return matchingFiles.Distinct().ToList();
+            // Apply negative selectors
+            foreach (var selector in negativeSelectors)
+            {
+                string basePath = Path.GetDirectoryName(selector) ?? string.Empty;
+                string pattern = Path.GetFileName(selector) ?? "*";
+
+                var excluded = allTrackedFiles.Where(f =>
+                    (string.IsNullOrEmpty(basePath) || f.StartsWith(basePath, StringComparison.OrdinalIgnoreCase)) &&
+                    (string.IsNullOrEmpty(pattern) || MatchesPattern(Path.GetFileName(f), pattern)));
+
+                foreach (var file in excluded)
+                {
+                    matchingFiles.Remove(file);
+                }
+            }
+
+            return matchingFiles.ToList();
+        }
+    }
+
+    private static bool MatchesPattern(string fileName, string pattern)
+    {
+        // Convert wildcard pattern to regex
+        var regexPattern = "^" + System.Text.RegularExpressions.Regex.Escape(pattern)
+            .Replace("\\*", ".*")
+            .Replace("\\?", ".") + "$";
+        return System.Text.RegularExpressions.Regex.IsMatch(fileName, regexPattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
     }
 
     public static void Main(string[] args)
     {
         string folderPath = "/path/to/your/git/repository";
-        var fileSelectors = new List<string> { "*.txt", "documents/*.pdf" };
+        var fileSelectors = new List<string> { "*.txt", "documents/*.pdf", "!documents/excluded-file.pdf" };
 
         try
         {
