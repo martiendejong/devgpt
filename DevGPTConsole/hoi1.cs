@@ -159,7 +159,7 @@ namespace DevGPT.NewAPI
             var messages = new List<ChatMessage>();
             while (true)
             {
-                var m = Console.ReadLine();
+                string m = GetMultiline();
                 if (string.IsNullOrWhiteSpace(m)) break;
 
                 //var sendMessages = messages.ToList();
@@ -203,13 +203,7 @@ namespace DevGPT.NewAPI
             var messages = new List<ChatMessage>();
             while (true)
             {
-                var text = "";
-                var m = Console.ReadLine();
-                while (m != "^X")
-                {
-                    text += m;
-                    m = Console.ReadLine();
-                }
+                string text = GetMultiline();
                 if (string.IsNullOrWhiteSpace(text)) break;
 
                 //var sendMessages = messages.ToList();
@@ -231,6 +225,19 @@ namespace DevGPT.NewAPI
                 Console.WriteLine(result);
             }
 
+        }
+
+        private static string GetMultiline()
+        {
+            var text = "";
+            var m = Console.ReadLine();
+            while (m != "^X")
+            {
+                text += m;
+                m = Console.ReadLine();
+            }
+
+            return text;
         }
 
         public static async Task story()
