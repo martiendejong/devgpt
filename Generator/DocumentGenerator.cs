@@ -84,6 +84,14 @@ namespace DevGPT.NewAPI
             return response.ResponseMessage;
         }
 
+        public async Task<string> UpdateStore(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
+        {
+            var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
+            var response = await TypedApi.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext);
+            await ModifyDocuments(response);
+            return response.ResponseMessage;
+        }
+
         public async Task<string> StreamUpdateStore(string message, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);

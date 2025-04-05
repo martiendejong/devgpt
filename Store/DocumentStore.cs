@@ -54,11 +54,12 @@ namespace DevGPT.NewAPI
             //{
             //    return true;
             //}
-
-            var data = await FetchEmbeddingData(name, path, absNewPath);
-            embedding = new Embedding(name, path, checksum, new EmbeddingData(data));
-            Embeddings.Add(embedding);
-
+            if (File.Exists(absNewPath))
+            {
+                var data = await FetchEmbeddingData(name, path, absNewPath);
+                embedding = new Embedding(name, path, checksum, new EmbeddingData(data));
+                Embeddings.Add(embedding);
+            }
             return true;
         }
 
