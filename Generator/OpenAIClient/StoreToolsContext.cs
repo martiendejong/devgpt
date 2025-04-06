@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
+using System.Text.Json;
 using backend.Controllers;
 using DevGPT.NewAPI;
 using OpenAI;
@@ -9,6 +11,7 @@ public class StoreToolsContext : IToolsContext
     public string Model { get; set; }
     public string ApiKey { get; set; }
     public DocumentStore Store { get; set; }
+    public List<Tool> Tools { get; set; }
 
     public StoreToolsContext(string model, string apiKey, DocumentStore store)
     {
@@ -93,7 +96,6 @@ public class StoreToolsContext : IToolsContext
 
 
 
-    public List<Tool> Tools { get; set; }
 
     private static readonly ChatTool getWebSearchTool = ChatTool.CreateFunctionTool(
         functionName: nameof(PerformWebSearch),
