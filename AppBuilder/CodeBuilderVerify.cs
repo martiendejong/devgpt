@@ -17,3 +17,19 @@ public class CodeBuilderVerify : ChatResponse<CodeBuilderVerify>
     [JsonIgnore]
     public override string _signature => @"{ hasRework: bool, rework: string }";
 }
+
+public class CodeBuilderContinuous : ChatResponse<CodeBuilderContinuous>
+{
+    public bool Finished { get; set; }
+    public string Message { get; set; }
+
+    [JsonIgnore]
+    public override CodeBuilderContinuous _example => new CodeBuilderContinuous
+    {
+        Finished = false,
+        Message = "It seems there is no git branch for the feature. Let me create it."
+    };
+
+    [JsonIgnore]
+    public override string _signature => @"{ Finished: bool, Message: string }";
+}

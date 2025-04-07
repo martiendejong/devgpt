@@ -79,8 +79,8 @@ namespace DevGPT.NewAPI
             }
 
             // Log token count and selected documents for debugging
-            Console.WriteLine($"Total Documents Selected: {selectedDocuments.Count}");
-            Console.WriteLine($"Total Token Count: {currentTokenCount}");
+            //Console.WriteLine($"Total Documents Selected: {selectedDocuments.Count}");
+            //Console.WriteLine($"Total Token Count: {currentTokenCount}");
             return selectedDocuments;
         }
 

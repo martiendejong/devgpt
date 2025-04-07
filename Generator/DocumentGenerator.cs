@@ -64,6 +64,12 @@ namespace DevGPT.NewAPI
             return await TypedApi.GetResponse<ResponseType>(sendMessages, toolsContext);
         }
 
+        public async Task<ResponseType> GetResponse<ResponseType>(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null) where ResponseType : ChatResponse<ResponseType>, new()
+        {
+            var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
+            return await TypedApi.GetResponse<ResponseType>(sendMessages, toolsContext);
+        }
+
         public async Task<ResponseType> StreamResponse<ResponseType>(string message, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null) where ResponseType : ChatResponse<ResponseType>, new()
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
@@ -120,7 +126,7 @@ namespace DevGPT.NewAPI
             var sendMessages = messages == null ? new List<ChatMessage>() : messages.ToList();
             if (addRelevantDocuments)
             {
-                var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Select(m => Logger.GetMessageType(m) + ": " + m.Content.First().Text));
+                var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Select(m => Logger.GetMessageType(m) + ": " + m.Content.FirstOrDefault()?.Text ?? ""));
                 relevancyQuery += "\n\nuser: " + message;
                 var msgs = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery);
                 //var mainRelevantDoc = docs.First();

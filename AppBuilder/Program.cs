@@ -8,6 +8,11 @@ using System.Diagnostics;
 
 string openAiApiKey = "***REMOVED***";
 
+//string appDir = @"C:\Projects\myhtmlgame";
+//string documentStoreRoot = @"C:\Projects\myhtmlgame";
+//string embeddingsFile = @"C:\Projects\myhtmlgame\embeddings";
+//string logFilePath = @"C:\Projects\myhtmlgame\log";
+
 // Vera frontend
 string appDir = @"C:\Projects\socialmediahulp\frontend";
 string documentStoreRoot = @"C:\Projects\socialmediahulp\frontend\src";
@@ -17,8 +22,9 @@ string logFilePath = @"C:\Projects\socialmediahulp\frontend\log";
 var appFolderStoreConfig = new DocumentStoreConfig(documentStoreRoot, embeddingsFile, openAiApiKey);
 var store = new DocumentStore(appFolderStoreConfig);
 
-var builder = new CodeBuilder(appDir, documentStoreRoot, embeddingsFile, openAiApiKey, logFilePath);
+var builder = new CodeBuilder2(appDir, documentStoreRoot, embeddingsFile, openAiApiKey, logFilePath);
 builder.Output = Console.WriteLine;
+//await builder.AddFiles(["*.js", "*.css", "*.html"]);
 await builder.AddFiles(["*.js", "*.ts", "*.vue"]);
 while (true)
 {
