@@ -419,10 +419,10 @@ public class CodeBuilder2
         var commitResult = GitOutput.GetGitOutput(DocumentStoreFolderPath, "rev-parse HEAD");
         string commit = commitResult.Item1.Trim();
 
-        var promptExecute = @$"You are an expert software engineer. You will use Git Flow to commit and test your changes. You are now in branch {branch} at commit {commit}. The task {instruction} has been finished. Now commit your code and create a pull request to merge it back into the develop branch. Also switch to the develop branch.";
+        var promptExecute = @$"You are an expert software engineer. You will use Git Flow to commit and test your changes. You are now in branch {branch} at commit {commit}. The task {instruction} has been finished. Now commit your code and create a pull request with the develop branch. Also switch to the develop branch. Do not merge the branch with develop yourself.";
         var generatorExecute = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptExecute) }, OpenAiApiKey, LogFilePath);
 
-        var messages = new List<ChatMessage> { new UserChatMessage("commit your code and create a pull request to merge your branch with develop and switch to develop.") };
+        var messages = new List<ChatMessage> { new UserChatMessage("commit your code and create a pull request with develop. switch to develop. do not merge the branch with develop yourself, just make the pull request.") };
         var message = await generatorExecute.GetResponse<CodeBuilderContinuous>(messages, History, true, true, CodingTools);
         messages.Add(new AssistantChatMessage(message.Message));
         LogAddMessage(message.Message);
