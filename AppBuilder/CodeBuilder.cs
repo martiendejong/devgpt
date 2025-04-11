@@ -280,11 +280,11 @@ public class CodeBuilder2
         //        return "";
         //    }
         //);
-        CodingTools.Add("Build", "Builds the Quasar app and returns the build output.", new List<ChatToolParameter>(), async (messages, call) =>
-        {
-            var output = QuasarBuildOutput.GetQuasarBuildOutput(AppDir);
-            return output.Item2;
-        });
+        //CodingTools.Add("Build", "Builds the Quasar app and returns the build output.", new List<ChatToolParameter>(), async (messages, call) =>
+        //{
+        //    var output = QuasarBuildOutput.GetQuasarBuildOutput(AppDir);
+        //    return output.Item2;
+        //});
         CodingTools.Add("Git", "Calls git and returns the output.",
             new List<ChatToolParameter>() {
                 new ChatToolParameter { Name = "arguments", Description = "The arguments to call git with", Required = true, Type = "string" }
@@ -303,9 +303,9 @@ public class CodeBuilder2
 
     }
 
-    public async Task AddFiles(string[] fileFilters)
+    public async Task AddFiles(string[] fileFilters, string subDirectory = "", string[] excludePattern = null)
     {
-        var dir = new DirectoryInfo(DocumentStoreFolderPath);
+        var dir = subDirectory == "" ? new DirectoryInfo(DocumentStoreFolderPath) : new DirectoryInfo(Path.Combine(DocumentStoreFolderPath, subDirectory));
 
         var filesParts = new List<FileInfo[]>();
         foreach (var item in fileFilters)
@@ -317,11 +317,21 @@ public class CodeBuilder2
         foreach (var file in files)
         {
             var relPath = file.FullName.Substring((DocumentStoreFolderPath + "\\").Length);
-            await Store.AddDocument(file.FullName, file.Name, relPath, false);
+            if (excludePattern != null && !excludePattern.Any(dir => MatchPattern(relPath, dir)))
+            {
+                await Store.AddDocument(file.FullName, file.Name, relPath, false);
+            }
         }
 
         await Store.UpdateEmbeddings();
         Store.SaveEmbeddings();
+    }
+
+    public bool MatchPattern(string text, string pattern)
+    {
+        if(pattern.StartsWith("*"))
+            return text.StartsWith(pattern, StringComparison.InvariantCultureIgnoreCase);
+        return text.Contains(pattern, StringComparison.InvariantCultureIgnoreCase);
     }
 
     public List<ChatMessage> History = new List<ChatMessage>();

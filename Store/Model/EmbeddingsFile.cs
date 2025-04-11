@@ -34,13 +34,20 @@
             var embeddings = lines.Select(line =>
             {
                 var values = line.Split(",");
-                var name = UnescapeCommaAndNewLine(values[0]);
-                var path = values[1];
-                var checksum = values[2];
-                var data = values.Skip(3).Select(e => double.Parse(e.Replace(".", ","))).ToList();
-                var embedding = new Embedding(name, path, checksum, new EmbeddingData(data));
-                return embedding;
-            }).ToList();
+                try
+                {
+                    var name = UnescapeCommaAndNewLine(values[0]);
+                    var path = values[1];
+                    var checksum = values[2];
+                    var data = values.Skip(3).Select(e => double.Parse(e.Replace(".", ","))).ToList();
+                    var embedding = new Embedding(name, path, checksum, new EmbeddingData(data));
+                    return embedding;
+                }
+                catch (Exception e)
+                {
+                    return null;
+                }
+            }).Where(e => e != null).ToList();
             return embeddings;
         }
     }

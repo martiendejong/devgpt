@@ -1,12 +1,22 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using DevGPT.NewAPI;
 using MathNet.Numerics.Optimization;
+using Microsoft.Extensions.Configuration;
 using OpenAI.Chat;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 
-string openAiApiKey = "***REMOVED***";
+var config = new ConfigurationBuilder()
+    .SetBasePath(AppContext.BaseDirectory) // current directory
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .Build();
+
+// Bind the OpenAI section to a strongly-typed object
+var openAISettings = new OpenAISettings();
+config.GetSection("OpenAI").Bind(openAISettings);
+string openAiApiKey = openAISettings.ApiKey;
+
 
 //string appDir = @"C:\Projects\myhtmlgame";
 //string documentStoreRoot = @"C:\Projects\myhtmlgame";
@@ -14,10 +24,10 @@ string openAiApiKey = "***REMOVED***";
 //string logFilePath = @"C:\Projects\myhtmlgame\log";
 
 // Vera frontend
-string appDir = @"C:\Projects\socialmediahulp\frontend";
-string documentStoreRoot = @"C:\Projects\socialmediahulp\frontend\src";
-string embeddingsFile = @"C:\Projects\socialmediahulp\frontend\embeddings";
-string logFilePath = @"C:\Projects\socialmediahulp\frontend\log";
+string appDir = @"C:\Projects\socialmediahulp";
+string documentStoreRoot = @"C:\Projects\socialmediahulp";
+string embeddingsFile = @"C:\Projects\socialmediahulp\embeddings";
+string logFilePath = @"C:\Projects\socialmediahulp\log";
 
 var appFolderStoreConfig = new DocumentStoreConfig(documentStoreRoot, embeddingsFile, openAiApiKey);
 var store = new DocumentStore(appFolderStoreConfig);
@@ -25,7 +35,10 @@ var store = new DocumentStore(appFolderStoreConfig);
 var builder = new CodeBuilder2(appDir, documentStoreRoot, embeddingsFile, openAiApiKey, logFilePath);
 builder.Output = Console.WriteLine;
 //await builder.AddFiles(["*.js", "*.css", "*.html"]);
-await builder.AddFiles(["*.js", "*.ts", "*.vue"]);
+await builder.AddFiles(["*.js", "*.ts", "*.vue"], "frontend/src");
+await builder.AddFiles(["*.cs"], "", ["bin", "obj"]);
+await builder.AddFiles(["*.cssproj"]);
+await builder.AddFiles(["*.sln"]);
 while (true)
 {
     Console.WriteLine("Geef een instructie");
