@@ -4,7 +4,7 @@ using DevGPT.NewAPI;
 using OpenAI_API.Chat;
 
 
-var appFolderStoreConfig = new DocumentStoreConfig(@"c:\stores\maasaiinvest\htdocs", @"c:\stores\maasaiinvest\embeddings", "***REMOVED***");
+var appFolderStoreConfig = new DocumentStoreConfig(@"c:\stores\maasaiinvest\htdocs", @"c:\stores\maasaiinvest\embeddings", "");
 var store = new DocumentStore(appFolderStoreConfig);
 await store.UpdateEmbeddings();
 store.SaveEmbeddings();

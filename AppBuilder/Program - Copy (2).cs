@@ -5,7 +5,7 @@
 //using System.Diagnostics;
 
 
-//var appFolderStoreConfig = new DocumentStoreConfig(@"C:\projects\beheerportaal\quasar\src", @"C:\projects\beheerportaal\quasar\embeddings", "***REMOVED***");
+//var appFolderStoreConfig = new DocumentStoreConfig(@"C:\projects\beheerportaal\quasar\src", @"C:\projects\beheerportaal\quasar\embeddings", "");
 //var store = new DocumentStore(appFolderStoreConfig);
 
 ////var remove = store.Embeddings.Where(e => e.Path.Contains("LocationStore")).ToList();
