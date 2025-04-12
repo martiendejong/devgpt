@@ -7,14 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 
-var config = new ConfigurationBuilder()
-    .SetBasePath(AppContext.BaseDirectory) // current directory
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .Build();
-
-// Bind the OpenAI section to a strongly-typed object
-var openAISettings = new OpenAISettings();
-config.GetSection("OpenAI").Bind(openAISettings);
+var openAISettings = OpenAISettings.Load();
 string openAiApiKey = openAISettings.ApiKey;
 
 

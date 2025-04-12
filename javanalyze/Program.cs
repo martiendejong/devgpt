@@ -3,7 +3,10 @@ using OpenAI_API.Chat;
 
 var path = @"C:\projects\BRCWebservice\2025-02-05\Workspace_Gen3";
 
-var appFolderStoreConfig = new DocumentStoreConfig(@"c:\stores\webservice", @"c:\stores\webservice\embeddings", "***REMOVED***");
+var openAISettings = OpenAISettings.Load();
+string openAiApiKey = openAISettings.ApiKey;
+
+var appFolderStoreConfig = new DocumentStoreConfig(@"c:\stores\webservice", @"c:\stores\webservice\embeddings", openAiApiKey);
 var store = new DocumentStore(appFolderStoreConfig);
 
 

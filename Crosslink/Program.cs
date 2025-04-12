@@ -3,7 +3,8 @@ using DevGPT.NewAPI;
 using MathNet.Numerics.Optimization;
 using OpenAI.Chat;
 
-var apikey = "***REMOVED***";
+var openAISettings = OpenAISettings.Load();
+string openAiApiKey = openAISettings.ApiKey;
 
 var werkzoekendenconfig = new DocumentStoreConfig(@"c:\stores\crosslink\werkzoekenden", @"c:\stores\crosslink\werkzoekenden.embed", apikey);
 var werkzoekenden = new DocumentStore(werkzoekendenconfig);
