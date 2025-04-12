@@ -7,3 +7,5 @@ bin
 .vs
 /AppBuilder/appsettings.json
 /Crosslink/appsettings.json
+/bfg-1.15.0.jar
+/secrets.txt
