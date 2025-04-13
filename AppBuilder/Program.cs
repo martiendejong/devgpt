@@ -22,13 +22,17 @@ string documentStoreRoot = @"C:\Projects\socialmediahulp";
 string embeddingsFile = @"C:\Projects\socialmediahulp\embeddings";
 string logFilePath = @"C:\Projects\socialmediahulp\log";
 
+string tempStoreRoot = @"C:\Projects\socialmediahulp\tempstore";
+string tempEmbeddingsFile = @"C:\Projects\socialmediahulp\tempstore\embeddings";
+
+
 var appFolderStoreConfig = new DocumentStoreConfig(documentStoreRoot, embeddingsFile, openAiApiKey);
 var store = new DocumentStore(appFolderStoreConfig);
 
-var builder = new CodeBuilder2(appDir, documentStoreRoot, embeddingsFile, openAiApiKey, logFilePath);
+var builder = new CodeBuilder2(appDir, documentStoreRoot, embeddingsFile, openAiApiKey, logFilePath, tempStoreRoot, tempEmbeddingsFile);
 builder.Output = Console.WriteLine;
 //await builder.AddFiles(["*.js", "*.css", "*.html"]);
-await builder.AddFiles(["*.js", "*.ts", "*.vue"], "frontend/src");
+await builder.AddFiles(["*.js", "*.ts", "*.vue"], @"frontend\src");
 await builder.AddFiles(["*.cs"], "", ["bin", "obj"]);
 await builder.AddFiles(["*.cssproj"]);
 await builder.AddFiles(["*.sln"]);
@@ -36,8 +40,8 @@ while (true)
 {
     Console.WriteLine("Geef een instructie");
     var input = Console.ReadLine();
-    await builder.Build(input);
-    builder.History.ForEach(Console.WriteLine);
+    await builder.Execute(input);
+    builder.History.ForEach(m => Console.WriteLine(m.Content.ToString()));
 }
 
 return;
@@ -81,15 +85,15 @@ var prompt = @"You are a quasar developer working on the Vera AI App. Your goal 
 var promptMessages = new List<ChatMessage>() { new SystemChatMessage(prompt) };
 
 
-var generator = new DocumentGenerator(store, promptMessages, appFolderStoreConfig.OpenAiApiKey, logFilePath);
+var generator = new DocumentGenerator(store, promptMessages, appFolderStoreConfig.OpenAiApiKey, logFilePath, new List<IStore>());
 //await generator.UpdateStore("Add a BrUserHub that works like the BuildingHub but for BrUsers. The BrUserHub should later be integrated in the BrUserStore as a separate task");
 
 
-var generatorCreateTasks = new DocumentGenerator(store, new List<ChatMessage>() { new SystemChatMessage(promptCreateTasks) }, appFolderStoreConfig.OpenAiApiKey, logFilePath);
-var generatorPrepareTask = new DocumentGenerator(store, new List<ChatMessage>() { new SystemChatMessage(promptPrepareTask) }, appFolderStoreConfig.OpenAiApiKey, logFilePath);
-var generatorExecuteTask = new DocumentGenerator(store, new List<ChatMessage>() { new SystemChatMessage(promptExecuteTask) }, appFolderStoreConfig.OpenAiApiKey, logFilePath);
-var generatorTestTask = new DocumentGenerator(store, new List<ChatMessage>() { new SystemChatMessage(promptTestTask) }, appFolderStoreConfig.OpenAiApiKey, logFilePath);
-var generatorTestBuild = new DocumentGenerator(store, new List<ChatMessage>() { new SystemChatMessage(promptTestBuild) }, appFolderStoreConfig.OpenAiApiKey, logFilePath);
+var generatorCreateTasks = new DocumentGenerator(store, new List<ChatMessage>() { new SystemChatMessage(promptCreateTasks) }, appFolderStoreConfig.OpenAiApiKey, logFilePath, new List<IStore>());
+var generatorPrepareTask = new DocumentGenerator(store, new List<ChatMessage>() { new SystemChatMessage(promptPrepareTask) }, appFolderStoreConfig.OpenAiApiKey, logFilePath, new List<IStore>());
+var generatorExecuteTask = new DocumentGenerator(store, new List<ChatMessage>() { new SystemChatMessage(promptExecuteTask) }, appFolderStoreConfig.OpenAiApiKey, logFilePath, new List<IStore>());
+var generatorTestTask = new DocumentGenerator(store, new List<ChatMessage>() { new SystemChatMessage(promptTestTask) }, appFolderStoreConfig.OpenAiApiKey, logFilePath, new List<IStore>());
+var generatorTestBuild = new DocumentGenerator(store, new List<ChatMessage>() { new SystemChatMessage(promptTestBuild) }, appFolderStoreConfig.OpenAiApiKey, logFilePath, new List<IStore>());
 
 
 

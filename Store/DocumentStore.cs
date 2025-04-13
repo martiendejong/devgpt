@@ -152,19 +152,19 @@ namespace DevGPT.NewAPI
             return true;
         }
 
-        public async Task<List<string>> GetRelevantDocuments(string query)
+        public async Task<List<string>> GetRelevantDocuments(string query, List<IStore> otherStores)
         {
-            return await RelevantDocumentsProvider.GetRelevantDocuments(query, Embeddings);
+            return await RelevantDocumentsProvider.GetRelevantDocuments(query, Embeddings, otherStores);
         }
 
-        public async Task<string> GetRelevantDocumentsAsString(string query)
+        public async Task<string> GetRelevantDocumentsAsString(string query, List<IStore> otherStores)
         {
-            return await RelevantDocumentsProvider.GetRelevantDocumentsAsString(query, Embeddings);
+            return await RelevantDocumentsProvider.GetRelevantDocumentsAsString(query, Embeddings, otherStores);
         }
 
-        public async Task<List<ChatMessage>> GetRelevantDocumentsAsChatMessages(string query)
+        public async Task<List<ChatMessage>> GetRelevantDocumentsAsChatMessages(string query, List<IStore> otherStores)
         {
-            return await RelevantDocumentsProvider.GetRelevantDocumentsAsChatMessages(query, Embeddings);
+            return await RelevantDocumentsProvider.GetRelevantDocumentsAsChatMessages(query, Embeddings, otherStores);
         }
 
         protected async Task<bool> SplitAndAddDocument(string pathToDocument, string name, string path = "")

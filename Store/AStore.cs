@@ -9,7 +9,7 @@ namespace DevGPT.NewAPI
         protected DocumentStoreConfig Config { get; set; }
         protected IObjectListFile<Embedding> EmbeddingsFile { get; set; }
         protected EmbeddingGenerator EmbeddingGenerator { get; set; }
-        protected RelevantDocumentsProvider RelevantDocumentsProvider { get; set; }
+        public RelevantDocumentsProvider RelevantDocumentsProvider { get; protected set; }
         protected PathProvider PathProvider { get; set; }
 
         public AStore(DocumentStoreConfig config)
@@ -35,6 +35,11 @@ namespace DevGPT.NewAPI
         public void LoadEmbeddings()
         {
             Embeddings = EmbeddingsFile.Load();
+        }
+
+        public List<Embedding> GetEmbeddings()
+        {
+            return Embeddings;
         }
     }
 }

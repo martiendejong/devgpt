@@ -13,25 +13,29 @@ namespace DevGPT.NewAPI
     public class DocumentGenerator : IDocumentGenerator
     {
         protected IStore Store { get; set; }
+        protected List<IStore> ReadonlyStores { get; set; }
         protected TypedOpenAIClient TypedApi { get; set; }
         public SimpleOpenAIClient SimpleApi { get; set; }
         protected List<ChatMessage> BaseMessages { get; set; }
         protected OpenAIClient OpenAIAPI { get; set; }
 
-        public DocumentGenerator(DocumentStore store, List<ChatMessage> baseMessages, string openAiApiKey, ILogger logger)
+        public DocumentGenerator(DocumentStore store, List<ChatMessage> baseMessages, string openAiApiKey, ILogger logger, List<IStore> readonlyStores)
         {
             Store = store;
+            ReadonlyStores = readonlyStores;
             BaseMessages = baseMessages;
 
             OpenAIAPI = new OpenAIClient(openAiApiKey);
             //var logger = new Logger(logFilePath);
             TypedApi = new TypedOpenAIClient(OpenAIAPI, openAiApiKey, logger.Log);
             SimpleApi = TypedApi;
+            ReadonlyStores = readonlyStores;
         }
 
-        public DocumentGenerator(DocumentStore store, List<ChatMessage> baseMessages, string openAiApiKey, string logFilePath)
+        public DocumentGenerator(DocumentStore store, List<ChatMessage> baseMessages, string openAiApiKey, string logFilePath, List<IStore> readonlyStores)
         {
             Store = store;
+            ReadonlyStores = readonlyStores;
             BaseMessages = baseMessages;
 
             var OpenAIAPI = new OpenAIClient(openAiApiKey);
@@ -43,6 +47,12 @@ namespace DevGPT.NewAPI
         public async Task<string> GetResponse(string message, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
+            return await SimpleApi.GetResponse(sendMessages, ChatResponseFormat.CreateTextFormat(), toolsContext);
+        }
+
+        public async Task<string> GetResponse(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
+        {
+            var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
             return await SimpleApi.GetResponse(sendMessages, ChatResponseFormat.CreateTextFormat(), toolsContext);
         }
 
@@ -128,7 +138,7 @@ namespace DevGPT.NewAPI
             {
                 var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Select(m => Logger.GetMessageType(m) + ": " + m.Content.FirstOrDefault()?.Text ?? ""));
                 relevancyQuery += "\n\nuser: " + message;
-                var msgs = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery);
+                var msgs = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery, ReadonlyStores);
                 //var mainRelevantDoc = docs.First();
 
                 //var msgs = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery + "\n\n" + mainRelevantDoc);
@@ -156,7 +166,7 @@ namespace DevGPT.NewAPI
                 {
                     relevancyQuery += "\n\n" + Logger.GetMessageType(message) + ": " + message.Content.First().Text;
                 }
-                var relevantDocumentMessages = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery);
+                var relevantDocumentMessages = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery, ReadonlyStores);
                 //var mainRelevantDoc = docs.First();
 
                 //var msgs = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery + "\n\n" + mainRelevantDoc);

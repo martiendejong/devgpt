@@ -1,5 +1,4 @@
 ﻿using DevGPT.NewAPI;
-using OpenAI_API.Chat;
 
 var path = @"C:\projects\BRCWebservice\2025-02-05\Workspace_Gen3";
 

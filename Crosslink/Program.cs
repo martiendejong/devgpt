@@ -4,7 +4,7 @@ using MathNet.Numerics.Optimization;
 using OpenAI.Chat;
 
 var openAISettings = OpenAISettings.Load();
-string openAiApiKey = openAISettings.ApiKey;
+string apikey = openAISettings.ApiKey;
 
 var werkzoekendenconfig = new DocumentStoreConfig(@"c:\stores\crosslink\werkzoekenden", @"c:\stores\crosslink\werkzoekenden.embed", apikey);
 var werkzoekenden = new DocumentStore(werkzoekendenconfig);
@@ -152,7 +152,7 @@ Console.WriteLine();
 
 
 var matches = new List<Tuple<string, string>>();
-var relevant = await bedrijven.GetRelevantDocuments(data);
+var relevant = await bedrijven.GetRelevantDocuments(data, new List<IStore>());
 foreach (var item1 in relevant)
 {
 //    Console.WriteLine(item1);

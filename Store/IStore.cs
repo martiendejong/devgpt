@@ -4,7 +4,11 @@ namespace DevGPT.NewAPI
 {
     public interface IStore
     {
-        
+        public RelevantDocumentsProvider RelevantDocumentsProvider
+        {
+            get;
+        }
+        List<Embedding> GetEmbeddings();
 
         void SaveEmbeddings();
         void LoadEmbeddings();
@@ -14,9 +18,9 @@ namespace DevGPT.NewAPI
         Task<bool> ModifyDocument(string path, string name, string contents);
         Task<bool> UpdateEmbedding(string path, string name);
 
-        Task<List<ChatMessage>> GetRelevantDocumentsAsChatMessages(string query);
-        Task<string> GetRelevantDocumentsAsString(string query);
-        Task<List<string>> GetRelevantDocuments(string query);
+        Task<List<ChatMessage>> GetRelevantDocumentsAsChatMessages(string query, List<IStore> otherStores);
+        Task<string> GetRelevantDocumentsAsString(string query, List<IStore> otherStores);
+        Task<List<string>> GetRelevantDocuments(string query, List<IStore> otherStores);
         string GetFilesList();
     }
 }
