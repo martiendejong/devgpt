@@ -23,9 +23,9 @@ public class TypedOpenAIClient : SimpleOpenAIClient
         Parser = new PartialJsonParser();
     }
 
-    public virtual async Task<ResponseType> GetResponse<ResponseType>(List<ChatMessage> messages, IToolsContext toolsContext) where ResponseType : ChatResponse<ResponseType>, new()
-        => Parser.Parse<ResponseType>(await GetResponse(AddFormattingInstruction<ResponseType>(messages), ChatResponseFormat.CreateJsonObjectFormat(), toolsContext));
+    public virtual async Task<ResponseType> GetResponse<ResponseType>(List<ChatMessage> messages, IToolsContext toolsContext, List<ImageData> images) where ResponseType : ChatResponse<ResponseType>, new()
+        => Parser.Parse<ResponseType>(await GetResponse(AddFormattingInstruction<ResponseType>(messages), ChatResponseFormat.CreateJsonObjectFormat(), toolsContext, images));
 
-    public virtual async Task<ResponseType> GetResponseStream<ResponseType>(List<ChatMessage> messages, Action<string> onChunkReceived, IToolsContext toolsContext) where ResponseType : ChatResponse<ResponseType>, new()
-        => Parser.Parse<ResponseType>(await GetResponseStream(AddFormattingInstruction<ResponseType>(messages), onChunkReceived, ChatResponseFormat.CreateJsonObjectFormat(), toolsContext));
+    public virtual async Task<ResponseType> GetResponseStream<ResponseType>(List<ChatMessage> messages, Action<string> onChunkReceived, IToolsContext toolsContext, List<ImageData> images) where ResponseType : ChatResponse<ResponseType>, new()
+        => Parser.Parse<ResponseType>(await GetResponseStream(AddFormattingInstruction<ResponseType>(messages), onChunkReceived, ChatResponseFormat.CreateJsonObjectFormat(), toolsContext, images));
 }

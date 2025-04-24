@@ -1,34 +1,46 @@
-﻿using System.IO;
+using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using OpenAI;
 using OpenAI.Chat;
 using SharpToken;
+using System.Text;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Linq;
+using OpenAI.Images;
 
 public class SimpleOpenAIClientChatInteraction
 {
     public OpenAIClient API { get; set; }
     public ChatClient Client { get; set; }
+    public ImageClient ImageClient { get; set; }
     public ChatCompletionOptions Options { get; set; }
     public List<ChatMessage> Messages { get; set; }
-
+    public List<ImageData> Images { get; set; } // Store binary files
 
     public IToolsContext ToolsContext { get; set; }
 
-    public SimpleOpenAIClientChatInteraction(IToolsContext context, OpenAIClient api, string apiKey, string model, ChatClient chatClient, List<ChatMessage> messages, ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
+    public SimpleOpenAIClientChatInteraction(IToolsContext context, OpenAIClient api, string apiKey, string model, ChatClient chatClient, ImageClient imageClient, List<ChatMessage> messages, List<ImageData> images, ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
     {
         ToolsContext = context;
         API = api;
         Client = chatClient;
+        ImageClient = imageClient;
         Options = GetOptions(responseFormat, useWebSerach, useReasoning);
         Messages = messages;
+        Images = images;
+        if(Images != null)
+            Messages.AddRange(Images.Select(image =>
+            {
+                var contentPart = ChatMessageContentPart.CreateImagePart(image.BinaryData, image.MimeType);
+                return new UserChatMessage($"Image file attached: {image.Name}", contentPart);
+            }));
     }
 
     private ChatCompletionOptions GetOptions(ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
     {
         var options = new ChatCompletionOptions
         {
-            ResponseFormat = responseFormat
+            ResponseFormat = responseFormat,
         };
 
         if (ToolsContext != null && ToolsContext.Tools != null)
@@ -61,12 +73,26 @@ public class SimpleOpenAIClientChatInteraction
         return completion;
     }
 
+    public async Task<GeneratedImage> RunImage(string prompt, string size = "1024x1024", int count = 1)
+    {
+        var options = new ImageGenerationOptions
+        {
+            Size = GeneratedImageSize.W1024xH1024,
+            Style = GeneratedImageStyle.Natural,
+            Quality = GeneratedImageQuality.Standard
+        };
+
+        var response = await ImageClient.GenerateImageAsync(prompt, options);
+        return response;
+    }
+
     class ToolCallData
     {
         public string FunctionName = "";
         public string ToolCallId = "";
         public List<BinaryData> BinaryData;
     }
+
 
     public async IAsyncEnumerable<StreamingChatCompletionUpdate> Stream()
     {
@@ -87,7 +113,6 @@ public class SimpleOpenAIClientChatInteraction
                 if (completionUpdate.ContentUpdate.Count > 0)
                 {
                     content += completionUpdate.ContentUpdate[0].Text;
-                    // @later stream chunk
                 }
 
                 if (completionUpdate.ToolCallUpdates.Count > 0)

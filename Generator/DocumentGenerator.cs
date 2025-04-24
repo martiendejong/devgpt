@@ -1,12 +1,10 @@
-﻿using OpenAI;
+using OpenAI;
 using OpenAI.Chat;
 using System.Collections.Generic;
-
-//using OpenAI.Moderation;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text.Json;
-
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DevGPT.NewAPI
 {
@@ -16,17 +14,21 @@ namespace DevGPT.NewAPI
         protected List<IStore> ReadonlyStores { get; set; }
         protected TypedOpenAIClient TypedApi { get; set; }
         public SimpleOpenAIClient SimpleApi { get; set; }
-        protected List<ChatMessage> BaseMessages { get; set; }
+        public List<ChatMessage> BaseMessages { get; set; }
         protected OpenAIClient OpenAIAPI { get; set; }
+
+        public async Task<string> GetImage(string message, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)
+        {
+            var response = await SimpleApi.GetImage(message, ChatResponseFormat.CreateTextFormat(), toolsContext, images);
+            return response.ImageUri.OriginalString;
+        }
 
         public DocumentGenerator(DocumentStore store, List<ChatMessage> baseMessages, string openAiApiKey, ILogger logger, List<IStore> readonlyStores)
         {
             Store = store;
-            ReadonlyStores = readonlyStores;
             BaseMessages = baseMessages;
 
             OpenAIAPI = new OpenAIClient(openAiApiKey);
-            //var logger = new Logger(logFilePath);
             TypedApi = new TypedOpenAIClient(OpenAIAPI, openAiApiKey, logger.Log);
             SimpleApi = TypedApi;
             ReadonlyStores = readonlyStores;
@@ -44,34 +46,34 @@ namespace DevGPT.NewAPI
             SimpleApi = TypedApi;
         }
 
-        public async Task<string> GetResponse(string message, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
+        public async Task<string> GetResponse(string message, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
-            return await SimpleApi.GetResponse(sendMessages, ChatResponseFormat.CreateTextFormat(), toolsContext);
+            return await SimpleApi.GetResponse(sendMessages, ChatResponseFormat.CreateTextFormat(), toolsContext, images);
         }
 
-        public async Task<string> GetResponse(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
+        public async Task<string> GetResponse(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)
         {
             var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
-            return await SimpleApi.GetResponse(sendMessages, ChatResponseFormat.CreateTextFormat(), toolsContext);
+            return await SimpleApi.GetResponse(sendMessages, ChatResponseFormat.CreateTextFormat(), toolsContext, images);
         }
 
-        public async Task<string> StreamResponse(string message, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
+        public async Task<string> StreamResponse(string message, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
-            return await SimpleApi.GetResponseStream(sendMessages, onChunkReceived, ChatResponseFormat.CreateTextFormat(), toolsContext);
+            return await SimpleApi.GetResponseStream(sendMessages, onChunkReceived, ChatResponseFormat.CreateTextFormat(), toolsContext, images);
         }
 
-        public async Task<string> StreamResponse(IEnumerable<ChatMessage> messages, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
+        public async Task<string> StreamResponse(IEnumerable<ChatMessage> messages, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)
         {
             var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
-            return await SimpleApi.GetResponseStream(sendMessages, onChunkReceived, ChatResponseFormat.CreateTextFormat(), toolsContext);
+            return await SimpleApi.GetResponseStream(sendMessages, onChunkReceived, ChatResponseFormat.CreateTextFormat(), toolsContext, images);
         }
 
-        public async Task<ResponseType> GetResponse<ResponseType>(string message, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null) where ResponseType : ChatResponse<ResponseType>, new()
+        public async Task<ResponseType> GetResponse<ResponseType>(string message, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null) where ResponseType : ChatResponse<ResponseType>, new()
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
-            return await TypedApi.GetResponse<ResponseType>(sendMessages, toolsContext);
+            return await TypedApi.GetResponse<ResponseType>(sendMessages, toolsContext, images);
         }
 
         public async Task<ResponseType> GetResponse<ResponseType>(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null) where ResponseType : ChatResponse<ResponseType>, new()
@@ -80,38 +82,38 @@ namespace DevGPT.NewAPI
             return await TypedApi.GetResponse<ResponseType>(sendMessages, toolsContext);
         }
 
-        public async Task<ResponseType> StreamResponse<ResponseType>(string message, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null) where ResponseType : ChatResponse<ResponseType>, new()
+        public async Task<ResponseType> StreamResponse<ResponseType>(string message, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null) where ResponseType : ChatResponse<ResponseType>, new()
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
-            return await TypedApi.GetResponseStream<ResponseType>(sendMessages, onChunkReceived, toolsContext);
+            return await TypedApi.GetResponseStream<ResponseType>(sendMessages, onChunkReceived, toolsContext, images);
         }
 
-        public async Task<ResponseType> StreamResponse<ResponseType>(IEnumerable<ChatMessage> messages, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null) where ResponseType : ChatResponse<ResponseType>, new()
+        public async Task<ResponseType> StreamResponse<ResponseType>(IEnumerable<ChatMessage> messages, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null) where ResponseType : ChatResponse<ResponseType>, new()
         {
             var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
-            return await TypedApi.GetResponseStream<ResponseType>(sendMessages, onChunkReceived, toolsContext);
+            return await TypedApi.GetResponseStream<ResponseType>(sendMessages, onChunkReceived, toolsContext, images);
         }
 
-        public async Task<string> UpdateStore(string message, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
+        public async Task<string> UpdateStore(string message, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
-            var response = await TypedApi.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext);
+            var response = await TypedApi.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext, images);
             await ModifyDocuments(response);
             return response.ResponseMessage;
         }
 
-        public async Task<string> UpdateStore(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
+        public async Task<string> UpdateStore(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)
         {
             var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
-            var response = await TypedApi.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext);
+            var response = await TypedApi.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext, images);
             await ModifyDocuments(response);
             return response.ResponseMessage;
         }
 
-        public async Task<string> StreamUpdateStore(string message, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null)
+        public async Task<string> StreamUpdateStore(string message, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
-            var response = await TypedApi.GetResponseStream<UpdateStoreResponse>(sendMessages, onChunkReceived, toolsContext);
+            var response = await TypedApi.GetResponseStream<UpdateStoreResponse>(sendMessages, onChunkReceived, toolsContext, images);
             await ModifyDocuments(response);
             return response.ResponseMessage;
         }
@@ -136,13 +138,9 @@ namespace DevGPT.NewAPI
             var sendMessages = messages == null ? new List<ChatMessage>() : messages.ToList();
             if (addRelevantDocuments)
             {
-                var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Select(m => Logger.GetMessageType(m) + ": " + m.Content.FirstOrDefault()?.Text ?? ""));
+                var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Select(m => Logger.GetMessageType(m) + ": " + m.Content.First().Text));
                 relevancyQuery += "\n\nuser: " + message;
                 var msgs = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery, ReadonlyStores);
-                //var mainRelevantDoc = docs.First();
-
-                //var msgs = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery + "\n\n" + mainRelevantDoc);
-
                 sendMessages.AddRange(msgs);
             }
             if (addFilesList)
@@ -167,10 +165,6 @@ namespace DevGPT.NewAPI
                     relevancyQuery += "\n\n" + Logger.GetMessageType(message) + ": " + message.Content.First().Text;
                 }
                 var relevantDocumentMessages = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery, ReadonlyStores);
-                //var mainRelevantDoc = docs.First();
-
-                //var msgs = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery + "\n\n" + mainRelevantDoc);
-
                 sendMessages.AddRange(relevantDocumentMessages);
             }
             if (addFilesList)
