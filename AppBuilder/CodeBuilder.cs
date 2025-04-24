@@ -1,6 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using DevGPT.NewAPI;
 using OpenAI.Chat;
+using System.Reflection.Emit;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.Intrinsics.X86;
 using System.Text.Json;
@@ -14,7 +15,13 @@ public class CodeBuilder2
     public string AppDir;
     public string OpenAiApiKey;
     public string LogFilePath;
-    public ToolsContextBase CodingTools;
+    public ToolsContextBase SpecificationTools;
+    public ToolsContextBase ReflectionTools;
+    public ToolsContextBase ProjectManagerInitialTools;
+    public ToolsContextBase ProjectManagerTools;
+    public ToolsContextBase CoderTools;
+    public ToolsContextBase ReviewerTools;
+    public List<ToolInfo> ToolInfos;
 
     public string DocumentStoreFolderPath;
     public string EmbeddingsFilePath;
@@ -25,6 +32,130 @@ public class CodeBuilder2
     public string TempStoreEmbeddingsFilePath;
 
     public List<CodeBuilderTask> Tasks = new List<CodeBuilderTask>();
+
+    int level = 0;
+
+    public async Task<string> Elaborate(List<ChatMessage> messages, ChatToolCall call)
+    {
+        using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
+        if (argumentsJson.RootElement.TryGetProperty("instruction", out JsonElement question))
+        {
+            level++;
+
+            if (level > 2) return "Elaboration is already two levels deep, you should have a detailed enough instruction by now.";
+
+            Console.WriteLine($"{level}.");
+
+            var response = await CreateSpecification(question.ToString());
+            Console.WriteLine($"{response.Item1}");
+
+            level--;
+
+            return response.Item1;
+        }
+        return "";
+    }
+
+    public async Task<string> Reflect(List<ChatMessage> messages, ChatToolCall call)
+    {
+        using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
+        if (argumentsJson.RootElement.TryGetProperty("statement", out JsonElement question))
+        {
+            level++;
+
+            if (level > 2) return "Reflection is already two levels deep, you should have a detailed enough instruction by now.";
+
+            Console.WriteLine($"{level}.");
+
+            var response = await Reflect(question.ToString());
+            Console.WriteLine($"{response.Item1}");
+
+            level--;
+
+            return response.Item1;
+        }
+        return "";
+    }
+
+    public async Task<string> GetFile(List<ChatMessage> messages, ChatToolCall call)
+    {
+        using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
+        if (argumentsJson.RootElement.TryGetProperty("path", out JsonElement question))
+        {
+            try
+            {
+                var path = Store.GetFilePath(question.ToString());
+                var text = File.ReadAllText(path);
+                return text;
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+        return "path not provided";
+    }
+
+    public async Task<string> GetFilesList(List<ChatMessage> messages, ChatToolCall call)
+    {
+        Console.WriteLine($"Get files list");
+        var result = Store.GetFilesList();
+        Console.WriteLine(result);
+        return result;
+    }
+
+    public async Task<string> GetTasksList(List<ChatMessage> messages, ChatToolCall call)
+    {
+        Console.WriteLine($"Get task list");
+        var result = JsonSerializer.Serialize(Tasks);
+        Console.WriteLine(result);
+        return result;
+    }
+
+    public async Task<string> UpdateTask(List<ChatMessage> messages, ChatToolCall call)
+    {
+        using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
+        var hasTitle = argumentsJson.RootElement.TryGetProperty("title", out JsonElement title);
+        var hasDescription = argumentsJson.RootElement.TryGetProperty("description", out JsonElement description);
+        var hasStatus = argumentsJson.RootElement.TryGetProperty("status", out JsonElement status);
+
+        if (hasTitle)
+        {
+            var descriptionVal = hasDescription ? description.ToString() : null;
+            var statusVal = hasStatus ? status.ToString() : null;
+
+            var response = UpdateTask(title.ToString(), descriptionVal, statusVal);
+            return response ? "SUCCESS" : "FAILED, did you provide the right title?";
+        }
+        return "FAILED, no title provided";
+    }
+
+    public async Task<string> CreateTask(List<ChatMessage> messages, ChatToolCall call)
+    {
+        using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
+        var hasTitle = argumentsJson.RootElement.TryGetProperty("title", out JsonElement title);
+        var hasDescription = argumentsJson.RootElement.TryGetProperty("description", out JsonElement description);
+
+        if (hasTitle && hasDescription)
+        {
+            Tasks.Add(new CodeBuilderTask() { Title = title.ToString(), Description = description.ToString(), Status = "todo" });
+            return "SUCCESS";
+        }
+        return "FAILED, no title or no descrption provided";
+    }
+
+    public async Task<string> Git(List<ChatMessage> messages, ChatToolCall call)
+    {
+        using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
+        if (argumentsJson.RootElement.TryGetProperty("arguments", out JsonElement args))
+        {
+            var output = GitOutput.GetGitOutput(DocumentStoreFolderPath, args.ToString());
+            return output.Item1 + "\n" + output.Item2;
+        }
+        return "arguments not provided";
+    }
+
+
     public CodeBuilder2(string appDir, string docStorePath, string embedPath, string openAoApiKey, string logFilePath, string tempStorePath, string tempStoreEmbeddingsFilePath)
     {
         AppDir = appDir;
@@ -47,115 +178,77 @@ public class CodeBuilder2
 
         var tempStoreConfig = new DocumentStoreConfig(TempStoreFolderPath, TempStoreEmbeddingsFilePath, OpenAiApiKey);
         TempStore = new DocumentStore(tempStoreConfig);
+        
+        ToolInfos =
+        [
+            new ToolInfo("reflect",
+                "Asks the reasoning assistant to reflect on a statement.",
+                [
+                    new() { Name = "statement", Description = "The statement that will be evaluated.", Required = true, Type = "string" }
+                ], Reflect
+            ),
+            new ToolInfo("elaborate", 
+                "Asks the agent to generate an elaborate specification for an instruction. When you are asked to elaborate on something you are not allowed to call this function with the same instruction as that would cause a recursive loop.",
+                [
+                    new() { Name = "instruction", Description = "The instruction that needs elaboration", Required = true, Type = "string" }
+                ], Elaborate
+            ),
+            new ToolInfo("getfile", "Retrieves a document from the store.",
+            [
+                new() { Name = "path", Description = "The store relative path to the file.", Required = true, Type = "string" }
+            ],
+            GetFile
+                ),
+            new ToolInfo("getfileslist", "Gets the store files list.", [], GetFilesList
+                ),
+            new ToolInfo("gettaskslist", "Gets the current task list.", [], GetTasksList
+                ),
+            new ToolInfo("updatetask", "Updates the task with the given title.",
+            [
+                new() { Name = "title", Description = "The title of the task to update", Required = true, Type = "string" },
+                new() { Name = "description", Description = "The updated description", Required = false, Type = "string" },
+                new() { Name = "status", Description = "The updated status. Allowed values: todo test or done", Required = false, Type = "string" }
+            ], UpdateTask
+                ),
+            new ToolInfo("createtask", "Creates a new task.",
+            [
+                new() { Name = "title", Description = "The title of the task", Required = true, Type = "string" },
+                new() { Name = "description", Description = "The description of the task", Required = true, Type = "string" },
+            ],
+            CreateTask
+                ),
+            new ToolInfo("Git", "Calls git and returns the output.",
+            [
+                new() { Name = "arguments", Description = "The arguments to call git with", Required = true, Type = "string" }
+            ], Git
+                ),
+        ];
 
-        int level = 0;
-        CodingTools = new ToolsContextBase();
-        // tools: get task list, update task list, get elaborate specification
-        CodingTools.Add("elaborate", "Asks the agent to generate an elaborate specification for an instruction. When you are asked to elaborate on something you are not allowed to call this function with the same instruction as that would cause a recursive loop.",
-            new List<ChatToolParameter>() {
-                new ChatToolParameter { Name = "instruction", Description = "The instruction that needs elaboration", Required = true, Type = "string" }
-            },
-            async (messages, call) =>
-            {
-                using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
-                if (argumentsJson.RootElement.TryGetProperty("instruction", out JsonElement question))
-                {
-                    level++;
+        string[] specificationToolNames = ["getfile", "getfileslist", "Git", "reflect"];
+        SpecificationTools = new ToolsContextBase();
+        ToolInfos.Where(t => specificationToolNames.Contains(t.Name)).ToList().ForEach(t => SpecificationTools.Add(t));
 
-                    if (level > 2) return "Elaboration is already two levels deep, you should have a detailed enough instruction by now.";
+        string[] reflectionToolNames = ["getfile", "getfileslist", "Git"];
+        ReflectionTools = new ToolsContextBase();
+        ToolInfos.Where(t => specificationToolNames.Contains(t.Name)).ToList().ForEach(t => ReflectionTools.Add(t));
 
-                    Console.WriteLine($"{level}.");
 
-                    var response = await CreateSpecification(question.ToString());
-                    Console.WriteLine($"{response.Item1}");
+        string[] projectManagerIToolNames = ["gettaskslist", "reflect"];
+        ProjectManagerInitialTools = new ToolsContextBase();
+        ToolInfos.Where(t => projectManagerIToolNames.Contains(t.Name)).ToList().ForEach(t => ProjectManagerInitialTools.Add(t));
 
-                    level--;
 
-                    return response.Item1;
-                }
-                return "";
-            }
-        );
-        CodingTools.Add("getfile", "Retrieves a document from the store.",
-            new List<ChatToolParameter>() {
-                new ChatToolParameter { Name = "path", Description = "The store relative path to the file.", Required = true, Type = "string" }
-            },
-            async (messages, call) =>
-            {
-                using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
-                if (argumentsJson.RootElement.TryGetProperty("path", out JsonElement question))
-                {
-                    try
-                    {
-                        var path = Store.GetFilePath(question.ToString());
-                        var text = File.ReadAllText(path);
-                        return text;
-                    }
-                    catch (Exception ex)
-                    {
-                        return ex.Message;
-                    }
-                }
-                return "path not provided";
-            }
-        );
-        CodingTools.Add("getfileslist", "Gets the store files list.", new List<ChatToolParameter>(), async (messages, call) =>
-        {
-            Console.WriteLine($"Get files list");
-            var result = Store.GetFilesList();
-            Console.WriteLine(result);
-            return result;
-        });
-        CodingTools.Add("gettaskslist", "Gets the current task list.", new List<ChatToolParameter>(), async (messages, call) =>
-        {
-            Console.WriteLine($"Get task list");
-            var result = JsonSerializer.Serialize(Tasks);
-            Console.WriteLine(result);            
-            return result;
-        });
-        CodingTools.Add("updatetask", "Updates the task with the given title.",
-            new List<ChatToolParameter>() {
-                new ChatToolParameter { Name = "title", Description = "The title of the task to update", Required = true, Type = "string" },
-                new ChatToolParameter { Name = "description", Description = "The updated description", Required = false, Type = "string" },
-                new ChatToolParameter { Name = "status", Description = "The updated status. Allowed values: todo test or done", Required = false, Type = "string" }
-            },
-            async (messages, call) =>
-            {
-                using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
-                var hasTitle = argumentsJson.RootElement.TryGetProperty("title", out JsonElement title);
-                var hasDescription = argumentsJson.RootElement.TryGetProperty("description", out JsonElement description);
-                var hasStatus = argumentsJson.RootElement.TryGetProperty("status", out JsonElement status);
+        string[] projectManagerToolNames = ["gettaskslist", "updatetask", "createtask", "reflect"];
+        ProjectManagerTools = new ToolsContextBase();
+        ToolInfos.Where(t => projectManagerToolNames.Contains(t.Name)).ToList().ForEach(t => ProjectManagerTools.Add(t));
 
-                if (hasTitle)
-                {
-                    var descriptionVal = hasDescription ? description.ToString() :  null;
-                    var statusVal = hasStatus ? status.ToString() : null;
+        string[] coderToolNames = ["gettaskslist", "updatetask", "createtask"];
+        CoderTools = new ToolsContextBase();
+        ToolInfos.Where(t => coderToolNames.Contains(t.Name)).ToList().ForEach(t => CoderTools.Add(t));
 
-                    var response = UpdateTask(title.ToString(), descriptionVal, statusVal);
-                    return response ? "SUCCESS" : "FAILED, did you provide the right title?";
-                }
-                return "FAILED, no title provided";
-            }
-        );
-        CodingTools.Add("createtask", "Creates a new task.",
-            new List<ChatToolParameter>() {
-                new ChatToolParameter { Name = "title", Description = "The title of the task", Required = true, Type = "string" },
-                new ChatToolParameter { Name = "description", Description = "The description of the task", Required = true, Type = "string" },
-            },
-            async (messages, call) =>
-            {
-                using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
-                var hasTitle = argumentsJson.RootElement.TryGetProperty("title", out JsonElement title);
-                var hasDescription = argumentsJson.RootElement.TryGetProperty("description", out JsonElement description);
-
-                if (hasTitle && hasDescription)
-                {
-                    Tasks.Add(new CodeBuilderTask() { Title = title.ToString(), Description = description.ToString(), Status = "todo" });
-                    return "SUCCESS";
-                }
-                return "FAILED, no title or no descrption provided";
-            }
-        );
+        string[] revuewerToolNames = ["gettaskslist", "updatetask", "createtask"];
+        ReviewerTools = new ToolsContextBase();
+        ToolInfos.Where(t => revuewerToolNames.Contains(t.Name)).ToList().ForEach(t => ReviewerTools.Add(t));
 
         //CodingTools.Add("AskAgent", "Asks an agent a question and return the response.",
         //    new List<ChatToolParameter>() {
@@ -184,21 +277,6 @@ public class CodeBuilder2
         //    var output = QuasarBuildOutput.GetQuasarBuildOutput(AppDir);
         //    return output.Item2;
         //});
-        CodingTools.Add("Git", "Calls git and returns the output.",
-            new List<ChatToolParameter>() {
-                new ChatToolParameter { Name = "arguments", Description = "The arguments to call git with", Required = true, Type = "string" }
-            },
-            async (messages, call) =>
-            {
-                using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
-                if (argumentsJson.RootElement.TryGetProperty("arguments", out JsonElement args))
-                {
-                    var output = GitOutput.GetGitOutput(docStorePath, args.ToString());
-                    return output.Item1 + "\n" + output.Item2;
-                }
-                return "arguments not provided";
-            }
-        );
 
     }
 
@@ -235,6 +313,21 @@ public class CodeBuilder2
 
     public List<ChatMessage> History = new List<ChatMessage>();
 
+    public async Task Execute2(string instruction)
+    {
+        await Store.UpdateEmbeddings();
+        Store.SaveEmbeddings();
+        History.Add(instruction);
+
+        // create an agent that is an operative who calls other agents to solve the problems. it will partially complete tasks and keep responding to the user as well.
+        //
+        // it has the following agents that it can call:
+        // promptanalaysis(prompt) analyzes the prompt and comes up with a description of what the user wants
+        // gitanalysis(prompt) analyzes the repository to try and answer the question
+        // gitanalysis(prompt) analyzes the repository to try and answer the question
+
+    }
+
     public async Task Execute(string instruction)
     {
         await Store.UpdateEmbeddings();
@@ -267,7 +360,7 @@ public class CodeBuilder2
             var work = Tasks.Where(t => t.Status.ToLower() != "done").ToList();
             var task = work.OrderBy(t => t.Status.ToLower() == "test" ? 0 : 1).First();
             if(task.Status.ToLower() == "test")
-                await VerifyTask(task);
+                await ReviewTask(task);
             else
                 await ExecuteTask(task);
         }
@@ -314,14 +407,14 @@ public class CodeBuilder2
             await ExecuteTask(task);
 
             Output("Verifying");
-            var success = await VerifyTask(task);
+            var success = await ReviewTask(task);
             while (!success)
             {
                 LogAddMessage(task.Title);
                 await ExecuteTask(task);
 
                 Output("Verifying");
-                success = await VerifyTask(task);
+                success = await ReviewTask(task);
             }
         }
     }
@@ -343,13 +436,13 @@ public class CodeBuilder2
         var generatorExecute = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptExecute) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
 
         var messages = new List<ChatMessage> { new UserChatMessage("analyze the git branches and checkout a recent existing branch or create and checkout a new feature branch.") };
-        var message = await generatorExecute.GetResponse<CodeBuilderContinuous>(messages, History, true, true, CodingTools);
+        var message = await generatorExecute.GetResponse<CodeBuilderContinuous>(messages, History, true, true, SpecificationTools);
         messages.Add(new AssistantChatMessage(message.Message));
         LogAddMessage(message.Message);
         var finished = message.Finished;
         while (!finished)
         {
-            message = await generatorExecute.GetResponse<CodeBuilderContinuous>(messages, History, true, true, CodingTools);
+            message = await generatorExecute.GetResponse<CodeBuilderContinuous>(messages, History, true, true, SpecificationTools);
             LogAddMessage(message.Message);
             finished = message.Finished;
         }
@@ -375,13 +468,13 @@ public class CodeBuilder2
         var generatorExecute = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptExecute) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
 
         var messages = new List<ChatMessage> { new UserChatMessage("commit your code and create a pull request with develop. switch to develop. do not merge the branch with develop yourself, just make the pull request.") };
-        var message = await generatorExecute.GetResponse<CodeBuilderContinuous>(messages, History, true, true, CodingTools);
+        var message = await generatorExecute.GetResponse<CodeBuilderContinuous>(messages, History, true, true, SpecificationTools);
         messages.Add(new AssistantChatMessage(message.Message));
         LogAddMessage(message.Message);
         var finished = message.Finished;
         while (!finished)
         {
-            message = await generatorExecute.GetResponse<CodeBuilderContinuous>(messages, History, true, true, CodingTools);
+            message = await generatorExecute.GetResponse<CodeBuilderContinuous>(messages, History, true, true, SpecificationTools);
             LogAddMessage(message.Message);
             finished = message.Finished;
         }
@@ -402,7 +495,7 @@ public class CodeBuilder2
         var promptExecute = @$"You are an expert software engineer. Execute the task as specified. Create or update files where needed. If there is a problem with the existing code always look into the git history to get an understanding of the situation.";
         var generatorExecute = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptExecute) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
 
-        var message = await generatorExecute.UpdateStore(instruction, History, true, true, CodingTools);
+        var message = await generatorExecute.UpdateStore(instruction, History, true, true, CoderTools);
         LogAddMessage(message);
 
         task.Status = "test";
@@ -418,13 +511,13 @@ public class CodeBuilder2
         Output(instruction);
     }
 
-    private async Task<bool> VerifyTask(CodeBuilderTask task)
+    private async Task<bool> ReviewTask(CodeBuilderTask task)
     {
         var instruction = $"{task.Title}\n{task.Description}";
 
-        var promptVerify = @"Analyze the updated code and verify that the task is complete. Carefully analyze the locally changed files and compare them with the previous version to make sure the changes are proper and make sense. Make sure all the updated code is right and that it generates no errors. If there is anything that can be improved show the rework. If the changes are problematic discard them. If the code is completely right commit it with git.";
+        var promptVerify = @"Your goal is to review the given task. Carefully analyze the locally changed files and compare them with the previous version to make sure the changes are proper and make sense. Make sure all the updated code is right and that it generates no errors. If there is anything that can be improved show the rework. If the changes are problematic discard them. If the code is completely right commit it with git.";
         var generatorVerify = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptVerify) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
-        var message = await generatorVerify.GetResponse<CodeBuilderVerify>(instruction, History, true, true, CodingTools);
+        var message = await generatorVerify.GetResponse<CodeBuilderVerify>(instruction, History, true, true, ReviewerTools);
 
         if (message.HasRework)
         {
@@ -443,7 +536,7 @@ public class CodeBuilder2
 
         var promptVerify = @"Analyze the updated code and verify that the task is complete. Make sure all the updated code is right and that it generates no errors. Compare the branch with develop and analyse the differences. If there is anything that can be improved show the rework. If the code is completely right create a pull request to merge it with develop.";
         var generatorVerify = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptVerify) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
-        var message = await generatorVerify.GetResponse<CodeBuilderVerify>(instruction, History, true, true, CodingTools);
+        var message = await generatorVerify.GetResponse<CodeBuilderVerify>(instruction, History, true, true, SpecificationTools);
 
         if (message.HasRework)
         {
@@ -454,14 +547,46 @@ public class CodeBuilder2
         return true;
     }
 
+    private async Task<Tuple<string, string>> Reflect(string statement)
+    {
+        // this agent is supposed to generate an extensive specification.
+        // to do this it should be able to consult the code and git
+        // it should also be able to consult 
+
+
+        var fileTitle = $"Reflect on the statement: {statement}";
+        Console.WriteLine(fileTitle);
+
+        var promptAnalayzeInstruction =
+            @"Reflect on the given statement. Write down your chain of thought. Your goal is to provide the asker with a proper evaluation of the statement.";
+        var generatorAnalayzeInstruction = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptAnalayzeInstruction) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
+        var response = await generatorAnalayzeInstruction.GetResponse(statement, History, true, true, ReflectionTools);
+
+        var path = Guid.NewGuid().ToString();
+        await TempStore.ModifyDocument(fileTitle, path, response);
+        TempStore.SaveEmbeddings();
+
+        Console.WriteLine(response);
+
+        return new Tuple<string, string>(response, path);
+    }
+
+
+
     private async Task<Tuple<string, string>> CreateSpecification(string instruction)
     {
+        // this agent is supposed to generate an extensive specification.
+        // to do this it should be able to consult the code and git
+        // it should also be able to consult 
+
+
         var fileTitle = $"Elaborate on instruction: {instruction}";
         Console.WriteLine(fileTitle);
 
-        var promptAnalayzeInstruction = @"Analyze the instruction from the user. Analyze relevant documents. Translate the instruction of the user to a complete specification for the developer AI agent. When relevant analyse the git history or build output. Specify explicitly which files likely need to be changed to accomplish this task. Also specify assumptions and restraints. Specify suggestions about architecture and approach. Make it conrete. Clearly state the goal of the plan. Try to use a maximum of 200 words, preferrably shorter but if you absolutely need more words then create a longer specification. Leave out testing, that is something the user will do.";
+        var promptAnalayzeInstruction = 
+            @"Analyze the instruction from the user. Analyze relevant documents. Validate your resoning with the reasoning assistant. Translate the instruction of the user to a complete specification for the developer AI agent. When relevant analyse the git history or build output. Specify explicitly which files likely need to be changed to accomplish this task. Also specify assumptions and restraints. Specify suggestions about architecture and approach. Make it conrete. Clearly state the goal of the plan. Try to use a maximum of 200 words, preferrably shorter but if you absolutely need more words then create a longer specification.";
         var generatorAnalayzeInstruction = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptAnalayzeInstruction) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
-        var specification = await generatorAnalayzeInstruction.GetResponse(instruction, History, true, true, CodingTools);
+        var specification = await generatorAnalayzeInstruction.GetResponse(instruction, History, true, true, SpecificationTools);
 
         var path = Guid.NewGuid().ToString();
         await TempStore.ModifyDocument(fileTitle, path, specification);
@@ -486,7 +611,7 @@ public class CodeBuilder2
         m.Add(new SystemChatMessage(content));
         m.Add(new UserChatMessage(feedback));
 
-        var specification = await generatorAnalayzeInstruction.GetResponse(m, History, true, true, CodingTools);
+        var specification = await generatorAnalayzeInstruction.GetResponse(m, History, true, true, SpecificationTools);
 
         await TempStore.ModifyDocument(e.Name, e.Path, specification);
         TempStore.SaveEmbeddings();
@@ -498,9 +623,9 @@ public class CodeBuilder2
 
     private async Task<List<CodeBuilderTask>> CreateTasks(string instruction)
     {
-        var promptAnalayzeInstruction = @"Create a list consisting of the task or tasks needed to implement changes to satisfy the specification. Tasks consist of small code changes in one file or a couple of files. Be aware that the token limit constrains the number of files you can edit. Specify per task explicitly which files likely need to be changed to accomplish this task. Also specify assumptions and restraints. Specify suggestions about architecture and approach. Try to keep each task description at a maximum of around 100 words but make sure the description is always complete and clear without any ambiguity.";
+        var promptAnalayzeInstruction = @"Create a list of tasks for making the code changes to implement the specification. A task consists of a code change that implements part of the specificaiton.";
         var generatorAnalayzeInstruction = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptAnalayzeInstruction) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
-        var response = await generatorAnalayzeInstruction.GetResponse<CodeBuilderTasks>(instruction, History, true, true);
+        var response = await generatorAnalayzeInstruction.GetResponse<CodeBuilderTasks>(instruction, History, true, true, ProjectManagerInitialTools);
         // todo store in tasks file (not needed?)
         var tasks = response.Tasks;
         Console.WriteLine(string.Join("\n", tasks.Select(t => $"{t.Title}\n{t.Description}\n")));

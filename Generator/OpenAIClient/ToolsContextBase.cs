@@ -1,9 +1,31 @@
 ﻿using System.Text.Json;
 using OpenAI.Chat;
 
+public class ToolInfo
+{
+    public ToolInfo(string name, string description, List<ChatToolParameter> parameters, Func<List<ChatMessage>, ChatToolCall, Task<string>> execute)
+    {
+        Name = name;
+        Description = description;
+        Parameters = parameters;
+        Execute = execute;
+    }
+    public string Name {  get; set; }
+    public string Description { get; set; }
+    public List<ChatToolParameter> Parameters { get; set; }
+    public Func<List<ChatMessage>, ChatToolCall, Task<string>> Execute { get; set; }
+}
+
 public class ToolsContextBase : IToolsContext
 {
     public List<Tool> Tools { get; set; } = new List<Tool>();
+
+    public void Add(ToolInfo info)
+    {
+        var chatYool = CreateDefinition(info.Name, info.Description, info.Parameters);
+        var tool = new Tool { Definition = chatYool, FunctionName = info.Name, Execute = info.Execute };
+        Tools.Add(tool);
+    }
 
     public void Add(string name, string description, List<ChatToolParameter> parameters, Func<List<ChatMessage>, ChatToolCall, Task<string>> execute)
     {

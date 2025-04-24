@@ -7,6 +7,9 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-
+        <!-- button to open embeddings file -->
+        <!-- see files in a treeview -->
+            <!-- click on file to edit -->
+        <!-- call a query on the result -->
     </Grid>
 </Window>
