@@ -76,10 +76,10 @@ namespace DevGPT.NewAPI
             return await TypedApi.GetResponse<ResponseType>(sendMessages, toolsContext, images);
         }
 
-        public async Task<ResponseType> GetResponse<ResponseType>(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null) where ResponseType : ChatResponse<ResponseType>, new()
+        public async Task<ResponseType> GetResponse<ResponseType>(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null) where ResponseType : ChatResponse<ResponseType>, new()
         {
             var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
-            return await TypedApi.GetResponse<ResponseType>(sendMessages, toolsContext);
+            return await TypedApi.GetResponse<ResponseType>(sendMessages, toolsContext, images);
         }
 
         public async Task<ResponseType> StreamResponse<ResponseType>(string message, Action<string> onChunkReceived, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null) where ResponseType : ChatResponse<ResponseType>, new()

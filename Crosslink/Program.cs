@@ -176,14 +176,14 @@ foreach(var match in matches)
     messages.Add(new AssistantChatMessage("De CV van de kandiaat: " + match.Item1));
     messages.Add(new AssistantChatMessage("De vacature: " + match.Item2));
     messages.Add(new AssistantChatMessage("Genereer een sollicitatiegesprek tussen de kandidaat en de interviewer op basis van het cv van de kandidaat, de vacature, en de voorbeeldgesprekken met de recruiter. In dit gesprek worden inhoudelijke vragen gesteld over kennis die nodig is voor het uitvoeren van de functie. De sollicitant vraagt op diens beurt of de opgedane kennis bij deze vacature van belang zijn. Gebruik de informatie die is bijgevoegd in het gesprek."));
-    var response = await client.GetResponse(messages, ChatResponseFormat.CreateTextFormat(), null);
+    var response = await client.GetResponse(messages, ChatResponseFormat.CreateTextFormat(), null, new List<ImageData>());
 
     messages = new List<ChatMessage>();
     messages.Add(new AssistantChatMessage("De CV van de kandiaat: " + match.Item1));
     messages.Add(new AssistantChatMessage("De vacature: " + match.Item2));
     messages.Add(new AssistantChatMessage("Het gesimuleerde gesprek: " + response));
     messages.Add(new AssistantChatMessage("Geef een voorlopige analyse conclusie beoordeling van de natch en het gesimuleerde gesprek. Geef de match een score tussen 0 en 100 waar 100 een volledige match is en 0 totaal geen match. Beschrijf de match in 500 woorden en geef aan op welke punten er een sterke match is en welke punten juist aangeven dat er misschien geen match is. Geef aan het eind in één zin aan of je deze sollicitant wel of niet in dienst zou nemen en waarom. Geef ook in één zin aan of je deze baan zou aannemen en waarom."));
-    var rating = await client.GetResponse(messages, ChatResponseFormat.CreateTextFormat(), null);
+    var rating = await client.GetResponse(messages, ChatResponseFormat.CreateTextFormat(), null, new List<ImageData>());
 
     var finalText = $@"Er is een match gevonden met een CV en een vacature.
 
