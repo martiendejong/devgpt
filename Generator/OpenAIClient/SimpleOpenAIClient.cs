@@ -10,7 +10,7 @@ public class SimpleOpenAIClient
     public string ApiKey { get; set; }
     public OpenAIClient API { get; set; }
     public string Model { get; set; } = "gpt-4.1";//"gpt-4o";
-    public string ImageModel { get; set; } = "dall-e-3";
+    public string ImageModel { get; set; } = "gpt-image-1";//"dall-e-3";
 
     public delegate void LogFn(List<ChatMessage> messages, string responseContent);
     public LogFn Log { get; set; }

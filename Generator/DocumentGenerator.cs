@@ -97,9 +97,34 @@ namespace DevGPT.NewAPI
         public async Task<string> UpdateStore(string message, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
-            var response = await TypedApi.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext, images);
-            await ModifyDocuments(response);
-            return response.ResponseMessage;
+
+            var info = new ToolInfo("writefile", "Writes content to a file and returns success or an error. Use this to modify files.", new List<ChatToolParameter>() {
+                    new ChatToolParameter { Name = "file", Description = "The relative path to the file being written", Type = "string" },
+                    new ChatToolParameter { Name = "content", Description = "The literal content that will be written to the file", Type = "string" }
+                },
+                async (messages, call) => {
+                    using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
+                    var hasFile = argumentsJson.RootElement.TryGetProperty("file", out JsonElement file);
+                    if (!hasFile) return "file parameter not provided";
+                    var hasContent = argumentsJson.RootElement.TryGetProperty("content", out JsonElement content);
+                    if (!hasContent) return "content parameter not provided";
+                    try
+                    {
+                        Store.ModifyDocument(file.ToString(), file.ToString(), content.ToString());
+                        return "success";
+                    }
+                    catch (Exception ex)
+                    {
+                        return ex.Message;
+                    }
+                }
+            );
+            toolsContext.Add(info);
+
+            var response = await SimpleApi.GetResponse(sendMessages, ChatResponseFormat.CreateTextFormat(), toolsContext, images);
+            //await ModifyDocuments(response);
+            
+            return response;
         }
 
         public async Task<string> UpdateStore(IEnumerable<ChatMessage> messages, IEnumerable<ChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)

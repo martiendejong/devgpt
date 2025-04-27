@@ -19,8 +19,21 @@ public class CodeBuilder2
     public ToolsContextBase ReflectionTools;
     public ToolsContextBase ProjectManagerInitialTools;
     public ToolsContextBase ProjectManagerTools;
-    public ToolsContextBase CoderTools;
-    public ToolsContextBase ReviewerTools;
+    public ToolsContextBase CoderTools { get
+        {
+            string[] coderToolNames = ["getfileslist", "getfile", "gettaskslist", "updatetask", "createtask", "git"];
+            var coderTools = new ToolsContextBase();
+            ToolInfos.Where(t => coderToolNames.Contains(t.Name)).ToList().ForEach(coderTools.Add);
+            return coderTools;
+        }
+    }
+    public ToolsContextBase ReviewerTools {  get {
+            string[] reviewerToolNames = ["gettaskslist", "updatetask", "createtask", "git", "build"];
+            var reviewerTools = new ToolsContextBase();
+            ToolInfos.Where(t => reviewerToolNames.Contains(t.Name)).ToList().ForEach(t => reviewerTools.Add(t));
+            return reviewerTools;
+        }
+    }
     public List<ToolInfo> ToolInfos;
 
     public string DocumentStoreFolderPath;
@@ -34,6 +47,10 @@ public class CodeBuilder2
     public List<CodeBuilderTask> Tasks = new List<CodeBuilderTask>();
 
     int level = 0;
+
+    //public static string CoderPrompt = @$"You are an expert software engineer. Execute the task as specified. Create or update files where needed. When your task contains rework make sure to use git to analyze history. When you see things that need to be done that fall out of the scope of this task create a new task for it. If needed update existing tasks with information. ALWAYS PROVIDE THE WHOLE FILE THAT YOU ARE MODIFYING, NEVER LEAVE ANYTHING OUT OR WRITE // ... (rest of the methods remain unchanged) ";
+    public static string CoderPrompt = File.ReadAllText("CodePrompt.txt");// @$"You are an expert software engineer. Execute the task as specified. Create or update files where needed. When your task contains rework make sure to use git to analyze history. When you see things that need to be done that fall out of the scope of this task create a new task for it. If needed update existing tasks with information. ALWAYS PROVIDE THE WHOLE FILE THAT YOU ARE MODIFYING, NEVER LEAVE ANYTHING OUT OR WRITE // ... (rest of the methods remain unchanged) ";
+    public static string ReviewerPrompt = File.ReadAllText("ReviewPrompt.txt");//@"Your goal is to review the given task. Use git to carefully analyze the locally changed files and compare them with the previous version to make sure the changes are proper and make sense, that no neccessary code is deleted and that existing functionality remains working. Use the build function to make sure all the updated code is working correctly and that it generates no errors. If there is anything that can be improved show the rework. When you see things that need to be done that fall out of the scope of this task create a new task for it. If the changes are problematic discard them. If the code is completely right commit it with git.";
 
     public async Task<string> Elaborate(List<ChatMessage> messages, ChatToolCall call)
     {
@@ -84,6 +101,7 @@ public class CodeBuilder2
         {
             try
             {
+                Console.WriteLine($"Get file {question.ToString()}");
                 var path = Store.GetFilePath(question.ToString());
                 var text = File.ReadAllText(path);
                 return text;
@@ -121,6 +139,9 @@ public class CodeBuilder2
 
         if (hasTitle)
         {
+            Console.WriteLine($"Updating task {title.ToString()}");
+            Console.WriteLine($"{description.ToString()}");
+
             var descriptionVal = hasDescription ? description.ToString() : null;
             var statusVal = hasStatus ? status.ToString() : null;
 
@@ -138,6 +159,9 @@ public class CodeBuilder2
 
         if (hasTitle && hasDescription)
         {
+            Console.WriteLine($"Create task {title.ToString()}");
+            Console.WriteLine($"{description.ToString()}");
+
             Tasks.Add(new CodeBuilderTask() { Title = title.ToString(), Description = description.ToString(), Status = "todo" });
             return "SUCCESS";
         }
@@ -149,10 +173,21 @@ public class CodeBuilder2
         using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
         if (argumentsJson.RootElement.TryGetProperty("arguments", out JsonElement args))
         {
+            Console.WriteLine($"Calling git {args.ToString()}");
+
             var output = GitOutput.GetGitOutput(DocumentStoreFolderPath, args.ToString());
             return output.Item1 + "\n" + output.Item2;
         }
         return "arguments not provided";
+    }
+
+    public async Task<string> Build(List<ChatMessage> messages, ChatToolCall call)
+    {
+        Console.WriteLine($"Building the project");
+
+        var output = BuildOutput.GetBuildOutput(DocumentStoreFolderPath, "build.bat", "build_errors.log");
+        Console.WriteLine($"Building the project");
+        return output;
     }
 
 
@@ -217,23 +252,26 @@ public class CodeBuilder2
             ],
             CreateTask
                 ),
-            new ToolInfo("Git", "Calls git and returns the output.",
+            new ToolInfo("git", "Calls git and returns the output.",
             [
                 new() { Name = "arguments", Description = "The arguments to call git with", Required = true, Type = "string" }
             ], Git
                 ),
+            new ToolInfo("build", "Builds the solution and returns the output.",
+            [], Build
+                ),
         ];
 
-        string[] specificationToolNames = ["getfile", "getfileslist", "Git", "reflect"];
+        string[] specificationToolNames = ["getfile", "getfileslist", "git", "reflect"];
         SpecificationTools = new ToolsContextBase();
         ToolInfos.Where(t => specificationToolNames.Contains(t.Name)).ToList().ForEach(t => SpecificationTools.Add(t));
 
-        string[] reflectionToolNames = ["getfile", "getfileslist", "Git"];
+        string[] reflectionToolNames = ["getfile", "getfileslist", "git"];
         ReflectionTools = new ToolsContextBase();
-        ToolInfos.Where(t => specificationToolNames.Contains(t.Name)).ToList().ForEach(t => ReflectionTools.Add(t));
+        ToolInfos.Where(t => reflectionToolNames.Contains(t.Name)).ToList().ForEach(t => ReflectionTools.Add(t));
 
 
-        string[] projectManagerIToolNames = ["gettaskslist", "reflect"];
+        string[] projectManagerIToolNames = ["reflect"];
         ProjectManagerInitialTools = new ToolsContextBase();
         ToolInfos.Where(t => projectManagerIToolNames.Contains(t.Name)).ToList().ForEach(t => ProjectManagerInitialTools.Add(t));
 
@@ -242,13 +280,14 @@ public class CodeBuilder2
         ProjectManagerTools = new ToolsContextBase();
         ToolInfos.Where(t => projectManagerToolNames.Contains(t.Name)).ToList().ForEach(t => ProjectManagerTools.Add(t));
 
-        string[] coderToolNames = ["gettaskslist", "updatetask", "createtask"];
-        CoderTools = new ToolsContextBase();
-        ToolInfos.Where(t => coderToolNames.Contains(t.Name)).ToList().ForEach(t => CoderTools.Add(t));
 
-        string[] revuewerToolNames = ["gettaskslist", "updatetask", "createtask"];
-        ReviewerTools = new ToolsContextBase();
-        ToolInfos.Where(t => revuewerToolNames.Contains(t.Name)).ToList().ForEach(t => ReviewerTools.Add(t));
+        //string[] coderPrepareToolNames = ["getfileslist", "getfile", "gettaskslist", "updatetask", "createtask", "git"];
+        //CoderTools = new ToolsContextBase();
+        //ToolInfos.Where(t => coderToolNames.Contains(t.Name)).ToList().ForEach(t => CoderTools.Add(t));
+
+
+
+
 
         //CodingTools.Add("AskAgent", "Asks an agent a question and return the response.",
         //    new List<ChatToolParameter>() {
@@ -359,10 +398,28 @@ public class CodeBuilder2
         {
             var work = Tasks.Where(t => t.Status.ToLower() != "done").ToList();
             var task = work.OrderBy(t => t.Status.ToLower() == "test" ? 0 : 1).First();
-            if(task.Status.ToLower() == "test")
-                await ReviewTask(task);
+            if (task.Status.ToLower() == "test")
+            {
+                try
+                {
+                    await ReviewTask(task);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+            }
             else
-                await ExecuteTask(task);
+            {
+                try
+                {
+                    await ExecuteTask(task);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+            }
         }
 
         ////await Start(instruction);
@@ -492,10 +549,10 @@ public class CodeBuilder2
 
         //var specification = await CreateSpecification(instruction);
 
-        var promptExecute = @$"You are an expert software engineer. Execute the task as specified. Create or update files where needed. If there is a problem with the existing code always look into the git history to get an understanding of the situation.";
+        var promptExecute = CoderPrompt;
         var generatorExecute = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptExecute) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
 
-        var message = await generatorExecute.UpdateStore(instruction, History, true, true, CoderTools);
+        var message = await generatorExecute.UpdateStore(instruction, [] /*History*/, true, true, CoderTools);
         LogAddMessage(message);
 
         task.Status = "test";
@@ -515,9 +572,10 @@ public class CodeBuilder2
     {
         var instruction = $"{task.Title}\n{task.Description}";
 
-        var promptVerify = @"Your goal is to review the given task. Carefully analyze the locally changed files and compare them with the previous version to make sure the changes are proper and make sense. Make sure all the updated code is right and that it generates no errors. If there is anything that can be improved show the rework. If the changes are problematic discard them. If the code is completely right commit it with git.";
+        var promptVerify = ReviewerPrompt;
+
         var generatorVerify = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptVerify) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
-        var message = await generatorVerify.GetResponse<CodeBuilderVerify>(instruction, History, true, true, ReviewerTools);
+        var message = await generatorVerify.GetResponse<CodeBuilderVerify>(instruction, [] /*History*/, true, true, ReviewerTools);
 
         if (message.HasRework)
         {
@@ -623,7 +681,7 @@ public class CodeBuilder2
 
     private async Task<List<CodeBuilderTask>> CreateTasks(string instruction)
     {
-        var promptAnalayzeInstruction = @"Create a list of tasks for making the code changes to implement the specification. A task consists of a code change that implements part of the specificaiton.";
+        var promptAnalayzeInstruction = @"Create a list of tasks for making the code changes to implement the specification. A task consists of a code change that implements part of the specification. Only have tasks that have actual code changes, unless there is something really complex that needs to be worked out that spans over multiple files and involves creation of new tasks. if there are multiple trivial changes in one file combine them in one task. leave out any tasks for testing or review as that is handled separately by another agent.";
         var generatorAnalayzeInstruction = new DocumentGenerator(Store, new List<ChatMessage>() { new SystemChatMessage(promptAnalayzeInstruction) }, OpenAiApiKey, LogFilePath, new List<IStore> { TempStore });
         var response = await generatorAnalayzeInstruction.GetResponse<CodeBuilderTasks>(instruction, History, true, true, ProjectManagerInitialTools);
         // todo store in tasks file (not needed?)

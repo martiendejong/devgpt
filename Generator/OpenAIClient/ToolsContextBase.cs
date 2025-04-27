@@ -24,6 +24,7 @@ public class ToolsContextBase : IToolsContext
     {
         var chatYool = CreateDefinition(info.Name, info.Description, info.Parameters);
         var tool = new Tool { Definition = chatYool, FunctionName = info.Name, Execute = info.Execute };
+        if (Tools.Any(t => t.FunctionName == tool.FunctionName)) return;
         Tools.Add(tool);
     }
 

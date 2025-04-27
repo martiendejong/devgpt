@@ -210,7 +210,10 @@ namespace DevGPT.NewAPI
 
         protected async Task<EmbeddingData> FetchEmbeddingData(string name, string path, string fullPath)
         {
-            var text = File.ReadAllText(fullPath);
+            DocumentSplitter.TokensPerPart = 8000;
+            var texts = DocumentSplitter.SplitDocument(fullPath);
+            DocumentSplitter.TokensPerPart = 100;
+            var text = texts.First();
             var data = $"PATH: {path}\nDOCUMENT: {name}\n{text}"; // should this be a setting?
             return await EmbeddingGenerator.FetchEmbedding(data);
         }
