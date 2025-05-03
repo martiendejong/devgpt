@@ -40,7 +40,7 @@
                     var path = values[1];
                     var checksum = values[2];
                     var data = values.Skip(3).Select(e => double.Parse(e.Replace(".", ","))).ToList();
-                    var embedding = new Embedding(name, path, checksum, new EmbeddingData(data));
+                    var embedding = new Embedding(name, path, checksum, new Embedding(data));
                     return embedding;
                 }
                 catch (Exception e)

@@ -13,13 +13,13 @@ namespace DevGPT.NewAPI
             Client = new EmbeddingClient("text-embedding-ada-002", apiKey);
         }
 
-        public async Task<EmbeddingData> FetchEmbedding(string text)
+        public async Task<Embedding> FetchEmbedding(string text)
         {
             try
             {
                 var response = await Client.GenerateEmbeddingAsync(text);
                 var embeddings = response.Value.ToFloats().ToArray().Select(f => (double)f);
-                return new EmbeddingData(embeddings);
+                return new Embedding(embeddings);
             }
             catch (Exception ex)
             {

@@ -4,7 +4,17 @@ namespace DevGPT.NewAPI
 {
     public class Checksum
     {
-        public string CalculateChecksum(string filePath)
+        public static string CalculateChecksumFromString(string fileContents)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                var contentBytes = System.Text.Encoding.UTF8.GetBytes(fileContents);
+                var hashBytes = sha256.ComputeHash(contentBytes);
+                return Convert.ToHexString(hashBytes);
+            }
+        }
+
+        public static string CalculateChecksum(string filePath)
         {
             if (!File.Exists(filePath))
                 return "";

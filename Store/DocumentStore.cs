@@ -57,7 +57,7 @@ namespace DevGPT.NewAPI
             if (File.Exists(absNewPath))
             {
                 var data = await FetchEmbeddingData(name, path, absNewPath);
-                embedding = new Embedding(name, path, checksum, new EmbeddingData(data));
+                embedding = new Embedding(name, path, checksum, new Embedding(data));
                 Embeddings.Add(embedding);
             }
             return true;
@@ -208,7 +208,7 @@ namespace DevGPT.NewAPI
             }
         }
 
-        protected async Task<EmbeddingData> FetchEmbeddingData(string name, string path, string fullPath)
+        protected async Task<Embedding> FetchEmbeddingData(string name, string path, string fullPath)
         {
             DocumentSplitter.TokensPerPart = 8000;
             var texts = DocumentSplitter.SplitDocument(fullPath);

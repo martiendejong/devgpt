@@ -4,16 +4,16 @@
 
 namespace DevGPT.NewAPI
 {
-    public class EmbeddingData : List<double>
+    public class Embedding : List<double>
     {
-        public EmbeddingData(IEnumerable<double> data)
+        public Embedding(IEnumerable<double> data)
         {
             AddRange(data);
         }
 
         public Vector<double> Vector => Vector<double>.Build.DenseOfArray(ToArray());
 
-        public double CosineSimilarity(EmbeddingData compareTo)
+        public double CosineSimilarity(Embedding compareTo)
         {
             return CosineSimilarity(Vector, compareTo.Vector);
         }

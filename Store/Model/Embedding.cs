@@ -5,8 +5,8 @@
         public string Name { get; set; }
         public string Path { get; set; }
         public string Checksum { get; private set; }
-        public EmbeddingData Embeddings { get; set; }
-        public Embedding(string name, string path, string checksum, EmbeddingData embeddings)
+        public Embedding Embeddings { get; set; }
+        public Embedding(string name, string path, string checksum, Embedding embeddings)
         {
             Name = name;
             Path = path;
