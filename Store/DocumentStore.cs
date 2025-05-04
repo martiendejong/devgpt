@@ -22,7 +22,7 @@ namespace DevGPT.NewAPI
 
         public async Task<bool> UpdateEmbeddings()
         {
-            var e = new List<Embedding>(Embeddings);
+            var e = new List<EmbeddingI>(Embeddings);
             foreach (var embedding in e)
             {
                 await UpdateEmbedding(embedding.Name, embedding.Path);
@@ -57,7 +57,7 @@ namespace DevGPT.NewAPI
             if (File.Exists(absNewPath))
             {
                 var data = await FetchEmbeddingData(name, path, absNewPath);
-                embedding = new Embedding(name, path, checksum, new Embedding(data));
+                embedding = new EmbeddingI(name, path, checksum, new Embedding(data));
                 Embeddings.Add(embedding);
             }
             return true;
@@ -79,10 +79,10 @@ namespace DevGPT.NewAPI
             return Embeddings.Select(e => new DocumentInfo { Name = e.Name, Path = e.Path }).ToList();
         }
 
-        public List<FileNode> GetFilesTree()
+        public List<TreeNode> GetFilesTree()
         {
-            var nodes = new List<FileNode>();
-            var parentNodes = new List<FileNode>();
+            var nodes = new List<TreeNode>();
+            var parentNodes = new List<TreeNode>();
             Embeddings.ForEach(embedding =>
             {
                 var names = embedding.Path.Split(new char[] { '/', '\\' });
@@ -91,7 +91,7 @@ namespace DevGPT.NewAPI
                     var node = nodes.SingleOrDefault(n => n.Name == names[0] && n.Parent == null);
                     if (node == null)
                     {
-                        node = new FileNode(names[0]);
+                        node = new TreeNode(names[0]);
                         nodes.Add(node);
                         parentNodes.Add(node);
                     }
@@ -100,18 +100,18 @@ namespace DevGPT.NewAPI
                         var newNode = nodes.SingleOrDefault(n => n.Name == names[0] && n.Parent == node);
                         if (newNode == null)
                         {
-                            newNode = new FileNode(names[0]) { Parent = node };
+                            newNode = new TreeNode(names[0]) { Parent = node };
                             node.Children.Add(newNode);
                             nodes.Add(newNode);
                             node = newNode;
                         }
                     }
-                    var document = new FileNode(embedding.Name) { Parent = node, Path = embedding.Path };
+                    var document = new TreeNode(embedding.Name) { Parent = node, Path = embedding.Path };
                     node.Children.Add(document);
                 }
                 else
                 {
-                    var document = new FileNode(embedding.Name) { Parent = null, Path = embedding.Path };
+                    var document = new TreeNode(embedding.Name) { Parent = null, Path = embedding.Path };
                     parentNodes.Add(document);
                 }
             });
@@ -169,7 +169,7 @@ namespace DevGPT.NewAPI
 
         protected async Task<bool> SplitAndAddDocument(string pathToDocument, string name, string path = "")
         {
-            var documents = DocumentSplitter.SplitDocument(pathToDocument);
+            var documents = DocumentSplitter.SplitFile(pathToDocument);
             await AddDocumentParts(name, path, documents);
 
             return true;
@@ -211,7 +211,7 @@ namespace DevGPT.NewAPI
         protected async Task<Embedding> FetchEmbeddingData(string name, string path, string fullPath)
         {
             DocumentSplitter.TokensPerPart = 8000;
-            var texts = DocumentSplitter.SplitDocument(fullPath);
+            var texts = DocumentSplitter.SplitFile(fullPath);
             DocumentSplitter.TokensPerPart = 100;
             var text = texts.First();
             var data = $"PATH: {path}\nDOCUMENT: {name}\n{text}"; // should this be a setting?

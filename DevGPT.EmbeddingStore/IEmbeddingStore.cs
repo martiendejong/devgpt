@@ -1,9 +1,8 @@
 ﻿namespace Store.OpnieuwOpnieuw
 {
-    public interface IStore
+    public interface IEmbeddingStore : IDictionary<string, string>
     {
         public void Store(string key, string value);
-        public void Remove(string key);
         public EmbeddingInfo[] Embeddings { get; }
     }
 }

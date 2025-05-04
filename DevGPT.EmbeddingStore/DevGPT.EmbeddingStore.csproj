@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DevGPT.Helpers\DevGPT.Helpers.csproj" />
+    <ProjectReference Include="..\DevGPT.LLMClient\DevGPT.LLMClient.csproj" />
+  </ItemGroup>
+
+</Project>

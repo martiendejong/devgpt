@@ -19,7 +19,7 @@ namespace DevGPT.NewAPI
             PathProvider = pathProvider;
         }
 
-        public async Task<string> GetRelevantDocumentsAsString(string query, List<Embedding> embeddings, List<IStore> otherStores)
+        public async Task<string> GetRelevantDocumentsAsString(string query, List<EmbeddingI> embeddings, List<IStore> otherStores)
         {
             List<string> selectedDocuments = await GetRelevantDocuments(query, embeddings, otherStores);
 
@@ -28,7 +28,7 @@ namespace DevGPT.NewAPI
             return string.Join("\n\n", selectedDocuments);
         }
 
-        public async Task<List<ChatMessage>> GetRelevantDocumentsAsChatMessages(string query, List<Embedding> embeddings, List<IStore> otherStores)
+        public async Task<List<ChatMessage>> GetRelevantDocumentsAsChatMessages(string query, List<EmbeddingI> embeddings, List<IStore> otherStores)
         {
             List<string> selectedDocuments = await GetRelevantDocuments(query, embeddings, otherStores);
             return selectedDocuments.Select(d => new AssistantChatMessage(d) as ChatMessage).ToList();
@@ -38,10 +38,10 @@ namespace DevGPT.NewAPI
         {
             public RelevantDocumentsProvider Provider;
             public double Similarity;
-            public Embedding Document;
+            public EmbeddingI Document;
         }
 
-        public async Task<List<string>> GetRelevantDocuments(string query, List<Embedding> embeddings, List<IStore> otherStores)
+        public async Task<List<string>> GetRelevantDocuments(string query, List<EmbeddingI> embeddings, List<IStore> otherStores)
         {
             int maxTokens = 20000;
             int maxInputTokens = 8000;
@@ -106,11 +106,11 @@ namespace DevGPT.NewAPI
             return selectedDocuments;
         }
 
-        public async Task<List<(double similarity, Embedding document)>> GetDocumentsWithSimilarity(string query, List<Embedding> embeddings)
+        public async Task<List<(double similarity, EmbeddingI document)>> GetDocumentsWithSimilarity(string query, List<EmbeddingI> embeddings)
         {
             var queryEmbeddingData = await EmbeddingGenerator.FetchEmbedding(query);
 
-            var similarities = new List<(double similarity, Embedding document)>();
+            var similarities = new List<(double similarity, EmbeddingI document)>();
 
             foreach (var document in embeddings)
             {

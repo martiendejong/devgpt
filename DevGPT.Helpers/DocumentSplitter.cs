@@ -4,11 +4,15 @@
     {
         public int TokensPerPart { get; set; } = 1000;
 
-        public List<string> SplitDocument(string absOrgPath, string split = "\n")
+        public List<string> SplitFile(string path, string split = "\n")
         {
-            var partNr = 0;
+            var content = File.ReadAllText(path);
+            return SplitDocument(content, split);
+        }
+
+        public List<string> SplitDocument(string content, string split = "\n")
+        {
             var tokenCounter = new TokenCounter();
-            var content = File.ReadAllText(absOrgPath);
             var remainingLines = content.Split(split).ToList();
 
             var result = new List<string>();
@@ -16,7 +20,8 @@
             {
                 var partLines = new List<string>();
                 bool partComplete = false;
-                var moveLineToPart = () => {
+                var moveLineToPart = () =>
+                {
                     partLines.Add(remainingLines[0]);
                     remainingLines.RemoveAt(0);
                     var partTokens = tokenCounter.CountTokens(string.Join(split, partLines));
@@ -29,8 +34,6 @@
                 }
 
                 result.Add(string.Join(split, partLines));
-
-                partNr++;
             }
 
             return result;

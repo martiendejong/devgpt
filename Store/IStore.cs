@@ -8,7 +8,7 @@ namespace DevGPT.NewAPI
         {
             get;
         }
-        List<Embedding> GetEmbeddings();
+        List<EmbeddingI> GetEmbeddings();
 
         void SaveEmbeddings();
         void LoadEmbeddings();

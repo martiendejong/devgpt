@@ -1,6 +1,6 @@
 ﻿namespace DevGPT.NewAPI
 {
-    public class EmbeddingsFile : IObjectListFile<Embedding>
+    public class EmbeddingsFile : IObjectListFile<EmbeddingI>
     {
         public bool Exists => File.Exists(Path);
 
@@ -11,7 +11,7 @@
             Path = path;
         }
 
-        public void Save(List<Embedding> embeddings)
+        public void Save(List<EmbeddingI> embeddings)
         {
             var lines = embeddings.Select(e => $"{EscapeCommaAndNewLine(e.Name)},{e.Path},{e.Checksum},{string.Join(",", e.Embeddings.Select(em => em.ToString().Replace(",", ".")))}");
             var text = string.Join("\n", lines);
@@ -28,7 +28,7 @@
             return name.Replace("&comma;", ",");
         }
 
-        public List<Embedding> Load()
+        public List<EmbeddingI> Load()
         {
             var lines = File.ReadAllLines(Path);
             var embeddings = lines.Select(line =>
@@ -40,7 +40,7 @@
                     var path = values[1];
                     var checksum = values[2];
                     var data = values.Skip(3).Select(e => double.Parse(e.Replace(".", ","))).ToList();
-                    var embedding = new Embedding(name, path, checksum, new Embedding(data));
+                    var embedding = new EmbeddingI(name, path, checksum, new Embedding(data));
                     return embedding;
                 }
                 catch (Exception e)

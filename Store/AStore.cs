@@ -5,9 +5,9 @@ namespace DevGPT.NewAPI
 {
     public abstract class AStore
     {        
-        protected List<Embedding> Embeddings { get; set; }
+        protected List<EmbeddingI> Embeddings { get; set; }
         protected DocumentStoreConfig Config { get; set; }
-        protected IObjectListFile<Embedding> EmbeddingsFile { get; set; }
+        protected IObjectListFile<EmbeddingI> EmbeddingsFile { get; set; }
         protected EmbeddingGenerator EmbeddingGenerator { get; set; }
         public RelevantDocumentsProvider RelevantDocumentsProvider { get; protected set; }
         protected PathProvider PathProvider { get; set; }
@@ -24,7 +24,7 @@ namespace DevGPT.NewAPI
             if (EmbeddingsFile.Exists)
                 LoadEmbeddings();
             else
-                Embeddings = new List<Embedding>();
+                Embeddings = new List<EmbeddingI>();
         }
 
         public void SaveEmbeddings()
@@ -37,7 +37,7 @@ namespace DevGPT.NewAPI
             Embeddings = EmbeddingsFile.Load();
         }
 
-        public List<Embedding> GetEmbeddings()
+        public List<EmbeddingI> GetEmbeddings()
         {
             return Embeddings;
         }
