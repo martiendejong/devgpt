@@ -8,12 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.12.0" />
-    <PackageReference Include="OpenAI" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DevGPT.Classes\DevGPT.Classes.csproj" />
-    <ProjectReference Include="..\DevGPT.Helpers\DevGPT.Helpers.csproj" />
+    <ProjectReference Include="..\DevGPT.LLMClient\DevGPT.LLMClient.csproj" />
   </ItemGroup>
 
 </Project>

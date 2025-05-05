@@ -3,9 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Store.OpnieuwOpnieuw.DocumentStore
 {
-    public abstract class BaseStore<T> : IDictionary<string, T>
+    public abstract class AbstractStore<T> : IDictionary<string, T>
     {
-        public abstract void Store(string key, T value);
+        public abstract Task Store(string key, T value);
         public abstract bool Remove(string key);
 
         public event EventHandler<StoreUpdateEventArgs<T>> BeforeUpdate;
@@ -13,14 +13,16 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
         public event EventHandler<StoreRemoveEventArgs> BeforeRemove;
         public event EventHandler<StoreRemoveEventArgs> AfterRemove;
 
-        protected void _BeforeUpdate(string key, T value) => BeforeUpdate?.Invoke(this, new StoreUpdateEventArgs<T>(key, value));
-        protected void _AfterUpdate(string key, T value) => AfterUpdate?.Invoke(this, new StoreUpdateEventArgs<T>(key, value));
-        protected void _BeforeRemove(string key) => BeforeRemove?.Invoke(this, new StoreRemoveEventArgs(key));
-        protected void _AfterRemove(string key) => AfterRemove?.Invoke(this, new StoreRemoveEventArgs(key));
+        protected void InvokeBeforeUpdate(string key, T value) => BeforeUpdate?.Invoke(this, new StoreUpdateEventArgs<T>(key, value));
+        protected void InvokeAfterUpdate(string key, T value) => AfterUpdate?.Invoke(this, new StoreUpdateEventArgs<T>(key, value));
+        protected void InvokeBeforeRemove(string key) => BeforeRemove?.Invoke(this, new StoreRemoveEventArgs(key));
+        protected void InvokeAfterRemove(string key) => AfterRemove?.Invoke(this, new StoreRemoveEventArgs(key));
 
-        public Dictionary<string, T> Data = new Dictionary<string, T>();
+        public Dictionary<string, T> Data = [];
 
-        public T this[string key] { get => Data[key]; set => Store(key, value); }
+        #region implementation of IDictionary
+
+        public T this[string key] { get => Data[key]; set => Store(key, value).RunSynchronously(); }
 
         public ICollection<string> Keys => Data.Keys;
 
@@ -30,9 +32,9 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
 
         public bool IsReadOnly => false;
 
-        public void Add(string key, T value) => Store(key, value);
+        public void Add(string key, T value) => Store(key, value).RunSynchronously();
 
-        public void Add(KeyValuePair<string, T> item) => Store(item.Key, item.Value);
+        public void Add(KeyValuePair<string, T> item) => Store(item.Key, item.Value).RunSynchronously();
 
         public void Clear() => Data.Clear();
 
@@ -49,5 +51,7 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
         public bool TryGetValue(string key, [MaybeNullWhen(false)] out T value) => Data.TryGetValue(key, out value);
 
         IEnumerator IEnumerable.GetEnumerator() => Data.GetEnumerator();
+
+        #endregion
     }
 }

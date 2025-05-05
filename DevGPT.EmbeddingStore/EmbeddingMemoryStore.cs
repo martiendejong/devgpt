@@ -7,35 +7,29 @@ using System.Linq;
 
 namespace Store.OpnieuwOpnieuw
 {
-    public class EmbeddingBaseStore : BaseStore<string>
+    public class EmbeddingMemoryStore : AbstractStore<string>
     {
         public EmbeddingInfo[] Embeddings => _embeddings.ToArray();
         public ILLMClient EmbeddingProvider { get; set; }
         public List<EmbeddingInfo> _embeddings = new();
 
-        // Events
-        public event EventHandler<StoreUpdateEventArgs<string>> BeforeUpdate;
-        public event EventHandler<StoreUpdateEventArgs<string>> AfterUpdate;
-        public event EventHandler<StoreRemoveEventArgs> BeforeRemove;
-        public event EventHandler<StoreRemoveEventArgs> AfterRemove;
-
-        public EmbeddingBaseStore(ILLMClient embeddingProvider)
+        public EmbeddingMemoryStore(ILLMClient embeddingProvider)
         {
             EmbeddingProvider = embeddingProvider;
         }
 
-        override public void Store(string key, string value)
+        override public async Task Store(string key, string value)
         {
-            BeforeUpdate?.Invoke(this, new StoreUpdateEventArgs<string>(key, value));
-            StoreEmbedding(key, value);
-            AfterUpdate?.Invoke(this, new StoreUpdateEventArgs<string>(key, value));
+            InvokeBeforeUpdate(key, value);
+            await StoreEmbedding(key, value);
+            InvokeAfterUpdate(key, value);
         }
 
         override public bool Remove(string key)
         {
-            BeforeRemove?.Invoke(this, new StoreRemoveEventArgs(key));
+            InvokeBeforeRemove(key);
             var result = RemoveEmbedding(key);
-            AfterRemove?.Invoke(this, new StoreRemoveEventArgs(key));
+            InvokeAfterRemove(key);
             return result;
         }
 

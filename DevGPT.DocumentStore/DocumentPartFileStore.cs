@@ -2,7 +2,7 @@
 
 namespace Store.OpnieuwOpnieuw.DocumentStore
 {
-    public class DocumentPartFileStore : DocumentPartBaseStore
+    public class DocumentPartFileStore : DocumentPartMemoryStore
     {
         public string PartsFilePath { get; set; }
         public DocumentPartFileStore(string partsFilePath) { PartsFilePath = partsFilePath;
@@ -14,12 +14,12 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
         private void LoadPartsFile()
         {
             var data = File.ReadAllText(PartsFilePath);
-            DocumentParts = JsonSerializer.Deserialize<Dictionary<string, string[]>>(data);
+            Data = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data);
         }
 
         public void StorePartsFile()
         {
-            var data = JsonSerializer.Serialize(DocumentParts);
+            var data = JsonSerializer.Serialize(Data);
             File.WriteAllText(PartsFilePath, data);
         }
 
@@ -28,7 +28,7 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
             StorePartsFile();
         }
 
-        private void DocumentPartFileStore_AfterUpdate(object? sender, StoreUpdateEventArgs<string[]> e)
+        private void DocumentPartFileStore_AfterUpdate(object? sender, StoreUpdateEventArgs<IEnumerable<string>> e)
         {
             StorePartsFile();
         }

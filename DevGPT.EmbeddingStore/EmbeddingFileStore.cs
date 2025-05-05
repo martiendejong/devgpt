@@ -7,7 +7,7 @@ using Store.OpnieuwOpnieuw.AIClient;
 
 namespace Store.OpnieuwOpnieuw
 {
-    public class EmbeddingFileStore : EmbeddingBaseStore
+    public class EmbeddingFileStore : EmbeddingMemoryStore
     {
         public string StorePath { get; set; }
         public string EmbeddingsFilePath { get; set; }
