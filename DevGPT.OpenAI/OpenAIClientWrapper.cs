@@ -1,4 +1,5 @@
-﻿using DevGPT.NewAPI;
+﻿using System.Text.Json;
+using DevGPT.NewAPI;
 using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Embeddings;
@@ -6,21 +7,38 @@ using OpenAI.Images;
 
 namespace Store.OpnieuwOpnieuw.AIClient
 {
-    public class OpenAIClientWrapper : ILLMClient
+    public partial class OpenAIClientWrapper : ILLMClient
+    {
+        public string GetFormatInstruction<ResponseType>() where ResponseType : ChatResponse<ResponseType>, new()
+            => $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {ChatResponse<ResponseType>.Signature} EXAMPLE: { JsonSerializer.Serialize(ChatResponse<ResponseType>.Example) }";
+
+        public List<DevGPTChatMessage> AddFormattingInstruction<ResponseType>(List<DevGPTChatMessage> messages) where ResponseType : ChatResponse<ResponseType>, new()
+        {
+            var formatInstruction = GetFormatInstruction<ResponseType>();
+            messages.Insert(messages.Count - 1, new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = formatInstruction });
+            return messages;
+        }
+
+        public PartialJsonParser Parser { get; set; } = new PartialJsonParser();
+
+        public async Task<ResponseType> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext toolsContext, List<ImageData> images) where ResponseType : ChatResponse<ResponseType>, new()
+            => Parser.Parse<ResponseType>(await GetResponse(AddFormattingInstruction<ResponseType>(messages), DevGPTChatResponseFormat.Json, toolsContext, images));
+
+        public async Task<ResponseType> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext toolsContext, List<ImageData> images) where ResponseType : ChatResponse<ResponseType>, new()
+            => Parser.Parse<ResponseType>(await GetResponseStream(AddFormattingInstruction<ResponseType>(messages), onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images));
+    }
+
+    public partial class OpenAIClientWrapper : ILLMClient
     {
         public OpenAIConfig Config { get; set; }
         private readonly EmbeddingClient EmbeddingClient;
         private readonly OpenAIClient API; // todo rename
         private OpenAIStreamHandler StreamHandler { get; set; }
 
-        // todo in config
-        public string Model { get; set; } = "gpt-4.1";//"gpt-4o";
-        public string ImageModel { get; set; } = "gpt-image-1";//"dall-e-3";
-
         public OpenAIClientWrapper(OpenAIConfig config)
         {
             Config = config;
-            EmbeddingClient = new EmbeddingClient("text-embedding-ada-002", config.ApiKey);
+            EmbeddingClient = new EmbeddingClient(config.EmbeddingModel, config.ApiKey);
             API = new OpenAIClient(config.ApiKey);
             StreamHandler = new OpenAIStreamHandler();
         }
@@ -55,25 +73,25 @@ namespace Store.OpnieuwOpnieuw.AIClient
 
         protected async Task<ChatCompletion> GetChatResult(List<ChatMessage> messages, ChatResponseFormat responseFormat, IToolsContext context, List<ImageData> images)
         {
-            var client = API.GetChatClient(Model);
-            var imageClient = API.GetImageClient(Model);
-            var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Model, client, imageClient, messages, images, responseFormat, true, true);
+            var client = API.GetChatClient(Config.Model);
+            var imageClient = API.GetImageClient(Config.Model);
+            var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, client, imageClient, messages, images, responseFormat, true, true);
             return await interaction.Run();
         }
 
         protected async Task<GeneratedImage> GetImageResult(string prompt, ChatResponseFormat responseFormat, IToolsContext context, List<ImageData> images)
         {
-            var client = API.GetChatClient(Model);
-            var imageClient = API.GetImageClient(ImageModel);
-            var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Model, client, imageClient, [prompt], images, responseFormat, true, true);
+            var client = API.GetChatClient(Config.Model);
+            var imageClient = API.GetImageClient(Config.ImageModel);
+            var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, client, imageClient, [prompt], images, responseFormat, true, true);
             return await interaction.RunImage(prompt);
         }
 
         private IAsyncEnumerable<StreamingChatCompletionUpdate> StreamChatResult(List<ChatMessage> messages, ChatResponseFormat responseFormat, IToolsContext context, List<ImageData> images)
         {
-            var client = API.GetChatClient(Model);
-            var imageClient = API.GetImageClient(Model);
-            var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Model, client, imageClient, messages, images, responseFormat, true, true);
+            var client = API.GetChatClient(Config.Model);
+            var imageClient = API.GetImageClient(Config.Model);
+            var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, client, imageClient, messages, images, responseFormat, true, true);
             return interaction.Stream();
         }
 

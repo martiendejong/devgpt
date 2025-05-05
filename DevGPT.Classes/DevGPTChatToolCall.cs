@@ -1,14 +1,14 @@
 ﻿
 public class DevGPTChatToolCall
 {
-    private string id;
-    private string functionName;
-    private BinaryData functionArguments;
+    public string Id { get; }
+    public string FunctionName { get; }
+    public BinaryData FunctionArguments { get; }
 
     public DevGPTChatToolCall(string id, string functionName, BinaryData functionArguments)
     {
-        this.id = id;
-        this.functionName = functionName;
-        this.functionArguments = functionArguments;
+        this.Id = id;
+        this.FunctionName = functionName;
+        this.FunctionArguments = functionArguments;
     }
 }

@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Store.OpnieuwOpnieuw
 {
-    public class EmbeddingMemoryStore : AbstractStore<string>
+    public class EmbeddingMemoryStore : AbstractStore<string>, IEmbeddingStore
     {
         public EmbeddingInfo[] Embeddings => _embeddings.ToArray();
         public ILLMClient EmbeddingProvider { get; set; }

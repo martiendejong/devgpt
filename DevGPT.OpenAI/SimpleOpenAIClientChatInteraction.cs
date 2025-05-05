@@ -48,7 +48,7 @@ public class SimpleOpenAIClientChatInteraction
         {
             foreach (var tool in ToolsContext.Tools)
             {
-                options.Tools.Add(tool.Definition.OpenAI());
+                options.Tools.Add(tool.OpenAI());
             }
         }
 

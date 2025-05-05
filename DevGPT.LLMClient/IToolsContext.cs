@@ -1,5 +1,5 @@
 ﻿public interface IToolsContext
 {
-    List<Tool> Tools { get; set; }
-    void Add(ToolInfo info);
+    List<DevGPTChatTool> Tools { get; set; }
+    void Add(DevGPTChatTool info);
 }

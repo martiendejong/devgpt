@@ -6,7 +6,7 @@ namespace Store.OpnieuwOpnieuw.AIClient
 {
     public static class DevGPTOpenAIExtensions
     {
-        public static DevGPTGeneratedImage DevGPT(this GeneratedImage image) => new DevGPTGeneratedImage(image.ImageBytes);
+        public static DevGPTGeneratedImage DevGPT(this GeneratedImage image) => new DevGPTGeneratedImage(image.ImageUri.OriginalString, image.ImageBytes);
 
         public static DevGPTChatToolCall DevGPT(this ChatToolCall chatTool)
         {
@@ -39,7 +39,7 @@ namespace Store.OpnieuwOpnieuw.AIClient
 
         public static ChatTool OpenAI(this DevGPTChatTool chatTool)
         {
-            return CreateDefinitionOpenAI(chatTool.Name, chatTool.Description, chatTool.Parameters);
+            return CreateDefinitionOpenAI(chatTool.FunctionName, chatTool.Description, chatTool.Parameters);
         }
 
 

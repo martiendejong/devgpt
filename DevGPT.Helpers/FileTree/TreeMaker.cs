@@ -7,9 +7,9 @@ using DevGPT.NewAPI;
 
 namespace Store.OpnieuwOpnieuw.Helpers.FileTree
 {
-    public class TreeMaker<T>
+    public static class TreeMaker
     {
-        public static List<TreeNode<T>> GetTree(Dictionary<string, T> files)
+        public static List<TreeNode<T>> GetTree<T>(this IDictionary<string, T> files)
         {
             var nodes = new List<TreeNode<T>>();
             var result = new List<TreeNode<T>>();

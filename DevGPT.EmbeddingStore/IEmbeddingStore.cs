@@ -2,7 +2,7 @@
 {
     public interface IEmbeddingStore : IDictionary<string, string>
     {
-        public void Store(string key, string value);
+        public Task Store(string key, string value);
         public EmbeddingInfo[] Embeddings { get; }
     }
 }

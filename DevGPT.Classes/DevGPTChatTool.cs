@@ -1,13 +1,16 @@
-﻿public class DevGPTChatTool
+﻿using Store.OpnieuwOpnieuw.AIClient;
+
+public class DevGPTChatTool
 {
-    public DevGPTChatTool(string name, string description, List<ChatToolParameter> parameters)
+    public DevGPTChatTool(string name, string description, List<ChatToolParameter> parameters, Func<List<DevGPTChatMessage>, DevGPTChatToolCall, Task<string>> execute)
     {
-        Name = name;
+        FunctionName = name;
         Description = description;
         Parameters = parameters;
+        Execute = execute;
     }
-
-    public string Name { get; }
-    public string Description { get; }
-    public List<ChatToolParameter> Parameters { get; }
+    public string FunctionName {  get; set; }
+    public string Description { get; set; }
+    public List<ChatToolParameter> Parameters { get; set; }
+    public Func<List<DevGPTChatMessage>, DevGPTChatToolCall, Task<string>> Execute { get; set; }
 }
