@@ -127,6 +127,9 @@ namespace DevGPT.NewAPI
             //toolsContext.Add(info);
 
             var response = await LLMClient.GetResponse(sendMessages, DevGPTChatResponseFormat.Text, toolsContext, images);
+
+            Console.WriteLine();
+            Console.WriteLine(response);
             //await ModifyDocuments(response);
 
             return response;

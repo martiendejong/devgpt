@@ -120,6 +120,8 @@ List<string> docFunctions = ["read", "write"];
 List<string> docAgents = [];
 var docWriter = await factory.CreateAgent("DocWriter", docPrompt, docStores, docFunctions, docAgents);
 
+factory.Messages = builder.History;
+
 
 
 
@@ -149,7 +151,8 @@ while (true)
 {
     Console.WriteLine("Geef een instructie");
     var input = Console.ReadLine();
-    await leadArchitect.Generator.UpdateStore(input, null, true, true, leadArchitect.Tools, null);
+    var response = await leadArchitect.Generator.UpdateStore(input, builder.History, true, true, leadArchitect.Tools, null);
+    builder.History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response });
 
     //await builder.Execute(input);
     //builder.History.ForEach(m => Console.WriteLine(m.Text));

@@ -25,6 +25,8 @@ public class AgentFactory {
         LogFilePath = logFilePath;
     }
 
+    public List<DevGPTChatMessage> Messages;
+
     public string OpenAiApiKey;
     public string LogFilePath;
 

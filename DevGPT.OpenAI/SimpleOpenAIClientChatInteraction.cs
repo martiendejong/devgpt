@@ -214,7 +214,8 @@ public class SimpleOpenAIClientChatInteraction
                 {
                     Console.WriteLine($"Calling {tool.FunctionName}");
                     string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT());
-                    Console.WriteLine($"Result: {result}");
+                    if(!(tool.FunctionName.Contains("read") || tool.FunctionName.Contains("list")))
+                        Console.WriteLine($"Result: {result}");
                     toolResults.Add(new ToolChatMessage(toolCall.Id, result));
                 }
             }
