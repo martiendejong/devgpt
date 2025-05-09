@@ -11,7 +11,9 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
 {
     public interface IDocumentStore
     {
+        public string Name { get; set; }
         public ITextEmbeddingStore EmbeddingStore { get; }
+        public ITextStore TextStore { get; set; }
         public string GetPath(string name);
         public Task<string> Get(string name);
         public Task<bool> Store(string name, string content, bool split = true);
@@ -20,5 +22,6 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
         public Task<List<TreeNode<string>>> Tree();
         public Task<List<string>> List();
         Task UpdateEmbeddings();
+        Task<List<string>> RelevantItems(string query);
     }
 }

@@ -211,7 +211,7 @@ public class CodeBuilder2
         var textStore = new TextFileStore(DocumentStoreFolderPath);
         var partStore = new DocumentPartFileStore(partsFilePath);
         
-        Store = new DocumentStore(embeddingStore, textStore, partStore);
+        Store = new DocumentStore(embeddingStore, textStore, partStore, llmClient);
 
 
         TempStoreFolderPath = tempStorePath;
@@ -228,7 +228,7 @@ public class CodeBuilder2
         var tempPartStore = new DocumentPartFileStore(tempStorePartsFilePath);
 
         //var tempStoreConfig = new DocumentStoreConfig(TempStoreFolderPath, TempStoreEmbeddingsFilePath, OpenAiApiKey);
-        TempStore = new DocumentStore(tempEmbeddingStore, tempTextStore, tempPartStore);
+        TempStore = new DocumentStore(tempEmbeddingStore, tempTextStore, tempPartStore, llmClient);
         
         ChatTools =
         [
@@ -637,6 +637,8 @@ public class CodeBuilder2
 
         return new Tuple<string, string>(response, path);
     }
+
+
 
 
 

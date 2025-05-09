@@ -1,64 +1,54 @@
 using System;
 using System.Threading.Tasks;
-using System.IO;
 using System.Collections.Generic;
 using Store;
-using Store.Helpers; // For PathProvider
+using Store.Model;
+using DevGPT.DocumentStore;
+using System.Linq;
 
-class Program
+namespace JavaAnalyze
 {
-    static async Task Main(string[] args)
+    class Program
     {
-        // Path to the Java project
-        string path = @"C:\projects\BRCWebservice\2025-02-05\Workspace_Gen3";
-
-        // Load OpenAI API settings via DevGPT config
-        var openAISettings = Store.OpenAISettings.Load();
-        string openAiApiKey = openAISettings.ApiKey;
-
-        // Set up DevGPT DocumentStore
-        var storeConfig = new Store.Model.DocumentStoreConfig(@"c:\stores\webservice", @"c:\stores\webservice\embeddings", openAiApiKey);
-        var store = new Store.DocumentStore(storeConfig);
-
-        // Use PathProvider from DevGPT.Helpers
-        var pathProvider = new PathProvider(path);
-
-        // Use shared logic to find Java files
-        string[] filters = new[] { "*.java" };
-        var foundFiles = new List<string>();
-        foreach (var filter in filters)
+        static async Task Main(string[] args)
         {
-            try
+            // Path to the Java project
+            string path = @"C:\projects\BRCWebservice\2025-02-05\Workspace_Gen3";
+
+            // Load OpenAI API settings via DevGPT config
+            var openAISettings = Store.OpenAISettings.Load();
+            string openAiApiKey = openAISettings.ApiKey;
+
+            // Set up DevGPT DocumentStore
+            var storeConfig = new DocumentStoreConfig(@"c:\stores\webservice", @"c:\stores\webservice\embeddings", openAiApiKey);
+            var store = new DocumentStore(storeConfig);
+
+            // Use PathProvider from Store.Helpers
+            var pathProvider = new Store.Helpers.PathProvider(path);
+
+            // Use standard logic to find Java files
+            string[] filters = new[] { "*.java" };
+            var foundFiles = new List<string>();
+            foreach (var filter in filters)
             {
-                foundFiles.AddRange(Directory.GetFiles(path, filter, SearchOption.AllDirectories));
+                // PathProvider only resolves base path and relative path; for search, use Directory. Use helpers if available later.
+                foundFiles.AddRange(System.IO.Directory.GetFiles(path, filter, System.IO.SearchOption.AllDirectories));
             }
-            catch (UnauthorizedAccessException ex)
+
+            Console.WriteLine($"Found {foundFiles.Count} Java files:");
+            foreach (var f in foundFiles)
+                Console.WriteLine(f);
+
+            // Index the Java files in the document store with embeddings (use shared logic)
+            foreach (var filePath in foundFiles)
             {
-                Console.WriteLine($"Access denied: {ex.Message}");
+                var relPath = System.IO.Path.GetRelativePath(path, filePath);
+                await store.AddDocument(filePath, relPath, relPath, split: true);
             }
-            catch (DirectoryNotFoundException ex)
-            {
-                Console.WriteLine($"Directory not found: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+
+            // Update and persist embeddings
+            await store.UpdateEmbeddings();
+            store.SaveEmbeddings();
         }
-
-        Console.WriteLine($"Found {foundFiles.Count} Java files:");
-        foreach (var f in foundFiles)
-            Console.WriteLine(f);
-
-        // Index the Java files in the document store with embeddings
-        foreach (var filePath in foundFiles)
-        {
-            var relPath = filePath.Substring(path.EndsWith("\\") ? path.Length : (path.Length + 1));
-            await store.AddDocument(filePath, relPath, relPath, split: true);
-        }
-
-        // Update and persist embeddings
-        await store.UpdateEmbeddings();
-        store.SaveEmbeddings();
     }
 }

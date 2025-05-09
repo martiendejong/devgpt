@@ -174,15 +174,7 @@ namespace DevGPT.NewAPI
             {
                 var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Concat(chatMessages).Select(m => m.Role + ": " + m.Text));
 
-                relevancyQuery = EmbeddingMatcher.CutOffQuery(relevancyQuery);
-                var queryEmbedding = await LLMClient.GenerateEmbedding(relevancyQuery);
-
-                var matches = EmbeddingMatcher.GetEmbeddingsWithSimilarity(queryEmbedding, Store.EmbeddingStore.Embeddings);
-
-                // @todo
-                // get text using file store
-                // calculate used tokens and subtract
-                var docs = EmbeddingMatcher.TakeTop(matches.Select(m => (m.similarity, m.document, true)).ToList(), (key) => "", 0);
+                var docs = await Store.RelevantItems(relevancyQuery);
 
                 var msgs = docs.Select(d => new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = d });
 

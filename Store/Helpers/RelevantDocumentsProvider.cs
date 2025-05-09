@@ -1,127 +1,48 @@
-﻿using OpenAI.Chat;
-using System.IO;
-using static System.Net.Mime.MediaTypeNames;
+using System.Collections.Generic;
+using System.Linq;
+using Store.Model;
+using DevGPT.Helpers.Embedding;
 
-namespace DevGPT.NewAPI
+namespace Store.Helpers
 {
     public class RelevantDocumentsProvider
     {
-        protected EmbeddingGenerator EmbeddingGenerator { get; set; }
-        
-        protected TokenCounter TokenCounter { get; set; }
-
-        protected PathProvider PathProvider { get; set; }
-
-        public RelevantDocumentsProvider(EmbeddingGenerator embeddingGenerator, PathProvider pathProvider)
+        private readonly IEnumerable<EmbeddingsFile> _embeddingFiles;
+        public RelevantDocumentsProvider(IEnumerable<EmbeddingsFile> embeddingFiles)
         {
-            EmbeddingGenerator = embeddingGenerator;
-            TokenCounter = new TokenCounter();
-            PathProvider = pathProvider;
+            _embeddingFiles = embeddingFiles;
         }
 
-        public async Task<string> GetRelevantDocumentsAsString(string query, List<EmbeddingI> embeddings, List<IStore> otherStores)
+        public IEnumerable<EmbeddingsFile> GetRelevant(string query, int maxCount = 5)
         {
-            List<string> selectedDocuments = await GetRelevantDocuments(query, embeddings, otherStores);
-
-            // Return document names as a comma-separated string
-            //return string.Join(", ", selectedDocuments.Select(d => d.Name));
-            return string.Join("\n\n", selectedDocuments);
+            var queryEmbeddings = EmbeddingGenerator.GenerateEmbeddings(query);
+            // Very simple cosine similarity ranking for demonstration
+            return _embeddingFiles.Select(f => new {
+                File = f,
+                Score = ScoreFile(f, queryEmbeddings)
+            })
+            .OrderByDescending(x => x.Score)
+            .Take(maxCount)
+            .Select(x => x.File);
         }
-
-        public async Task<List<ChatMessage>> GetRelevantDocumentsAsChatMessages(string query, List<EmbeddingI> embeddings, List<IStore> otherStores)
+        private static float ScoreFile(EmbeddingsFile file, List<Embedding> queryEmbeddings)
         {
-            List<string> selectedDocuments = await GetRelevantDocuments(query, embeddings, otherStores);
-            return selectedDocuments.Select(d => new AssistantChatMessage(d) as ChatMessage).ToList();
+            if (file.Embeddings == null || queryEmbeddings == null || file.Embeddings.Count == 0) return 0f;
+            // Compare first vector for demo
+            var v1 = file.Embeddings[0].Values;
+            var v2 = queryEmbeddings[0].Values;
+            return CosineSimilarity(v1, v2);
         }
-
-        public class MultiStoreEmbeddings
+        private static float CosineSimilarity(float[] a, float[] b)
         {
-            public RelevantDocumentsProvider Provider;
-            public double Similarity;
-            public EmbeddingI Document;
-        }
-
-        public async Task<List<string>> GetRelevantDocuments(string query, List<EmbeddingI> embeddings, List<IStore> otherStores)
-        {
-            int maxTokens = 20000;
-            int maxInputTokens = 8000;
-
-            // if query is too many tokens we keep cutting at the front because with chat messages the end is what matters
-            var tokens = TokenCounter.CountTokens(query);
-            while (tokens > maxInputTokens) {
-                double divider = (double)tokens / (double)maxInputTokens;
-                var x = query.Length / divider;
-                var y = (int)x;
-                int newLength = (int)x;
-                query = query.Substring(query.Length - newLength);
-                tokens = TokenCounter.CountTokens(query);
-            }
-
-            var documents = await GetDocumentsWithSimilarity(query, embeddings);
-            var total = documents.Select(d => new MultiStoreEmbeddings { Provider = this, Similarity = d.Item1, Document = d.Item2 }).ToList();
-
-            foreach (var o in otherStores) {
-                var odocuments = await o.RelevantDocumentsProvider.GetDocumentsWithSimilarity(query, o.GetEmbeddings());
-                total.AddRange(odocuments.Select(d => new MultiStoreEmbeddings { Provider = o.RelevantDocumentsProvider, Similarity = d.Item1, Document = d.Item2 }).ToList());
-            }
-            total = total.OrderByDescending(t => t.Similarity).ToList();
-
-            // List to store selected documents
-            var selectedDocuments = new List<string>();
-            int currentTokenCount = 0;
-
-            foreach (var document in total)
+            if (a.Length != b.Length) return 0;
+            float dot = 0, magA = 0, magB = 0;
+            for (int i = 0; i < a.Length; i++)
             {
-                var path = document.Provider.PathProvider.GetPath(document.Document.Path);
-                var text = File.ReadAllText(path);
-
-                // Count tokens for the current document
-                int documentTokenCount = TokenCounter.CountTokens(text);
-
-                // Check if adding this document would exceed max tokens
-                if (currentTokenCount + documentTokenCount <= maxTokens)
-                {
-                    if(document.Provider == this)
-                    {
-                        var documentView = $"File name: {document.Document.Name}\nFile path: {document.Document.Path}\nFile content:\n{text}";
-                        selectedDocuments.Add(documentView);
-                    }
-                    else
-                    {
-                        var documentView = $"{document.Document.Name}:\n{text}";
-                        selectedDocuments.Add(documentView);
-                    }
-                    currentTokenCount += documentTokenCount;
-                }
-                else
-                {
-                    // Stop if adding the document would exceed max tokens
-                    break;
-                }
+                dot += a[i] * b[i]; magA += a[i] * a[i]; magB += b[i] * b[i];
             }
-
-            // Log token count and selected documents for debugging
-            //Console.WriteLine($"Total Documents Selected: {selectedDocuments.Count}");
-            //Console.WriteLine($"Total Token Count: {currentTokenCount}");
-            return selectedDocuments;
+            if (magA == 0 || magB == 0) return 0;
+            return dot / (float)(System.Math.Sqrt(magA) * System.Math.Sqrt(magB));
         }
-
-        public async Task<List<(double similarity, EmbeddingI document)>> GetDocumentsWithSimilarity(string query, List<EmbeddingI> embeddings)
-        {
-            var queryEmbeddingData = await EmbeddingGenerator.FetchEmbedding(query);
-
-            var similarities = new List<(double similarity, EmbeddingI document)>();
-
-            foreach (var document in embeddings)
-            {
-                var similarity = queryEmbeddingData.CosineSimilarity(document.Embeddings);
-
-                similarities.Add((similarity, document));
-            }
-
-            similarities.Sort((x, y) => y.similarity.CompareTo(x.similarity));
-            return similarities;
-        }
-
     }
 }

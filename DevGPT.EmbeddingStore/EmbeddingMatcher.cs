@@ -1,6 +1,7 @@
 ﻿using OpenAI.Chat;
 using Store.OpnieuwOpnieuw;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace DevGPT.NewAPI
@@ -30,7 +31,7 @@ namespace DevGPT.NewAPI
             return query;
         }
 
-        public List<string> TakeTop(List<(double similarity, EmbeddingInfo document, bool addPath)> total, Func<string, string> getText, int maxTokens = 0)
+        public List<string> TakeTop(List<(double similarity, EmbeddingInfo document, string storeName)> total, Func<string, Task<string>> getText, int maxTokens = 0)
         {
             maxTokens = maxTokens == 0 ? MaxQueryTokens : maxTokens;
 
@@ -41,6 +42,7 @@ namespace DevGPT.NewAPI
             {
                 var text = getText(document.document.Key);
                 var documentView = $"File path: {document.document.Key}\nFile content:\n{text}";
+                if (document.storeName != null) documentView = $"Store: {document.storeName}\n{documentView}";
 
                 // Count tokens for the current document
                 int documentTokenCount = TokenCounter.CountTokens(documentView);

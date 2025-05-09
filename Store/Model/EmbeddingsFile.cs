@@ -1,54 +1,20 @@
-﻿namespace DevGPT.NewAPI
+using System.Collections.Generic;
+using System;
+
+namespace Store.Model
 {
-    public class EmbeddingsFile : IObjectListFile<EmbeddingI>
+    public class EmbeddingsFile
     {
-        public bool Exists => File.Exists(Path);
+        public string DocumentId { get; set; }
+        public List<Embedding> Embeddings { get; set; } = new List<Embedding>();
+        public DateTime LastUpdated { get; set; }
+    }
 
-        public string Path { get; set; }
-
-        public EmbeddingsFile(string path)
-        {
-            Path = path;
-        }
-
-        public void Save(List<EmbeddingI> embeddings)
-        {
-            var lines = embeddings.Select(e => $"{EscapeCommaAndNewLine(e.Name)},{e.Path},{e.Checksum},{string.Join(",", e.Embeddings.Select(em => em.ToString().Replace(",", ".")))}");
-            var text = string.Join("\n", lines);
-            File.WriteAllText(Path, text);
-        }
-
-        private static string EscapeCommaAndNewLine(string name)
-        {
-            return name.Replace("\n", "").Replace(",", "&comma;");
-        }
-
-        private static string UnescapeCommaAndNewLine(string name)
-        {
-            return name.Replace("&comma;", ",");
-        }
-
-        public List<EmbeddingI> Load()
-        {
-            var lines = File.ReadAllLines(Path);
-            var embeddings = lines.Select(line =>
-            {
-                var values = line.Split(",");
-                try
-                {
-                    var name = UnescapeCommaAndNewLine(values[0]);
-                    var path = values[1];
-                    var checksum = values[2];
-                    var data = values.Skip(3).Select(e => double.Parse(e.Replace(".", ","))).ToList();
-                    var embedding = new EmbeddingI(name, path, checksum, new Embedding(data));
-                    return embedding;
-                }
-                catch (Exception e)
-                {
-                    return null;
-                }
-            }).Where(e => e != null).ToList();
-            return embeddings;
-        }
+    // This is expected by consumer code using EmbeddingI
+    public class Embedding : Store.EmbeddingI
+    {
+        public string Type { get; set; }
+        public float[] Values { get; set; }
+        public string Source { get; set; } // E.g., sentence or word
     }
 }

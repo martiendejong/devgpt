@@ -7,13 +7,17 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
 {
     public class DocumentStore : IDocumentStore
     {
+        public string Name { get; set; } = Guid.NewGuid().ToString();
+
         public EmbeddingMatcher EmbeddingMatcher = new EmbeddingMatcher();
         public ITextEmbeddingStore EmbeddingStore { get; set; }
         public IDocumentPartStore PartStore { get; set; }
         public DocumentSplitter DocumentSplitter = new DocumentSplitter();
         public ITextStore TextStore { get; set; }
-        public DocumentStore(ITextEmbeddingStore embeddingStore, ITextStore textStore, IDocumentPartStore partStore) 
+        public ILLMClient LLMClient { get; set; }
+        public DocumentStore(ITextEmbeddingStore embeddingStore, ITextStore textStore, IDocumentPartStore partStore, ILLMClient llmClient)
         {
+            LLMClient = llmClient;
             EmbeddingStore = embeddingStore;
             TextStore = textStore;
             PartStore = partStore;
@@ -28,7 +32,7 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
         public async Task<bool> Embed(string name)
         {
             List<string> partKeys = [name];
-            var content = File.ReadAllText(GetPath(name));
+            var content = await TextStore.Get(name);
             var embed = EmbeddingMatcher.CutOffQuery(content);
             return await EmbeddingStore.StoreEmbedding(name, embed);
         }
@@ -79,6 +83,14 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
 
         public async Task<List<TreeNode<string>>> Tree() => TreeMaker.GetTree(EmbeddingStore.Embeddings.Select(e => e.Key).ToList());
         public async Task<List<string>> List() => EmbeddingStore.Embeddings.Select(e => e.Key).ToList();
+        public async Task<List<string>> RelevantItems(string query)
+        {
+            query = EmbeddingMatcher.CutOffQuery(query);
+            var embed = await LLMClient.GenerateEmbedding(EmbeddingMatcher.CutOffQuery(query));
+            var list = EmbeddingMatcher.GetEmbeddingsWithSimilarity(embed, EmbeddingStore.Embeddings);
+            var items = EmbeddingMatcher.TakeTop(list.Select(item => (item.similarity, item.document, Name)).ToList(), TextStore.Get);
+            return items;
+        }
 
         public string GetPath(string name) => TextStore.GetPath(name);
 

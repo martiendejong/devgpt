@@ -22,6 +22,7 @@
     <ProjectReference Include="..\DevGPT.LLMClientTools\DevGPT.LLMClientTools.csproj" />
     <ProjectReference Include="..\DevGPT.LLMClient\DevGPT.LLMClient.csproj" />
     <ProjectReference Include="..\DevGPT.OpenAI\DevGPT.OpenAI.csproj" />
+    <ProjectReference Include="..\Store\Store.csproj" />
   </ItemGroup>
 
 </Project>
