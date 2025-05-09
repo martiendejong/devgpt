@@ -38,7 +38,8 @@ public class AgentFactory {
 
     public async Task<string> CallAgent(string name, string query)
     {
-        return await Agents[name].Generator.UpdateStore(query);
+        var agent = Agents[name];
+        return await agent.Generator.UpdateStore(query, null, true, true, agent.Tools, null);
     }
 
     public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(DocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents)
@@ -82,9 +83,9 @@ public class AgentFactory {
     {
         var writeFile = new DevGPTChatTool($"{store.Name}_write", $"Store a file in store {store.Name}", [keyParameter, contentParameter], async (messages, toolCall) =>
         {
-            if (keyParameter.TryGetValue(toolCall, out JsonElement key))
-                if (contentParameter.TryGetValue(toolCall, out JsonElement content))
-                    return await store.Store(key.ToString(), content.ToString(), false) ? "success" : "content provided was the same as the file";
+            if (keyParameter.TryGetValue(toolCall, out string key))
+                if (contentParameter.TryGetValue(toolCall, out string content))
+                    return await store.Store(key, content, false) ? "success" : "content provided was the same as the file";
                 else
                     return "No content given";
             return "No key given";
@@ -92,8 +93,8 @@ public class AgentFactory {
         tools.Add(writeFile);
         var deleteFile = new DevGPTChatTool($"{store.Name}_delete", $"Removes a file from store {store.Name}", [keyParameter], async (messages, toolCall) =>
         {
-            if (keyParameter.TryGetValue(toolCall, out JsonElement key))
-                return await store.Remove(key.ToString()) ? "success" : "the file was already deleted"; ;
+            if (keyParameter.TryGetValue(toolCall, out string key))
+                return await store.Remove(key) ? "success" : "the file was already deleted"; ;
             return "No key given";
         });
         tools.Add(deleteFile);
@@ -105,10 +106,9 @@ public class AgentFactory {
         {
             var git = new DevGPTChatTool($"git", $"Calls git and returns the output.", [argumentsParameter], async (messages, toolCall) =>
             {
-                using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
-                if (argumentsJson.RootElement.TryGetProperty("arguments", out JsonElement args))
+                if (argumentsParameter.TryGetValue(toolCall, out string args))
                 {
-                    var output = GitOutput.GetGitOutput(store.TextStore.RootFolder, args.ToString());
+                    var output = GitOutput.GetGitOutput(store.TextStore.RootFolder, args);
                     return output.Item1 + "\n" + output.Item2;
                 }
                 return "arguments not provided";
@@ -128,15 +128,15 @@ public class AgentFactory {
         tools.Add(getFiles);
         var getRelevancy = new DevGPTChatTool($"{store.Name}_relevancy", $"Retrieve a list of relevant files in store {store.Name}", [relevancyParameter], async (messages, toolCall) =>
         {
-            if (relevancyParameter.TryGetValue(toolCall, out JsonElement key))
-                return string.Join("\n", await store.RelevantItems(key.ToString()));
+            if (relevancyParameter.TryGetValue(toolCall, out string key))
+                return string.Join("\n", await store.RelevantItems(key));
             return "No key given";
         });
         tools.Add(getRelevancy);
         var getFile = new DevGPTChatTool($"{store.Name}_read", $"Retrieve a file from store {store.Name}", [keyParameter], async (messages, toolCall) =>
         {
-            if (keyParameter.TryGetValue(toolCall, out JsonElement key))
-                return await store.Get(key.ToString());
+            if (keyParameter.TryGetValue(toolCall, out string key))
+                return await store.Get(key);
             return "No key given";
         });
         tools.Add(getFile);
@@ -148,8 +148,8 @@ public class AgentFactory {
         {
             var getRelevancy = new DevGPTChatTool($"{agent}", $"Calls {agent} to execute a taks and return a message", [instructionParameter], async (messages, toolCall) =>
             {
-                if (instructionParameter.TryGetValue(toolCall, out JsonElement key))
-                    return await CallAgent(agent, key.ToString());
+                if (instructionParameter.TryGetValue(toolCall, out string key))
+                    return await CallAgent(agent, key);
                 return "No key given";
             });
         }

@@ -7,9 +7,15 @@ public class ChatToolParameter
     public string Type { get; set; }
     public bool Required { get; set; }
     
-    public bool TryGetValue(DevGPTChatToolCall call, out JsonElement element)
+    public bool TryGetValue(DevGPTChatToolCall call, out string value)
     {
         using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
-        return argumentsJson.RootElement.TryGetProperty("key", out element);
+        if(argumentsJson.RootElement.TryGetProperty(Name, out JsonElement element))
+        {
+            value = element.ToString();
+            return true;
+        }
+        value = null;
+        return false;
     }
 }

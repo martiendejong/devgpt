@@ -103,28 +103,28 @@ namespace DevGPT.NewAPI
         {
             var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
 
-            var info = new DevGPTChatTool("writefile", "Writes content to a file and returns success or an error. Use this to modify files.", new List<ChatToolParameter>() {
-                    new ChatToolParameter { Name = "file", Description = "The relative path to the file being written", Type = "string" },
-                    new ChatToolParameter { Name = "content", Description = "The literal content that will be written to the file", Type = "string" }
-                },
-                async (messages, call) => {
-                    using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
-                    var hasFile = argumentsJson.RootElement.TryGetProperty("file", out JsonElement file);
-                    if (!hasFile) return "file parameter not provided";
-                    var hasContent = argumentsJson.RootElement.TryGetProperty("content", out JsonElement content);
-                    if (!hasContent) return "content parameter not provided";
-                    try
-                    {
-                        await Store.Store(file.ToString(), content.ToString(), false);
-                        return "success";
-                    }
-                    catch (Exception ex)
-                    {
-                        return ex.Message;
-                    }
-                }
-            );
-            toolsContext.Add(info);
+            //var info = new DevGPTChatTool("writefile", "Writes content to a file and returns success or an error. Use this to modify files.", new List<ChatToolParameter>() {
+            //        new ChatToolParameter { Name = "file", Description = "The relative path to the file being written", Type = "string" },
+            //        new ChatToolParameter { Name = "content", Description = "The literal content that will be written to the file", Type = "string" }
+            //    },
+            //    async (messages, call) => {
+            //        using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
+            //        var hasFile = argumentsJson.RootElement.TryGetProperty("file", out JsonElement file);
+            //        if (!hasFile) return "file parameter not provided";
+            //        var hasContent = argumentsJson.RootElement.TryGetProperty("content", out JsonElement content);
+            //        if (!hasContent) return "content parameter not provided";
+            //        try
+            //        {
+            //            await Store.Store(file.ToString(), content.ToString(), false);
+            //            return "success";
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            return ex.Message;
+            //        }
+            //    }
+            //);
+            //toolsContext.Add(info);
 
             var response = await LLMClient.GetResponse(sendMessages, DevGPTChatResponseFormat.Text, toolsContext, images);
             //await ModifyDocuments(response);

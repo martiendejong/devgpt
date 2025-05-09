@@ -212,7 +212,9 @@ public class SimpleOpenAIClientChatInteraction
             {
                 if (toolCall.FunctionName == tool.FunctionName)
                 {
+                    Console.WriteLine($"Calling {tool.FunctionName}");
                     string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT());
+                    Console.WriteLine($"Result: {result}");
                     toolResults.Add(new ToolChatMessage(toolCall.Id, result));
                 }
             }

@@ -149,7 +149,7 @@ while (true)
 {
     Console.WriteLine("Geef een instructie");
     var input = Console.ReadLine();
-    await leadArchitect.Generator.UpdateStore(input);
+    await leadArchitect.Generator.UpdateStore(input, null, true, true, leadArchitect.Tools, null);
 
     //await builder.Execute(input);
     //builder.History.ForEach(m => Console.WriteLine(m.Text));
