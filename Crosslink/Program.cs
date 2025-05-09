@@ -130,7 +130,7 @@ Profiel: Natuur & Techniek
         Console.WriteLine(data);
         Console.WriteLine();
 
-        // Find relevant vacancies using library call
+        // Find relevant vacancies using shared library call
         var matches = new List<Tuple<string, string>>();
         var relevant = await bedrijven.GetRelevantDocuments(data, new List<IStore>());
         foreach (var item1 in relevant)
