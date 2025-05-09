@@ -1,48 +1,28 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 using DevGPT.NewAPI;
-using MathNet.Numerics.Optimization;
 using OpenAI.Chat;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 
-var openAISettings = OpenAISettings.Load();
-string apikey = openAISettings.ApiKey;
+class Program
+{
+    static async Task Main(string[] args)
+    {
+        // Load API settings
+        var openAISettings = OpenAIConfig.Load();
+        string apikey = openAISettings.ApiKey;
 
-var werkzoekendenconfig = new DocumentStoreConfig(@"c:\stores\crosslink\werkzoekenden", @"c:\stores\crosslink\werkzoekenden.embed", apikey);
-var werkzoekenden = new DocumentStore(werkzoekendenconfig);
+        // Configure document stores using shared library
+        var werkzoekendenconfig = new DocumentStoreConfig(@"c:\stores\crosslink\werkzoekenden", @"c:\stores\crosslink\werkzoekenden.embed", apikey);
+        var werkzoekenden = new DocumentStore(werkzoekendenconfig);
 
-var bedrijvenconfig = new DocumentStoreConfig(@"c:\stores\crosslink", @"c:\stores\crosslink\bedrijven", apikey);
-var bedrijven = new DocumentStore(bedrijvenconfig);
+        var bedrijvenconfig = new DocumentStoreConfig(@"c:\stores\crosslink\bedrijven", @"c:\stores\crosslink\bedrijven.embed", apikey);
+        var bedrijven = new DocumentStore(bedrijvenconfig);
 
-
-
-
-//var baseMessages = new List<ChatMessage>() { new ChatMessage(ChatMessageRole.System, "creeer een vacature voor een denkbeeldige baan bij een bedrijf in Nederland. De vacature bestaat uit verschillende onderdelen zoals functieomschrijving, opleidingsniveau, werkomgeving en bedrijfscultuur en salaris en arbeidsvoorwaarden. Maak het zoveel mogelijk zoals een Vacature er gemiddeld uit ziet. Voeg aan het eind een gesprek toe tussen de interviewer in het bedrijf en de externe recruiter.") };
-//var generator = new DocumentGenerator(bedrijven, baseMessages, apikey, @"c:\stores\crosslink\bedrijven.log");
-
-//for (var i = 0; i < 100; ++i)
-//{
-//    var msg = await generator.UpdateStore("");
-//    Console.WriteLine(msg);
-//}
-//Console.ReadLine();
-
-
-
-
-//var baseMessages = new List<ChatMessage>() { new ChatMessage(ChatMessageRole.System, "creeer een CV van een denkbeeldig persoon in Nederland. Het CV bestaat uit verschillende onderdelen zoals NAW, personalia, opleiding, werkgeschiedenis en hobbies. Maak het zoveel mogelijk zoals een CV er gemiddeld uit ziet. Voeg aan het eind van het CV een voorbeeldgesprek toe tussen de werkzoekende en een recruiter. Zorg dat de werkzoekende een eigen persoonlijkheid heeft.") };
-//var generator2 = new DocumentGenerator(werkzoekenden, baseMessages, apikey, @"c:\stores\crosslink\werkzoekenden.log");
-
-//for (var i = 0; i < 100; ++i)
-//{
-//    var msg = await generator2.UpdateStore("");
-//    Console.WriteLine(msg);
-//}
-//Console.ReadLine();
-
-
-
-
-
-var data = @"**Curriculum Vitae**  
+        // Example candidate CV data (would normally come from a document in werkzoekenden)
+        var data = @"**Curriculum Vitae**  
 
 **Persoonlijke gegevens**  
 Naam: Mark van den Berg  
@@ -146,46 +126,43 @@ Profiel: Natuur & Techniek
 
 **Referenties op aanvraag beschikbaar.**";
 
-Console.WriteLine("Vacatures vinden op basis van het volgende CV:");
-Console.WriteLine(data);
-Console.WriteLine();
+        Console.WriteLine("Vacatures vinden op basis van het volgende CV:");
+        Console.WriteLine(data);
+        Console.WriteLine();
 
+        // Find relevant vacancies using library call
+        var matches = new List<Tuple<string, string>>();
+        var relevant = await bedrijven.GetRelevantDocuments(data, new List<IStore>());
+        foreach (var item1 in relevant)
+        {
+            matches.Add(new Tuple<string, string>(data, item1));
+        }
 
-var matches = new List<Tuple<string, string>>();
-var relevant = await bedrijven.GetRelevantDocuments(data, new List<IStore>());
-foreach (var item1 in relevant)
-{
-//    Console.WriteLine(item1);
-    matches.Add(new Tuple<string, string>(data, item1));
-}
+        var api = new OpenAI.OpenAIClient(apikey);
+        var client = new SimpleOpenAIClient(api, apikey, (List<ChatMessage> messages, string responseContent) => { });
+        var i = 0;
+        foreach (var match in matches)
+        {
+            ++i;
+            Console.WriteLine("BEGIN MATCH");
+            Console.WriteLine("Er is een match gevonden met de volgende vacature:");
+            Console.WriteLine(match.Item2);
+            Console.WriteLine();
 
-var api = new OpenAI.OpenAIClient(apikey);
-var client = new SimpleOpenAIClient(api, apikey, (List<ChatMessage> messages, string responseContent) => { });
-var i = 0;
-foreach(var match in matches)
-{
-    ++i;
-    Console.WriteLine("BEGIN MATCH");
-    Console.WriteLine("Er is een match gevonden met de volgende vacature:");
-    Console.WriteLine(match.Item2);
-    Console.WriteLine();
+            var messages = new List<ChatMessage>();
+            messages.Add(new AssistantChatMessage("De CV van de kandiaat: " + match.Item1));
+            messages.Add(new AssistantChatMessage("De vacature: " + match.Item2));
+            messages.Add(new AssistantChatMessage("Genereer een sollicitatiegesprek tussen de kandidaat en de interviewer op basis van het cv van de kandidaat, de vacature, en de voorbeeldgesprekken met de recruiter. In dit gesprek worden inhoudelijke vragen gesteld over kennis die nodig is voor het uitvoeren van de functie. De sollicitant vraagt op diens beurt of de opgedane kennis bij deze vacature van belang zijn. Gebruik de informatie die is bijgevoegd in het gesprek."));
+            var response = await client.GetResponse(messages, ChatResponseFormat.CreateTextFormat(), null, new List<ImageData>());
 
-    
+            messages = new List<ChatMessage>();
+            messages.Add(new AssistantChatMessage("De CV van de kandiaat: " + match.Item1));
+            messages.Add(new AssistantChatMessage("De vacature: " + match.Item2));
+            messages.Add(new AssistantChatMessage("Het gesimuleerde gesprek: " + response));
+            messages.Add(new AssistantChatMessage("Geef een voorlopige analyse conclusie beoordeling van de natch en het gesimuleerde gesprek. Geef de match een score tussen 0 en 100 waar 100 een volledige match is en 0 totaal geen match. Beschrijf de match in 500 woorden en geef aan op welke punten er een sterke match is en welke punten juist aangeven dat er misschien geen match is. Geef aan het eind in één zin aan of je deze sollicitant wel of niet in dienst zou nemen en waarom. Geef ook in één zin aan of je deze baan zou aannemen en waarom."));
+            var rating = await client.GetResponse(messages, ChatResponseFormat.CreateTextFormat(), null, new List<ImageData>());
 
-    var messages = new List<ChatMessage>();
-    messages.Add(new AssistantChatMessage("De CV van de kandiaat: " + match.Item1));
-    messages.Add(new AssistantChatMessage("De vacature: " + match.Item2));
-    messages.Add(new AssistantChatMessage("Genereer een sollicitatiegesprek tussen de kandidaat en de interviewer op basis van het cv van de kandidaat, de vacature, en de voorbeeldgesprekken met de recruiter. In dit gesprek worden inhoudelijke vragen gesteld over kennis die nodig is voor het uitvoeren van de functie. De sollicitant vraagt op diens beurt of de opgedane kennis bij deze vacature van belang zijn. Gebruik de informatie die is bijgevoegd in het gesprek."));
-    var response = await client.GetResponse(messages, ChatResponseFormat.CreateTextFormat(), null, new List<ImageData>());
-
-    messages = new List<ChatMessage>();
-    messages.Add(new AssistantChatMessage("De CV van de kandiaat: " + match.Item1));
-    messages.Add(new AssistantChatMessage("De vacature: " + match.Item2));
-    messages.Add(new AssistantChatMessage("Het gesimuleerde gesprek: " + response));
-    messages.Add(new AssistantChatMessage("Geef een voorlopige analyse conclusie beoordeling van de natch en het gesimuleerde gesprek. Geef de match een score tussen 0 en 100 waar 100 een volledige match is en 0 totaal geen match. Beschrijf de match in 500 woorden en geef aan op welke punten er een sterke match is en welke punten juist aangeven dat er misschien geen match is. Geef aan het eind in één zin aan of je deze sollicitant wel of niet in dienst zou nemen en waarom. Geef ook in één zin aan of je deze baan zou aannemen en waarom."));
-    var rating = await client.GetResponse(messages, ChatResponseFormat.CreateTextFormat(), null, new List<ImageData>());
-
-    var finalText = $@"Er is een match gevonden met een CV en een vacature.
+            var finalText = $@"Er is een match gevonden met een CV en een vacature.
 
 De CV:
 {match.Item1}
@@ -199,51 +176,14 @@ Op basis van de match van CV en vacature wordt het volgende gesprek gesimuleerd:
 Hier volgt de analyse van de match tot zover.
 {rating}
 ";
-    File.WriteAllText(@$"c:\stores\crosslink\Match {i}.txt", finalText);
+            File.WriteAllText(@$"c:\stores\crosslink\Match {i}.txt", finalText);
 
-    Console.WriteLine("Op basis van de match van CV en vacature wordt het volgende gesprek gesimuleerd:");
-    Console.WriteLine(response);
-    Console.WriteLine("EINDE MATCH");
-    Console.WriteLine();
+            Console.WriteLine("Op basis van de match van CV en vacature wordt het volgende gesprek gesimuleerd:");
+            Console.WriteLine(response);
+            Console.WriteLine("EINDE MATCH");
+            Console.WriteLine();
 
-    Console.WriteLine("Druk op enter om verder te gaan.");
+            Console.WriteLine("Druk op enter om verder te gaan.");
+        }
+    }
 }
-//var generator = new DocumentGenerator(bedrijven, baseMessages, apikey, @"c:\stores\crosslink\bedrijven.log");
-
-
-
-
-//// voeg de documenten van de verschillende entiteiten toe
-//await werkzoekenden.ModifyDocument("Jan Klaassen", "persoon1.txt", @"Jan Klaassen is een PHP ontwikkelaar die houdt van vissen. Hij woont in Meppel.");
-//await werkzoekenden.ModifyDocument("Piet Pietersen", "persoon2.txt", @"Piet Pietersen is een .NET ontwikkelaar uit Den Haag die de hele dag conspiracy videos kijkt op youtube.");
-//await werkzoekenden.ModifyDocument("Gert Gerritsen", "persoon3.txt", @"Gert Gerritsen is een bouwvakker die rookt en zuipt. Hij zoekt werk in de omgeving Zwolle.");
-
-////await werkzoekenden.UpdateEmbeddings();
-//werkzoekenden.SaveEmbeddings();
-
-//await bedrijven.ModifyDocument("IT Zwolle", "bedrijf1.txt", @"IT Zwolle is een tech bedrijf in Zwolle dat zoekt naar PHP programmeurs.");
-//await bedrijven.ModifyDocument(".NET Zwolle", "bedrijf2.txt", @".NET Zwolle is een tech bedrijf in Zwolle dat zoekt naar .NET ontwikkelaars.");
-//await bedrijven.ModifyDocument(".NET Den Haag", "bedrijf3.txt", @".NET Den Haag is een tech bedrijf in Den Haag dat zoekt naar .NET developers.");
-//await bedrijven.ModifyDocument("GWW Hengelo", "bedrijf4.txt", @"Bij bouwbedrijf Hengelo zijn ze niet vies van een sigaretje of een biertje en werken ze in de GWW sector.");
-//await bedrijven.ModifyDocument("Bouwbedrijf Hengelo", "bedrijf5.txt", @"Bij bouwbedrijf Hengelo wordt gerookt en gezopen en werken ze in de bouw.");
-
-////await bedrijven.UpdateEmbeddings();
-//bedrijven.SaveEmbeddings();
-
-
-//var files = werkzoekenden.GetFilesAsDocumentInfo();
-//foreach (var item in files)
-//{
-//    var path = werkzoekenden.GetFilePath(item.Path);
-//    var data = File.ReadAllText(path);
-
-//    Console.WriteLine("\n");
-//    Console.WriteLine(data);
-//    var relevant = await bedrijven.GetRelevantDocuments(data);
-//    foreach (var item1 in relevant)
-//    {
-//        Console.WriteLine(item1);
-//    }
-//}
-
-//Console.ReadLine();
