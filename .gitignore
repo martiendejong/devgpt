@@ -12,3 +12,4 @@ bin
 /embeddings
 /parts
 /tempstore
+/build_errors.log

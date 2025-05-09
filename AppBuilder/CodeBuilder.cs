@@ -191,7 +191,7 @@ public class CodeBuilder2
         Console.WriteLine($"Building the project");
 
         var output = BuildOutput.GetBuildOutput(DocumentStoreFolderPath, "build.bat", "build_errors.log");
-        Console.WriteLine($"Building the project");
+        Console.WriteLine($"Done Building the project");
         return output;
     }
 
