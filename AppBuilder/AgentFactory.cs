@@ -63,7 +63,7 @@ public class AgentFactory {
 
     private void AddStoreTools(IEnumerable<(DocumentStore Store, bool Write)> stores, ToolsContextBase tools, IEnumerable<string> functions, IEnumerable<string> agents)
     {
-        AddAgentTools(agents);
+        AddAgentTools(tools, agents);
         var i = 0;
         foreach (var storeItem in stores)
         {
@@ -144,16 +144,17 @@ public class AgentFactory {
         tools.Add(getFile);
     }
 
-    private void AddAgentTools(IEnumerable<string> agents)
+    private void AddAgentTools(ToolsContextBase tools, IEnumerable<string> agents)
     {
         foreach (var agent in agents)
         {
-            var getRelevancy = new DevGPTChatTool($"{agent}", $"Calls {agent} to execute a taks and return a message", [instructionParameter], async (messages, toolCall) =>
+            var callAgent = new DevGPTChatTool($"{agent}", $"Calls {agent} to execute a taks and return a message", [instructionParameter], async (messages, toolCall) =>
             {
                 if (instructionParameter.TryGetValue(toolCall, out string key))
                     return await CallAgent(agent, key);
                 return "No key given";
             });
+            tools.Add(callAgent);
         }
     }
 }

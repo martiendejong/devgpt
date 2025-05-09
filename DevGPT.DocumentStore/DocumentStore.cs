@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using System.Linq;
+using System.Xml.Linq;
 using DevGPT.NewAPI;
 using Store.OpnieuwOpnieuw.AIClient;
 using Store.OpnieuwOpnieuw.Helpers.FileTree;
@@ -85,11 +86,19 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
         public async Task<List<string>> List() => EmbeddingStore.Embeddings.Select(e => e.Key).ToList();
         public async Task<List<string>> RelevantItems(string query)
         {
-            query = EmbeddingMatcher.CutOffQuery(query);
             var embed = await LLMClient.GenerateEmbedding(EmbeddingMatcher.CutOffQuery(query));
             var list = EmbeddingMatcher.GetEmbeddingsWithSimilarity(embed, EmbeddingStore.Embeddings);
-            var items = EmbeddingMatcher.TakeTop(list.Select(item => (item.similarity, item.document, Name)).ToList(), TextStore.Get);
+            var r = list.Select(item => new RelevantEmbedding { Similarity = item.similarity, StoreName = Name, Document = item.document, GetText = async (string a) => await TextStore.Get(a) }).ToList();
+            var items = EmbeddingMatcher.TakeTop(r);
             return items;
+        }
+
+        public async Task<List<RelevantEmbedding>> Embeddings(string query)
+        {
+            var embed = await LLMClient.GenerateEmbedding(EmbeddingMatcher.CutOffQuery(query));
+            var list = EmbeddingMatcher.GetEmbeddingsWithSimilarity(embed, EmbeddingStore.Embeddings);
+            var r = list.Select(item => new RelevantEmbedding { Similarity = item.similarity, StoreName = Name, Document = item.document, GetText = async (string a) => await TextStore.Get(a) }).ToList();
+            return r;
         }
 
         public string GetPath(string name) => TextStore.GetPath(name);
