@@ -1,37 +1,35 @@
-using DevGPT.NewAPI;
-using Store.OpnieuwOpnieuw.DocumentStore;
-using Store.OpnieuwOpnieuw;
 using System;
 using System.Threading.Tasks;
 using System.IO;
 using System.Collections.Generic;
-using DevGPT.NewAPI; // For PathProvider
+using Store;
+using Store.Helpers; // For PathProvider
 
 class Program
 {
     static async Task Main(string[] args)
     {
-        // Settings
-        var path = @"C:\projects\BRCWebservice\2025-02-05\Workspace_Gen3";
-        var openAISettings = OpenAISettings.Load();
+        // Path to the Java project
+        string path = @"C:\projects\BRCWebservice\2025-02-05\Workspace_Gen3";
+
+        // Load OpenAI API settings via DevGPT config
+        var openAISettings = Store.OpenAISettings.Load();
         string openAiApiKey = openAISettings.ApiKey;
 
-        // Setup document store config for embeddings and document indexing
-        var appFolderStoreConfig = new DocumentStoreConfig(@"c:\stores\webservice", @"c:\stores\webservice\embeddings", openAiApiKey);
-        // Modern DocumentStore from DevGPT.Store (for compatibility with AppBuilder)
-        var store = new DocumentStore(appFolderStoreConfig);
+        // Set up DevGPT DocumentStore
+        var storeConfig = new Store.Model.DocumentStoreConfig(@"c:\stores\webservice", @"c:\stores\webservice\embeddings", openAiApiKey);
+        var store = new Store.DocumentStore(storeConfig);
 
-        // Use shared PathProvider logic from the library
+        // Use PathProvider from DevGPT.Helpers
         var pathProvider = new PathProvider(path);
 
-        // Generic shared file search logic
+        // Use shared logic to find Java files
         string[] filters = new[] { "*.java" };
         var foundFiles = new List<string>();
         foreach (var filter in filters)
         {
             try
             {
-                // Instead of direct Directory.GetFiles, offer shared logic here if more complex (refactor as needed)
                 foundFiles.AddRange(Directory.GetFiles(path, filter, SearchOption.AllDirectories));
             }
             catch (UnauthorizedAccessException ex)
@@ -52,14 +50,14 @@ class Program
         foreach (var f in foundFiles)
             Console.WriteLine(f);
 
-        // Add Java files to the store (embed/process them as in AppBuilder)
+        // Index the Java files in the document store with embeddings
         foreach (var filePath in foundFiles)
         {
             var relPath = filePath.Substring(path.EndsWith("\\") ? path.Length : (path.Length + 1));
             await store.AddDocument(filePath, relPath, relPath, split: true);
         }
 
-        // Update embeddings for all files in the store, and persist
+        // Update and persist embeddings
         await store.UpdateEmbeddings();
         store.SaveEmbeddings();
     }

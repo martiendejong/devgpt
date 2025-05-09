@@ -26,18 +26,18 @@ public class CodeBuilder2
         {
             string[] coderToolNames = ["getfileslist", "getfile", "gettaskslist", "updatetask", "createtask", "git"];
             var coderTools = new ToolsContextBase();
-            ToolInfos.Where(t => coderToolNames.Contains(t.FunctionName)).ToList().ForEach(coderTools.Add);
+            ChatTools.Where(t => coderToolNames.Contains(t.FunctionName)).ToList().ForEach(coderTools.Add);
             return coderTools;
         }
     }
     public ToolsContextBase ReviewerTools {  get {
-            string[] reviewerToolNames = ["gettaskslist", "updatetask", "createtask", "git"/*, "build"*/];
+            string[] reviewerToolNames = ["gettaskslist", "updatetask", "createtask", "git", "build"];
             var reviewerTools = new ToolsContextBase();
-            ToolInfos.Where(t => reviewerToolNames.Contains(t.FunctionName)).ToList().ForEach(t => reviewerTools.Add(t));
+            ChatTools.Where(t => reviewerToolNames.Contains(t.FunctionName)).ToList().ForEach(t => reviewerTools.Add(t));
             return reviewerTools;
         }
     }
-    public List<DevGPTChatTool> ToolInfos;
+    public List<DevGPTChatTool> ChatTools;
 
     public string DocumentStoreFolderPath;
     public string EmbeddingsFilePath;
@@ -230,7 +230,7 @@ public class CodeBuilder2
         //var tempStoreConfig = new DocumentStoreConfig(TempStoreFolderPath, TempStoreEmbeddingsFilePath, OpenAiApiKey);
         TempStore = new DocumentStore(tempEmbeddingStore, tempTextStore, tempPartStore);
         
-        ToolInfos =
+        ChatTools =
         [
             new DevGPTChatTool("reflect",
                 "Asks the reasoning assistant to reflect on a statement.",
@@ -280,21 +280,21 @@ public class CodeBuilder2
 
         string[] specificationToolNames = ["getfile", "getfileslist", "git", "reflect"];
         SpecificationTools = new ToolsContextBase();
-        ToolInfos.Where(t => specificationToolNames.Contains(t.FunctionName)).ToList().ForEach(t => SpecificationTools.Add(t));
+        ChatTools.Where(t => specificationToolNames.Contains(t.FunctionName)).ToList().ForEach(t => SpecificationTools.Add(t));
 
         string[] reflectionToolNames = ["getfile", "getfileslist", "git"];
         ReflectionTools = new ToolsContextBase();
-        ToolInfos.Where(t => reflectionToolNames.Contains(t.FunctionName)).ToList().ForEach(t => ReflectionTools.Add(t));
+        ChatTools.Where(t => reflectionToolNames.Contains(t.FunctionName)).ToList().ForEach(t => ReflectionTools.Add(t));
 
 
         string[] projectManagerIToolNames = ["reflect"];
         ProjectManagerInitialTools = new ToolsContextBase();
-        ToolInfos.Where(t => projectManagerIToolNames.Contains(t.FunctionName)).ToList().ForEach(t => ProjectManagerInitialTools.Add(t));
+        ChatTools.Where(t => projectManagerIToolNames.Contains(t.FunctionName)).ToList().ForEach(t => ProjectManagerInitialTools.Add(t));
 
 
         string[] projectManagerToolNames = ["gettaskslist", "updatetask", "createtask", "reflect"];
         ProjectManagerTools = new ToolsContextBase();
-        ToolInfos.Where(t => projectManagerToolNames.Contains(t.FunctionName)).ToList().ForEach(t => ProjectManagerTools.Add(t));
+        ChatTools.Where(t => projectManagerToolNames.Contains(t.FunctionName)).ToList().ForEach(t => ProjectManagerTools.Add(t));
 
 
         //string[] coderPrepareToolNames = ["getfileslist", "getfile", "gettaskslist", "updatetask", "createtask", "git"];
