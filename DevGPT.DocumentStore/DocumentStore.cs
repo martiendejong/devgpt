@@ -1,43 +1,87 @@
-﻿using DevGPT.NewAPI;
+﻿using System.Xml.Linq;
+using DevGPT.NewAPI;
+using Store.OpnieuwOpnieuw.AIClient;
 using Store.OpnieuwOpnieuw.Helpers.FileTree;
 
 namespace Store.OpnieuwOpnieuw.DocumentStore
 {
     public class DocumentStore : IDocumentStore
     {
-        public IEmbeddingStore EmbeddingStore { get; set; }
+        public EmbeddingMatcher EmbeddingMatcher = new EmbeddingMatcher();
+        public ITextEmbeddingStore EmbeddingStore { get; set; }
         public IDocumentPartStore PartStore { get; set; }
         public DocumentSplitter DocumentSplitter = new DocumentSplitter();
-        public DocumentStore(IEmbeddingStore embeddingStore, IDocumentPartStore partStore) 
+        public ITextStore TextStore { get; set; }
+        public DocumentStore(ITextEmbeddingStore embeddingStore, ITextStore textStore, IDocumentPartStore partStore) 
         {
             EmbeddingStore = embeddingStore;
+            TextStore = textStore;
             PartStore = partStore;
         }
 
-        public async Task Store(string name, string content)
+
+        public async Task UpdateEmbeddings()
         {
-            var parts = DocumentSplitter.SplitDocument(content);
+            foreach (var embedding in EmbeddingStore.Embeddings) await Embed(embedding.Key);
+        }
+
+        public async Task<bool> Embed(string name)
+        {
+            List<string> partKeys = [name];
+            var content = File.ReadAllText(GetPath(name));
+            var embed = EmbeddingMatcher.CutOffQuery(content);
+            return await EmbeddingStore.StoreEmbedding(name, embed);
+        }
+
+        public async Task<bool> Store(string name, string content, bool split = true)
+        {
             var partKeys = new List<string>();
-            if (parts.Count == 1)
+            if (!split)
             {
-                await EmbeddingStore.Store(name, content);
+                var embed = EmbeddingMatcher.CutOffQuery(content);
+                await EmbeddingStore.StoreEmbedding(name, embed);
+                await TextStore.Store(name, content);
                 partKeys.Add(name);
             }
             else
             {
-                for(var i = 0; i < parts.Count; ++i)
+                var parts = DocumentSplitter.SplitDocument(content);
+                if (parts.Count == 1)
                 {
-                    var partKey = $"{name} part {i}";
-                    await EmbeddingStore.Store(partKey, parts[i]);
-                    partKeys.Add(partKey);
+                    await EmbeddingStore.StoreEmbedding(name, content);
+                    partKeys.Add(name);
+                }
+                else
+                {
+                    for (var i = 0; i < parts.Count; ++i)
+                    {
+                        var partKey = $"{name} part {i}";
+                        await EmbeddingStore.StoreEmbedding(partKey, parts[i]);
+                        await TextStore.Store(partKey, content);
+                        partKeys.Add(partKey);
+                    }
                 }
             }
             await PartStore.Store(name, partKeys);
+            return true;
         }
 
-        public void Remove(string name) => EmbeddingStore.Remove(name);
+        public async Task<bool> Remove(string name)
+        {
+            await EmbeddingStore.RemoveEmbedding(name);
+            var parts = await PartStore.Get(name);
+            foreach (var part in parts)
+            {
+                await EmbeddingStore.RemoveEmbedding(part);
+            }
+            return true;
+        }
 
-        public List<TreeNode<IEnumerable<string>>> Tree() => TreeMaker.GetTree(PartStore);
-        public List<string> List() => PartStore.SelectMany(p => p.Value).ToList();
+        public async Task<List<TreeNode<string>>> Tree() => TreeMaker.GetTree(EmbeddingStore.Embeddings.Select(e => e.Key).ToList());
+        public async Task<List<string>> List() => EmbeddingStore.Embeddings.Select(e => e.Key).ToList();
+
+        public string GetPath(string name) => TextStore.GetPath(name);
+
+        public async Task<string> Get(string name) => await TextStore.Get(name);
     }
 }

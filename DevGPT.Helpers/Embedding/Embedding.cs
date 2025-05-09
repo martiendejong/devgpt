@@ -6,6 +6,8 @@ namespace DevGPT.NewAPI
 {
     public class Embedding : List<double>
     {
+        public Embedding() { }
+
         public Embedding(IEnumerable<double> data)
         {
             AddRange(data);

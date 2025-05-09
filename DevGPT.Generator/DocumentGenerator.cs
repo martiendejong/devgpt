@@ -20,6 +20,8 @@ namespace DevGPT.NewAPI
         public List<DevGPTChatMessage> BaseMessages { get; set; }
         protected ILLMClient LLMClient { get; set; }
 
+        public EmbeddingMatcher EmbeddingMatcher = new EmbeddingMatcher();
+
         public async Task<string> GetImage(string message, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)
         {
             var response = await LLMClient.GetImage(message, DevGPTChatResponseFormat.Text, toolsContext, images);
@@ -37,12 +39,12 @@ namespace DevGPT.NewAPI
             ReadonlyStores = readonlyStores;
         }
 
-        public DocumentGenerator(DocumentStore store, List<DevGPTChatMessage> baseMessages, string openAiApiKey, string logFilePath, List<IDocumentStore> readonlyStores)
+        public DocumentGenerator(DocumentStore store, List<DevGPTChatMessage> baseMessages, ILLMClient client, string openAiApiKey, string logFilePath, List<IDocumentStore> readonlyStores)
         {
             Store = store;
             ReadonlyStores = readonlyStores;
             BaseMessages = baseMessages;
-
+            LLMClient = client;
             var OpenAIAPI = new OpenAIClient(openAiApiKey);
             //var logger = new Logger(logFilePath);
             //TypedApi = new TypedOpenAIClient(OpenAIAPI, openAiApiKey, logger.Log);
@@ -113,7 +115,7 @@ namespace DevGPT.NewAPI
                     if (!hasContent) return "content parameter not provided";
                     try
                     {
-                        await Store.Store(file.ToString(), content.ToString());
+                        await Store.Store(file.ToString(), content.ToString(), false);
                         return "success";
                     }
                     catch (Exception ex)
@@ -126,7 +128,7 @@ namespace DevGPT.NewAPI
 
             var response = await LLMClient.GetResponse(sendMessages, DevGPTChatResponseFormat.Text, toolsContext, images);
             //await ModifyDocuments(response);
-            
+
             return response;
         }
 
@@ -151,37 +153,19 @@ namespace DevGPT.NewAPI
             if (response.Modifications != null)
                 foreach (var modification in response.Modifications)
                 {
-                    await Store.Store(modification.Path, modification.Contents);
-                    await Store.Store(modification.Path, modification.Contents);
+                    await Store.Store(modification.Path, modification.Contents, false);
+                    await Store.Store(modification.Path, modification.Contents, false);
                 }
             if (response.Deletions != null)
                 foreach (var deletion in response.Deletions)
                 {
                     Store.Remove(deletion.Path);
                 }
-            Store.SaveEmbeddings(); // no need?
         }
 
+
         private async Task<List<DevGPTChatMessage>> PrepareMessages(string message, IEnumerable<DevGPTChatMessage>? messages, bool addRelevantDocuments, bool addFilesList)
-        {
-            var sendMessages = messages == null ? new List<DevGPTChatMessage>() : messages.ToList();
-            if (addRelevantDocuments)
-            {
-                var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Select(m => m.Role + ": " + m.Text));
-                relevancyQuery += "\n\nuser: " + message;
-                var msgs = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery, ReadonlyStores);
-                sendMessages.AddRange(msgs);
-            }
-            if (addFilesList)
-            {
-                var filesList = string.Join("\n", Store.List());
-                sendMessages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"A list of all files in the document store:\n{filesList}" });
-            }
-            sendMessages.AddRange(BaseMessages);
-            if(!string.IsNullOrWhiteSpace(message))
-                sendMessages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.User, Text = message });
-            return sendMessages;
-        }
+            => await PrepareMessages([new DevGPTChatMessage { Role = DevGPTMessageRole.User, Text = message }], messages, addRelevantDocuments, addFilesList);
 
         private async Task<List<DevGPTChatMessage>> PrepareMessages(IEnumerable<DevGPTChatMessage> chatMessages, IEnumerable<DevGPTChatMessage>? history, bool addRelevantDocuments, bool addFilesList)
         {
@@ -189,8 +173,20 @@ namespace DevGPT.NewAPI
             if (addRelevantDocuments)
             {
                 var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Concat(chatMessages).Select(m => m.Role + ": " + m.Text));
-                var relevantDocumentMessages = await Store.GetRelevantDocumentsAsChatMessages(relevancyQuery, ReadonlyStores);
-                sendMessages.AddRange(relevantDocumentMessages);
+
+                relevancyQuery = EmbeddingMatcher.CutOffQuery(relevancyQuery);
+                var queryEmbedding = await LLMClient.GenerateEmbedding(relevancyQuery);
+
+                var matches = EmbeddingMatcher.GetEmbeddingsWithSimilarity(queryEmbedding, Store.EmbeddingStore.Embeddings);
+
+                // @todo
+                // get text using file store
+                // calculate used tokens and subtract
+                var docs = EmbeddingMatcher.TakeTop(matches.Select(m => (m.similarity, m.document, true)).ToList(), (key) => "", 0);
+
+                var msgs = docs.Select(d => new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = d });
+
+                sendMessages.AddRange(msgs);
             }
             if (addFilesList)
             {

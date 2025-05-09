@@ -2,37 +2,65 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using DevGPT.NewAPI;
 using Store.OpnieuwOpnieuw.AIClient;
 
 namespace Store.OpnieuwOpnieuw
 {
-    public class EmbeddingFileStore : EmbeddingMemoryStore
+    public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStore
     {
-        public string StorePath { get; set; }
         public string EmbeddingsFilePath { get; set; }
 
-        public EmbeddingFileStore(string storePath, string embeddingsFilePath, ILLMClient embeddingProvider) : base(embeddingProvider)
+        public override EmbeddingInfo[] Embeddings => _embeddings.ToArray();
+        public List<EmbeddingInfo> _embeddings;
+
+        public EmbeddingFileStore(string embeddingsFilePath, ILLMClient embeddingProvider) : base(embeddingProvider)
         {
-            StorePath = storePath;
             EmbeddingsFilePath = embeddingsFilePath;
-            AfterUpdate += StoreData;
-            AfterRemove += RemoveData;
+            LoadEmbeddingsFile();
         }
 
-        private void StoreData(object sender, StoreUpdateEventArgs<string> args)
+        public void LoadEmbeddingsFile()
         {
-            File.WriteAllText(GetPath(args.Key), args.Value);
+            if (File.Exists(EmbeddingsFilePath))
+            {
+                try
+                {
+                    var data = File.ReadAllText(EmbeddingsFilePath);
+                    _embeddings = JsonSerializer.Deserialize<List<EmbeddingInfo>>(data);
+                    return;
+                }
+                catch { }
+            }            
+            _embeddings = new List<EmbeddingInfo>();
         }
 
-        private string GetPath(string key)
+        public async Task StoreEmbeddingsFile()
         {
-            return Path.Combine(StorePath, key);
+            await File.WriteAllTextAsync(EmbeddingsFilePath, JsonSerializer.Serialize(Embeddings));
         }
 
-        private void RemoveData(object sender, StoreRemoveEventArgs args)
+        public override async Task<EmbeddingInfo> GetEmbedding(string key) => _embeddings.FirstOrDefault(e => e.Key == key);
+
+        public override async Task<bool> RemoveEmbedding(string key)
         {
-            File.Delete(GetPath(args.Key));
+            var embedding = await GetEmbedding(key);
+            if (embedding == null) return false;
+            _embeddings.Remove(embedding);
+            await StoreEmbeddingsFile();
+            return true;
+        }
+
+        protected override async Task UpdateEmbedding(EmbeddingInfo embedding) {
+            await StoreEmbeddingsFile();
+        }
+
+        protected override async Task AddEmbedding(EmbeddingInfo embeddingInfo)
+        {
+            _embeddings.Add(embeddingInfo);
+            await StoreEmbeddingsFile();
         }
     }
 }

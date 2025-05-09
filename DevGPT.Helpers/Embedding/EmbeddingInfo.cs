@@ -5,13 +5,13 @@ namespace Store.OpnieuwOpnieuw
     public class EmbeddingInfo
     {
         public string Key { get; set; }
-        public Embedding Data { get; set; }
         public string Checksum { get; set; }
-        public EmbeddingInfo(string key, Embedding data, string checksum)
+        public Embedding Data { get; set; }
+        public EmbeddingInfo(string key, string checksum, Embedding data)
         {
             Key = key;
-            Data = data;
             Checksum = checksum;
+            Data = data;
         }
     }
 }

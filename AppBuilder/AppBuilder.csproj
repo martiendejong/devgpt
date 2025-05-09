@@ -31,8 +31,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Generator\Generator.csproj" />
-    <ProjectReference Include="..\Store\Store.csproj" />
+    <ProjectReference Include="..\DevGPT.Classes\DevGPT.Classes.csproj" />
+    <ProjectReference Include="..\DevGPT.DocumentStore\DevGPT.DocumentStore.csproj" />
+    <ProjectReference Include="..\DevGPT.EmbeddingStore\DevGPT.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\DevGPT.Generator\DevGPT.Generator.csproj" />
+    <ProjectReference Include="..\DevGPT.Helpers\DevGPT.Helpers.csproj" />
+    <ProjectReference Include="..\DevGPT.LLMClientTools\DevGPT.LLMClientTools.csproj" />
+    <ProjectReference Include="..\DevGPT.LLMClient\DevGPT.LLMClient.csproj" />
+    <ProjectReference Include="..\DevGPT.OpenAI\DevGPT.OpenAI.csproj" />
   </ItemGroup>
 
 </Project>

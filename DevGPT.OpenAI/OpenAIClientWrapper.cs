@@ -32,7 +32,7 @@ namespace Store.OpnieuwOpnieuw.AIClient
     {
         public OpenAIConfig Config { get; set; }
         private readonly EmbeddingClient EmbeddingClient;
-        private readonly OpenAIClient API; // todo rename
+        private readonly OpenAIClient API;
         private OpenAIStreamHandler StreamHandler { get; set; }
 
         public OpenAIClientWrapper(OpenAIConfig config)

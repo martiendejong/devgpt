@@ -28,13 +28,20 @@ namespace Store.OpnieuwOpnieuw.AIClient
         public static DevGPTChatMessage DevGPT(this ChatMessage message)
         {
             if (message is UserChatMessage) return new DevGPTChatMessage() { Role = DevGPTMessageRole.User, Text = message.Content.First().Text };
-            if (message is AssistantChatMessage) return new DevGPTChatMessage() { Role = DevGPTMessageRole.Assistant, Text = message.Content.First().Text };
+            if (message is AssistantChatMessage)
+            {
+                if(message.Content.Any())
+                    return new DevGPTChatMessage() { Role = DevGPTMessageRole.Assistant, Text = message.Content.First().Text };
+                return null; // tool calls, todo check if this is right
+            }
             if (message is SystemChatMessage) return new DevGPTChatMessage() { Role = DevGPTMessageRole.System, Text = message.Content.First().Text };
+            if (message is ToolChatMessage)
+                return null;
             throw new Exception("DevGPTMessageRole not recognized");
         }
 
         public static List<ChatMessage> OpenAI(this List<DevGPTChatMessage> messages) => messages.Select(m => m.OpenAI()).ToList();
-        public static List<DevGPTChatMessage> DevGPT(this List<ChatMessage> messages) => messages.Select(m => m.DevGPT()).ToList();
+        public static List<DevGPTChatMessage> DevGPT(this List<ChatMessage> messages) => messages.Select(m => m.DevGPT()).Where(m => m != null).ToList();
 
 
         public static ChatTool OpenAI(this DevGPTChatTool chatTool)

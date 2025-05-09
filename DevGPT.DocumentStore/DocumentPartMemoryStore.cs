@@ -2,20 +2,24 @@
 
 namespace Store.OpnieuwOpnieuw.DocumentStore
 {
-    public class DocumentPartMemoryStore : AbstractStore<IEnumerable<string>>, IDocumentPartStore
+    public class DocumentPartMemoryStore : IDocumentPartStore
     {
-        override public async Task Store(string name, IEnumerable<string> partKeys)
+        public Dictionary<string, string[]> Parts = new Dictionary<string, string[]>();
+
+        public async Task<bool> Store(string name, IEnumerable<string> partKeys)
         {
-            InvokeBeforeUpdate(name, partKeys);
-            Data[name] = partKeys;
-            InvokeAfterUpdate(name, partKeys);
+            Parts[name] = partKeys.ToArray();
+            return true;
         }
 
-        override public bool Remove(string key)
+        public async Task<IEnumerable<string>> Get(string name)
         {
-            InvokeBeforeRemove(key);
-            Data.Remove(key);
-            InvokeAfterRemove(key);
+            return Parts[name];
+        }
+
+        public async Task<bool> Remove(string name, IEnumerable<string> partKeys)
+        {
+            Parts.Remove(name);
             return true;
         }
     }
