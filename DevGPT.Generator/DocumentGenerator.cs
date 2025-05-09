@@ -177,7 +177,13 @@ namespace DevGPT.NewAPI
             {
                 var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Concat(chatMessages).Select(m => m.Role + ": " + m.Text));
 
-                var docs = await Store.RelevantItems(relevancyQuery);
+                var embeddings = await Store.Embeddings(relevancyQuery);
+                foreach(var s in ReadonlyStores)
+                {
+                    embeddings.AddRange(await s.Embeddings(relevancyQuery));
+                }
+                var e = new EmbeddingMatcher();
+                var docs = e.TakeTop(embeddings);
 
                 var msgs = docs.Select(d => new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = d });
 

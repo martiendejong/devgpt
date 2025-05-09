@@ -23,5 +23,6 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
         public Task<List<string>> List();
         Task UpdateEmbeddings();
         Task<List<string>> RelevantItems(string query);
+        Task<List<RelevantEmbedding>> Embeddings(string relevancyQuery);
     }
 }
