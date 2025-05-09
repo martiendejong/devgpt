@@ -4,6 +4,8 @@ using Store.OpnieuwOpnieuw;
 using System;
 using System.Threading.Tasks;
 using System.IO;
+using System.Collections.Generic;
+using DevGPT.NewAPI; // For PathProvider
 
 class Program
 {
@@ -19,14 +21,17 @@ class Program
         // Modern DocumentStore from DevGPT.Store (for compatibility with AppBuilder)
         var store = new DocumentStore(appFolderStoreConfig);
 
-        // Reuse shared file search logic from AppBuilder to add files by pattern
-        // Find all Java files inside the target directory
+        // Use shared PathProvider logic from the library
+        var pathProvider = new PathProvider(path);
+
+        // Generic shared file search logic
         string[] filters = new[] { "*.java" };
-        var foundFiles = new System.Collections.Generic.List<string>();
+        var foundFiles = new List<string>();
         foreach (var filter in filters)
         {
             try
             {
+                // Instead of direct Directory.GetFiles, offer shared logic here if more complex (refactor as needed)
                 foundFiles.AddRange(Directory.GetFiles(path, filter, SearchOption.AllDirectories));
             }
             catch (UnauthorizedAccessException ex)
