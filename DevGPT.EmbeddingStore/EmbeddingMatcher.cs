@@ -32,7 +32,7 @@ namespace DevGPT.NewAPI
             return query;
         }
 
-        public List<string> TakeTop(List<RelevantEmbedding> total, int maxTokens = 0)
+        public async Task<List<string>> TakeTop(List<RelevantEmbedding> total, int maxTokens = 0)
         {
             maxTokens = maxTokens == 0 ? MaxQueryTokens : maxTokens;
 
@@ -41,7 +41,7 @@ namespace DevGPT.NewAPI
 
             foreach (var document in total)
             {
-                var text = document.GetText(document.Document.Key);
+                var text = await document.GetText(document.Document.Key);
                 var documentView = $"File path: {document.Document.Key}\nFile content:\n{text}";
                 if (document.StoreName != null) documentView = $"Store: {document.StoreName}\n{documentView}";
 

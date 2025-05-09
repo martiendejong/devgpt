@@ -160,7 +160,7 @@ while (true)
 {
     Console.WriteLine("Geef een instructie");
     var input = Console.ReadLine();
-    var response = await projectManager.Generator.UpdateStore(input, builder.History, true, true, leadArchitect.Tools, null);
+    var response = await projectManager.Generator.UpdateStore(input, builder.History, true, true, projectManager.Tools, null);
     builder.History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response });
 
     //await builder.Execute(input);

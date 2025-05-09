@@ -23,6 +23,8 @@
 
         public async Task<bool> Store(string key, string value)
         {
+            var dir = new FileInfo(GetPath(key)).Directory.FullName;
+            Directory.CreateDirectory(dir);            
             await File.WriteAllTextAsync(GetPath(key), value);
             return true;
         }

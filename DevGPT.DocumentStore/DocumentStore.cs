@@ -89,7 +89,7 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
             var embed = await LLMClient.GenerateEmbedding(EmbeddingMatcher.CutOffQuery(query));
             var list = EmbeddingMatcher.GetEmbeddingsWithSimilarity(embed, EmbeddingStore.Embeddings);
             var r = list.Select(item => new RelevantEmbedding { Similarity = item.similarity, StoreName = Name, Document = item.document, GetText = async (string a) => await TextStore.Get(a) }).ToList();
-            var items = EmbeddingMatcher.TakeTop(r);
+            var items = await EmbeddingMatcher.TakeTop(r);
             return items;
         }
 

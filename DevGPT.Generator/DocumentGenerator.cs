@@ -183,7 +183,7 @@ namespace DevGPT.NewAPI
                     embeddings.AddRange(await s.Embeddings(relevancyQuery));
                 }
                 var e = new EmbeddingMatcher();
-                var docs = e.TakeTop(embeddings);
+                var docs = await e.TakeTop(embeddings);
 
                 var msgs = docs.Select(d => new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = d });
 
