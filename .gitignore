@@ -9,3 +9,6 @@ bin
 /Crosslink/appsettings.json
 /bfg-1.15.0.jar
 /secrets.txt
+/embeddings
+/parts
+/tempstore
