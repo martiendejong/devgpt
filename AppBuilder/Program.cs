@@ -46,8 +46,6 @@ var c = new QuickAgentCreator(agentFactory, llmClient);
 var codebaseStore = c.CreateStore(mainPaths, "Codebase");
 var teamStore = c.CreateStore(tempPaths, "Teamdocumenten");
 
-await codebaseStore.UpdateEmbeddings();
-
 const string BasePrompt = "Roep andere agents aan als je informatie of acties nodig hebt. " +
     "Wanneer je andere agents aanspreekt geef altijd duidelijk aan welke acties of informatie je verwacht en waarom. " +
     "Wanneer je een reactie geeft reageer dan beknopt en to the point en met de informatie waar om gevraagd wordt of die relevant is. " +
@@ -221,6 +219,7 @@ public class QuickAgentCreator
         var textStore = new TextFileStore(paths.RootFolder);
         var partStore = new DocumentPartFileStore(paths.PartsFile);
         var store = new DocumentStore(embeddingStore, textStore, partStore, Client);
+        store.UpdateEmbeddings();
         store.Name = name;
         return store;
     }
