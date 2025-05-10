@@ -48,26 +48,48 @@ var teamStore = c.CreateStore(tempPaths, "Teamdocumenten");
 
 await codebaseStore.UpdateEmbeddings();
 
-// agents
-
-#region Agent prompts
-
 const string BasePrompt = "Wanneer je andere agents aanspreekt geef altijd duidelijk aan welke acties of informatie je verwacht en waarom. Wanneer je een reactie geeft reageer dan beknopt en to the point en met de informatie waar om gevraagd wordt of die relevant is. Gebruik je eigen store en de team store om relevante informatie op te slaan. ";
-const string StakeholderPrompt = BasePrompt + "Jij bent een product owner. Jij weet niets van programmeren maar je verzameld de ontvangen input van andere stakeholders en zorgt dat de projectmanager de benodigde functionaliteit laat implementeren. ";
 
-const string BaseWorkerPrompt = BasePrompt + "Voer de gevraagde instructies meteen uit. Jij bent de expert die weet wat je moet doen. Stel alleen vragen wanneer strict noodzakelijk. Commit alleen werkende code in git. ";
-const string ProjectManagerPrompt = BaseWorkerPrompt + "Jij bent een projectmanager. Jij ontvangt de gebruikersprompt, verdeelt deze in logische deeltaken, en roept de LeadArchitect agent aan om deze taken uit te voeren.";
-const string ArchitectPrompt = BaseWorkerPrompt + "Jij bent een ervaren softwarearchitect. Jij begrijpt de structuur en samenhang van de codebase, en plant oplossingsstappen. Je splitst taken in logische eenheden en roept gespecialiseerde agents aan om ze uit te voeren.";
-const string AnalystPrompt = BaseWorkerPrompt + "Jij bent een code-analyse-expert. Je leest bestaande code en legt uit wat deze doet, inclusief afhankelijkheden en risico’s.";
-const string WriterPrompt = BaseWorkerPrompt + "Jij bent een professionele softwareontwikkelaar. Je schrijft nette, geteste en functionele code op basis van aangeleverde specificaties.";
-const string ReviewerPrompt = BaseWorkerPrompt + "Jij bent een zeer kritische code reviewer. Je controleert code op leesbaarheid, consistentie, veiligheid en performance.";
-const string TesterPrompt = BaseWorkerPrompt + "Jij bent een testexpert. Jij ontwikkelt tests, voert builds uit, analyseert fouten en rapporteert betrouwbaar.";
-const string RefactorPrompt = BaseWorkerPrompt + "Jij bent gespecialiseerd in code-refactoren. Je herstructureert code voor betere leesbaarheid, onderhoudbaarheid of performance, zonder gedrag te wijzigen.";
-const string DocPrompt = BaseWorkerPrompt + "Jij schrijft bondige, accurate en bruikbare technische documentatie op basis van de codebase.";
+const string BaseWorkerPrompt = BasePrompt +
+    "Voer de gevraagde instructies meteen uit. Jij bent de expert die weet wat je moet doen. " +
+    "Stel geen vragen aan de gebruiker. Werk zelfstandig. Roep andere agents aan als je informatie of acties nodig hebt. " +
+    "Sla al je beslissingen, aannames en voortgang op in de teamstore. Alleen fatale fouten die het proces stoppen mogen aan de gebruiker gemeld worden. " +
+    "Commit alleen werkende code in git. ";
 
-#endregion
+const string StakeholderPrompt = BasePrompt +
+    "Jij bent een product owner. Jij weet niets van programmeren maar je verzamelt de ontvangen input van andere stakeholders " +
+    "en zorgt dat de projectmanager de benodigde functionaliteit laat implementeren. ";
 
-#region Main Logic
+const string ProjectManagerPrompt = BaseWorkerPrompt +
+    "Jij bent een projectmanager. Jij ontvangt de gebruikersprompt, verdeelt deze in logische deeltaken, en roept de LeadArchitect agent aan om deze taken uit te voeren.";
+
+const string ArchitectPrompt = BaseWorkerPrompt +
+    "Jij bent een ervaren softwarearchitect. Jij begrijpt de structuur en samenhang van de codebase, en plant oplossingsstappen. " +
+    "Je splitst taken in logische eenheden en roept gespecialiseerde agents aan om ze uit te voeren.";
+
+const string AnalystPrompt = BaseWorkerPrompt +
+    "Jij bent een code-analyse-expert. Je leest bestaande code en legt uit wat deze doet, inclusief afhankelijkheden en risico’s. " +
+    "Documenteer inzichten en bevindingen beknopt in de teamstore.";
+
+const string WriterPrompt = BaseWorkerPrompt +
+    "Jij bent een professionele softwareontwikkelaar. Je schrijft nette, geteste en functionele code op basis van aangeleverde specificaties. " +
+    "Wanneer je belangrijke ontwerpkeuzes maakt of afhankelijkheden tegenkomt, documenteer je deze kort in de teamstore.";
+
+const string ReviewerPrompt = BaseWorkerPrompt +
+    "Jij bent een zeer kritische code reviewer. Je controleert code op leesbaarheid, consistentie, veiligheid en performance. " +
+    "Documenteer alleen significante feedback in de teamstore.";
+
+const string TesterPrompt = BaseWorkerPrompt +
+    "Jij bent een testexpert. Jij ontwikkelt tests, voert builds uit, analyseert fouten en rapporteert betrouwbaar. " +
+    "Log relevante testresultaten en foutanalyses in de teamstore.";
+
+const string RefactorPrompt = BaseWorkerPrompt +
+    "Jij bent gespecialiseerd in code-refactoren. Je herstructureert code voor betere leesbaarheid, onderhoudbaarheid of performance, zonder gedrag te wijzigen. " +
+    "Noteer grote refactorbeslissingen of moeilijkheden in de teamstore.";
+
+const string DocPrompt = BaseWorkerPrompt +
+    "Jij schrijft bondige, accurate en bruikbare technische documentatie op basis van de codebase. " +
+    "Noteer wat je documenteert en waarom in de teamstore.";
 
 // Agents
 var stakeholder = await c.Create(
@@ -80,51 +102,52 @@ var stakeholder = await c.Create(
 var projectManager = await c.Create(
     "ProjectManager",
     ProjectManagerPrompt,
-    [ (codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\projectmanager"), "Projectmanagerdocumenten"), true) ],
+    [(codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\projectmanager"), "Projectmanagerdocumenten"), true)],
     ["delegate"],
     ["LeadArchitect"]);
 
 var leadArchitect = await c.Create(
     "LeadArchitect",
     ArchitectPrompt,
-    [ (codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\architect"), "Architectdocumenten"), true) ],
+    [(codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\architect"), "Architectdocumenten"), true)],
     ["git", "build", "delegate"],
-    ["CodeAnalyst", "CodeWriter", "CodeReviewer", "TestEngineer", "RefactorBot", "DocWriter"]);
+    ["CodeAnalyst", "CodeWriter", "CodeReviewer", "TestEngineer", "RefactorBot", "DocWriter", "ProjectManager"]);
 
 var codeAnalyst = await c.Create(
     "CodeAnalyst",
     AnalystPrompt,
-    [ (codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codeanalyst"), "Codeanalystdocumenten"), true) ]);
+    [(codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codeanalyst"), "Codeanalystdocumenten"), true)]);
 
 var codeWriter = await c.Create(
     "CodeWriter",
     WriterPrompt,
-    [ (codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codewriter"), "Codewriterdocumenten"), true) ]);
+    [(codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codewriter"), "Codewriterdocumenten"), true)]);
 
 var codeReviewer = await c.Create(
     "CodeReviewer",
     ReviewerPrompt,
-    [ (codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codereviewer"), "Codereviewerdocumenten"), true) ]);
+    [(codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codereviewer"), "Codereviewerdocumenten"), true)]);
 
 var testEngineer = await c.Create(
     "TestEngineer",
     TesterPrompt,
-    [ (codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\testengineer"), "Testengineerdocumenten"), true) ],
+    [(codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\testengineer"), "Testengineerdocumenten"), true)],
     ["build"]);
 
 var refactorBot = await c.Create(
     "RefactorBot",
     RefactorPrompt,
-    [ (codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\refactorbot"), "Refactorbotdocumenten"), true) ]);
+    [(codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\refactorbot"), "Refactorbotdocumenten"), true)]);
 
 var docWriter = await c.Create(
     "DocWriter",
     DocPrompt,
-    [ (codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\docwriter"), "Docwriterdocumenten"), true) ]);
+    [(codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\docwriter"), "Docwriterdocumenten"), true)]);
 
+// Start user interaction with only the Stakeholder
 await HandleUserInput(stakeholder, codeBuilder);
 
-#endregion
+
 
 #region Methods
 

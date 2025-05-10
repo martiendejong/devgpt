@@ -38,10 +38,13 @@ public class AgentFactory {
 
     public Dictionary<string, DevGPTAgent> Agents = new Dictionary<string, DevGPTAgent>();
 
-    public async Task<string> CallAgent(string name, string query)
+    public async Task<string> CallAgent(string name, string query, string caller)
     {
         var agent = Agents[name];
-        return await agent.Generator.UpdateStore(query, null, true, true, agent.Tools, null);
+        Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{caller}: {query}" });
+        var response = await agent.Generator.UpdateStore(query, null, true, true, agent.Tools, null);
+        Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{name}: {response}" });
+        return response;
     }
 
     public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(DocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents)
@@ -51,7 +54,7 @@ public class AgentFactory {
 
         var tools = new ToolsContextBase();
 
-        AddStoreTools(stores, tools, function, agents);
+        AddStoreTools(stores, tools, function, agents, name);
 
         var tempStores = stores.Select(s => s.Store as IDocumentStore).ToList();
 
@@ -61,9 +64,9 @@ public class AgentFactory {
         return agent;
     }
 
-    private void AddStoreTools(IEnumerable<(DocumentStore Store, bool Write)> stores, ToolsContextBase tools, IEnumerable<string> functions, IEnumerable<string> agents)
+    private void AddStoreTools(IEnumerable<(DocumentStore Store, bool Write)> stores, ToolsContextBase tools, IEnumerable<string> functions, IEnumerable<string> agents, string caller)
     {
-        AddAgentTools(tools, agents);
+        AddAgentTools(tools, agents, caller);
         var i = 0;
         foreach (var storeItem in stores)
         {
@@ -144,14 +147,14 @@ public class AgentFactory {
         tools.Add(getFile);
     }
 
-    private void AddAgentTools(ToolsContextBase tools, IEnumerable<string> agents)
+    private void AddAgentTools(ToolsContextBase tools, IEnumerable<string> agents, string caller)
     {
         foreach (var agent in agents)
         {
             var callAgent = new DevGPTChatTool($"{agent}", $"Calls {agent} to execute a taks and return a message", [instructionParameter], async (messages, toolCall) =>
             {
                 if (instructionParameter.TryGetValue(toolCall, out string key))
-                    return await CallAgent(agent, key);
+                    return await CallAgent(agent, key, caller);
                 return "No key given";
             });
             tools.Add(callAgent);
