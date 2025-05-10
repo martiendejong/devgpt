@@ -14,3 +14,4 @@ bin
 /tempstore
 /build_errors.log
 /roles/stakeholder
+/roles/docwriter
