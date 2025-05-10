@@ -187,6 +187,7 @@ static async Task HandleUserInput(DevGPTAgent agent, CodeBuilder2 codeBuilder)
         Console.WriteLine("Geef een instructie");
         var input = Console.ReadLine();
         var response = await agent.Generator.GetResponse(input, codeBuilder.History, true, true, agent.Tools, null);
+        Console.WriteLine(response);
         codeBuilder.History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response });
     }
 }
