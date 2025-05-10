@@ -1,12 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System.Text.Json;
 using System.Xml.Linq;
-using DevGPT.Chat;
-using DevGPT.NewAPI;
 using Microsoft.Extensions.Configuration;
-using Store.OpnieuwOpnieuw;
-using Store.OpnieuwOpnieuw.AIClient;
-using Store.OpnieuwOpnieuw.DocumentStore;
 using static System.Formats.Asn1.AsnWriter;
 //string appDir = @"C:\Projects\martiendejongnl\extract";
 //string documentStoreRoot = @"C:\Projects\martiendejongnl\extract";

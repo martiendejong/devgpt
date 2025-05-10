@@ -1,6 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-using DevGPT.NewAPI;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 public class CodeBuilderVerify : ChatResponse<CodeBuilderVerify>
 {

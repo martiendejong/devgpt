@@ -1,12 +1,9 @@
-﻿namespace Store.OpnieuwOpnieuw
+﻿public class StoreRemoveEventArgs : EventArgs
 {
-    public class StoreRemoveEventArgs : EventArgs
-    {
-        public string Key { get; }
+    public string Key { get; }
 
-        public StoreRemoveEventArgs(string key)
-        {
-            Key = key;
-        }
+    public StoreRemoveEventArgs(string key)
+    {
+        Key = key;
     }
 }

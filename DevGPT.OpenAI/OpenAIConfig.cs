@@ -1,33 +1,30 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace Store.OpnieuwOpnieuw
+public class OpenAIConfig
 {
-    public class OpenAIConfig
+    public OpenAIConfig(string apiKey = "", string embeddingModel = "text-embedding-ada-002", string model = "gpt-4.1", string imageModel = "gpt-image-1")
     {
-        public OpenAIConfig(string apiKey = "", string embeddingModel = "text-embedding-ada-002", string model = "gpt-4.1", string imageModel = "gpt-image-1")
-        {
-            ApiKey = apiKey;
-            Model = model;
-            ImageModel = imageModel;
-            EmbeddingModel = embeddingModel;
-        }
+        ApiKey = apiKey;
+        Model = model;
+        ImageModel = imageModel;
+        EmbeddingModel = embeddingModel;
+    }
 
-        public string ApiKey { get; set; }
-        public string Model { get; set; }
-        public string ImageModel { get; set; }
-        public string EmbeddingModel { get; set; }
+    public string ApiKey { get; set; }
+    public string Model { get; set; }
+    public string ImageModel { get; set; }
+    public string EmbeddingModel { get; set; }
 
-        public static OpenAIConfig Load()
-        {
-            var config = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory) // current directory
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .Build();
+    public static OpenAIConfig Load()
+    {
+        var config = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory) // current directory
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
 
-            // Bind the OpenAI section to a strongly-typed object
-            var openAISettings = new OpenAIConfig();
-            config.GetSection("OpenAI").Bind(openAISettings);
-            return openAISettings;
-        }
+        // Bind the OpenAI section to a strongly-typed object
+        var openAISettings = new OpenAIConfig();
+        config.GetSection("OpenAI").Bind(openAISettings);
+        return openAISettings;
     }
 }

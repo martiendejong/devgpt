@@ -1,7 +1,4 @@
-﻿using DevGPT.Chat;
-using Store.OpnieuwOpnieuw.AIClient;
-
-public class DevGPTChatTool
+﻿public class DevGPTChatTool
 {
     public DevGPTChatTool(string name, string description, List<ChatToolParameter> parameters, Func<List<DevGPTChatMessage>, DevGPTChatToolCall, Task<string>> execute)
     {

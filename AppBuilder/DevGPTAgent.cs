@@ -1,7 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-using DevGPT.NewAPI;
-
-public class DevGPTAgent
+﻿public class DevGPTAgent
 {
     public string Name { get; set; }
     public DocumentGenerator Generator { get; set; }

@@ -1,10 +1,5 @@
-﻿// See https://aka.ms/new-console-template for more information
-using DevGPT.Chat;
-using DevGPT.NewAPI;
+﻿
 using OpenAI.Chat;
-using Store.OpnieuwOpnieuw;
-using Store.OpnieuwOpnieuw.AIClient;
-using Store.OpnieuwOpnieuw.DocumentStore;
 using System.Reflection.Emit;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.Intrinsics.X86;
