@@ -48,20 +48,32 @@ var teamStore = c.CreateStore(tempPaths, "Teamdocumenten");
 
 await codebaseStore.UpdateEmbeddings();
 
-const string BasePrompt = "Wanneer je andere agents aanspreekt geef altijd duidelijk aan welke acties of informatie je verwacht en waarom. Wanneer je een reactie geeft reageer dan beknopt en to the point en met de informatie waar om gevraagd wordt of die relevant is. Gebruik je eigen store en de team store om relevante informatie op te slaan. ";
+const string BasePrompt = "Roep andere agents aan als je informatie of acties nodig hebt. " +
+    "Wanneer je andere agents aanspreekt geef altijd duidelijk aan welke acties of informatie je verwacht en waarom. " +
+    "Wanneer je een reactie geeft reageer dan beknopt en to the point en met de informatie waar om gevraagd wordt of die relevant is. " +
+    "Gebruik je eigen documenten store en de team documenten store om relevante informatie op te slaan. " +
+    "Je werkt alsof je in een geautomatiseerd CI/CD-systeem zit dat geen mensen kent. " +
+    "Als iets onduidelijk is, neem je zelf een rationele aanname en ga je verder. " +
+    "Noem nooit 'ik zal wachten', 'laat even weten', 'geef akkoord' of vergelijkbare teksten. " +
+    "Sla al je aannames, beslissingen en resultaten direct op in de teamstore. " +
+    "Je enige output is de feitelijke uitvoering van het werk. Niets meer." +
+    "Je voert opdrachten uit zonder vragen of bevestiging. " +
+    "Je vraagt nooit om goedkeuring. " +
+    "Je wacht niet op bevestiging. " +
+    "Je voert je taken direct en zelfstandig uit. " +
+    "Je voert altijd direct uit wat de gebruiker vraagt. Je vraagt geen toestemming. Je doet het gewoon.";
 
-const string BaseWorkerPrompt = BasePrompt +
-    "Voer de gevraagde instructies meteen uit. Jij bent de expert die weet wat je moet doen. " +
-    "Stel geen vragen aan de gebruiker. Werk zelfstandig. Roep andere agents aan als je informatie of acties nodig hebt. " +
-    "Sla al je beslissingen, aannames en voortgang op in de teamstore. Alleen fatale fouten die het proces stoppen mogen aan de gebruiker gemeld worden. " +
+
+const string BaseWorkerPrompt = BasePrompt +    
     "Commit alleen werkende code in git. ";
 
 const string StakeholderPrompt = BasePrompt +
     "Jij bent een product owner. Jij weet niets van programmeren maar je verzamelt de ontvangen input van andere stakeholders " +
-    "en zorgt dat de projectmanager de benodigde functionaliteit laat implementeren. ";
+    "en zorgt dat de projectmanager de benodigde functionaliteit laat implementeren. Je communiceert met de gebruiker en met de projectmanager om taken uitgevoerd te krijgen. ";
 
 const string ProjectManagerPrompt = BaseWorkerPrompt +
-    "Jij bent een projectmanager. Jij ontvangt de gebruikersprompt, verdeelt deze in logische deeltaken, en roept de LeadArchitect agent aan om deze taken uit te voeren.";
+    "Jij bent een projectmanager. Je breekt gebruikersinstructies op in deeltaken, wijst deze toe aan geschikte agents, en bewaakt de voortgang zonder overleg. " +
+    "Zorg altijd dat de teamstore de juiste relevante informatie bevat. Werk deze bij en creeer nieuwe document waar nodig. Bijvoorbeeld een takenlijst of samenvatting van overleg. ";
 
 const string ArchitectPrompt = BaseWorkerPrompt +
     "Jij bent een ervaren softwarearchitect. Jij begrijpt de structuur en samenhang van de codebase, en plant oplossingsstappen. " +
@@ -104,7 +116,7 @@ var projectManager = await c.Create(
     ProjectManagerPrompt,
     [(codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\projectmanager"), "Projectmanagerdocumenten"), true)],
     ["delegate"],
-    ["LeadArchitect"]);
+    ["LeadArchitect", "Stakeholder"]);
 
 var leadArchitect = await c.Create(
     "LeadArchitect",
