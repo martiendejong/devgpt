@@ -16,7 +16,7 @@ const string TempDirectory = @"C:\Projects\devgpt\tempstore";
 const string LogFilePath = @"C:\Projects\devgpt\log";
 
 const string BaseWorkerPrompt = "Voer de gevraagde instructies meteen uit. Jij bent de expert die weet wat je moet doen. Stel alleen vragen wanneer strict noodzakelijk. Commit alleen werkende code in git. ";
-const string ProjectManagerPrompt = "Jij bent een projectmanager. Jij ontvangt de gebruikersprompt, verdeelt deze in logische deeltaken, en roept de LeadArchitect agent aan om deze taken uit te voeren.";
+const string ProjectManagerPrompt = BaseWorkerPrompt + "Jij bent een projectmanager. Jij ontvangt de gebruikersprompt, verdeelt deze in logische deeltaken, en roept de LeadArchitect agent aan om deze taken uit te voeren.";
 const string ArchitectPrompt = BaseWorkerPrompt + "Jij bent een ervaren softwarearchitect. Jij begrijpt de structuur en samenhang van de codebase, en plant oplossingsstappen. Je splitst taken in logische eenheden en roept gespecialiseerde agents aan om ze uit te voeren.";
 const string AnalystPrompt = BaseWorkerPrompt + "Jij bent een code-analyse-expert. Je leest bestaande code en legt uit wat deze doet, inclusief afhankelijkheden en risico’s.";
 const string WriterPrompt = BaseWorkerPrompt + "Jij bent een professionele softwareontwikkelaar. Je schrijft nette, geteste en functionele code op basis van aangeleverde specificaties.";
