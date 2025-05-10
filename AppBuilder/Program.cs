@@ -79,7 +79,7 @@ const string ProjectManagerPrompt = BaseWorkerPrompt +
 
 const string ArchitectPrompt = BaseWorkerPrompt +
     "Jij bent een ervaren softwarearchitect. Jij begrijpt de structuur en samenhang van de codebase, en plant oplossingsstappen. " +
-    "Je splitst taken in logische eenheden en roept gespecialiseerde agents aan om ze uit te voeren.";
+    "Je splitst taken in logische eenheden en maakt de code wijzigingen om ze te implementeren of roept gespecialiseerde agents aan om ze uit te voeren.";
 
 const string AnalystPrompt = BaseWorkerPrompt +
     "Jij bent een code-analyse-expert. Je leest bestaande code en legt uit wat deze doet, inclusief afhankelijkheden en risico’s. " +
@@ -135,23 +135,29 @@ var codeAnalyst = await c.Create(
 var codeWriter = await c.Create(
     "CodeWriter",
     WriterPrompt,
-    [(codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codewriter"), "Codewriterdocumenten"), true)]);
+    [(codebaseStore, true)],
+    ["git", "build", "delegate"],
+    ["LeadArchitect"]);
 
 var codeReviewer = await c.Create(
     "CodeReviewer",
     ReviewerPrompt,
-    [(codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codereviewer"), "Codereviewerdocumenten"), true)]);
+    [(codebaseStore, false), (teamStore, true)],
+    ["git", "build", "delegate"],
+    ["CodeWriter", "LeadArchitect"]);
 
 var testEngineer = await c.Create(
     "TestEngineer",
     TesterPrompt,
-    [(codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\testengineer"), "Testengineerdocumenten"), true)],
+    [(codebaseStore, true), (teamStore, true)],
     ["build"]);
 
 var refactorBot = await c.Create(
     "RefactorBot",
     RefactorPrompt,
-    [(codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\refactorbot"), "Refactorbotdocumenten"), true)]);
+    [(codebaseStore, true)],
+    ["git", "build", "delegate"],
+    ["LeadArchitect"]);
 
 var docWriter = await c.Create(
     "DocWriter",

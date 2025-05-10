@@ -62,7 +62,14 @@ public class SimpleOpenAIClientChatInteraction
         do
         {
             requiresAction = false;
-            completion = await Client.CompleteChatAsync(Messages, Options);
+            try
+            {
+                completion = await Client.CompleteChatAsync(Messages, Options);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
 
             var finishMessage = new AssistantChatMessage(completion);
             var toolCalls = completion.ToolCalls;
