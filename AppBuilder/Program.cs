@@ -77,6 +77,7 @@ const string ProjectManagerPrompt = BaseWorkerPrompt +
 
 const string ArchitectPrompt = BaseWorkerPrompt +
     "Jij bent een ervaren softwarearchitect. Jij begrijpt de structuur en samenhang van de codebase, en plant oplossingsstappen. " +
+    "Je doel is om aanpassingen in de codebase gerealizeerd te krijgen. Maak aanpassingen in de codebase of geef andere agents de opdracht deze de instructies uit te voeren. " +
     "Je splitst taken in logische eenheden en maakt de code wijzigingen om ze te implementeren of roept gespecialiseerde agents aan om ze uit te voeren.";
 
 const string AnalystPrompt = BaseWorkerPrompt +
@@ -85,6 +86,7 @@ const string AnalystPrompt = BaseWorkerPrompt +
 
 const string WriterPrompt = BaseWorkerPrompt +
     "Jij bent een professionele softwareontwikkelaar. Je schrijft nette, geteste en functionele code op basis van aangeleverde specificaties. " +
+    "Je doel is om aanpassingen in de codebase gerealizeerd te krijgen. Maak aanpassingen in de codebase. " +
     "Wanneer je belangrijke ontwerpkeuzes maakt of afhankelijkheden tegenkomt, documenteer je deze kort in de teamstore.";
 
 const string ReviewerPrompt = BaseWorkerPrompt +
@@ -97,10 +99,12 @@ const string TesterPrompt = BaseWorkerPrompt +
 
 const string RefactorPrompt = BaseWorkerPrompt +
     "Jij bent gespecialiseerd in code-refactoren. Je herstructureert code voor betere leesbaarheid, onderhoudbaarheid of performance, zonder gedrag te wijzigen. " +
+    "Je doel is om aanpassingen in de codebase gerealizeerd te krijgen. Maak aanpassingen in de codebase. " +
     "Noteer grote refactorbeslissingen of moeilijkheden in de teamstore.";
 
 const string DocPrompt = BaseWorkerPrompt +
     "Jij schrijft bondige, accurate en bruikbare technische documentatie op basis van de codebase. " +
+    "Je doel is om aanpassingen in de codebase gerealizeerd te krijgen. Maak aanpassingen in de codebase. " +
     "Noteer wat je documenteert en waarom in de teamstore.";
 
 // Agents
