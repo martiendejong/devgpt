@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 using MathNet.Numerics.Optimization;
 using OpenAI.Chat;
 using Store.OpnieuwOpnieuw;
@@ -9,166 +9,157 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using System.Runtime.Serialization;
 
+#region Configuration and Constants
+
+const string AppDirectory = @"C:\Projects\devgpt";
+const string TempDirectory = @"C:\Projects\devgpt\tempstore";
+const string LogFilePath = @"C:\Projects\devgpt\log";
+
+const string ProjectManagerPrompt = "Jij bent een projectmanager. Jij ontvangt de gebruikersprompt, verdeelt deze in logische deeltaken, en roept de LeadArchitect agent aan om deze taken uit te voeren.";
+const string ArchitectPrompt = "Jij bent een ervaren softwarearchitect. Jij begrijpt de structuur en samenhang van de codebase, en plant oplossingsstappen. Je splitst taken in logische eenheden en roept gespecialiseerde agents aan om ze uit te voeren.";
+const string AnalystPrompt = "Jij bent een code-analyse-expert. Je leest bestaande code en legt uit wat deze doet, inclusief afhankelijkheden en risico’s.";
+const string WriterPrompt = "Jij bent een professionele softwareontwikkelaar. Je schrijft nette, geteste en functionele code op basis van aangeleverde specificaties.";
+const string ReviewerPrompt = "Jij bent een zeer kritische code reviewer. Je controleert code op leesbaarheid, consistentie, veiligheid en performance.";
+const string TesterPrompt = "Jij bent een testexpert. Jij ontwikkelt tests, voert builds uit, analyseert fouten en rapporteert betrouwbaar.";
+const string RefactorPrompt = "Jij bent gespecialiseerd in code-refactoren. Je herstructureert code voor betere leesbaarheid, onderhoudbaarheid of performance, zonder gedrag te wijzigen.";
+const string DocPrompt = "Jij schrijft bondige, accurate en bruikbare technische documentatie op basis van de codebase.";
+
+#endregion
+
+#region Main Logic
+
 var openAISettings = OpenAIConfig.Load();
-string openAiApiKey = openAISettings.ApiKey;
+string openAIApiKey = openAISettings.ApiKey;
 
-
-//string appDir = @"C:\Projects\myhtmlgame";
-//string documentStoreRoot = @"C:\Projects\myhtmlgame";
-//string embeddingsFile = @"C:\Projects\myhtmlgame\embeddings";
-//string logFilePath = @"C:\Projects\myhtmlgame\log";
-
-// Vera frontend
-//string appDir = @"C:\Projects\socialmediahulp";
-//string documentStoreRoot = @"C:\Projects\socialmediahulp";
-//string embeddingsFile = @"C:\Projects\socialmediahulp\embeddings";
-//string partsFile = @"C:\Projects\socialmediahulp\parts";
-//string logFilePath = @"C:\Projects\socialmediahulp\log";
-
-//string tempStoreRoot = @"C:\Projects\socialmediahulp\tempstore";
-//string tempEmbeddingsFile = @"C:\Projects\socialmediahulp\tempstore\embeddings";
-
-//string tempPartsFile = @"C:\Projects\socialmediahulp\tempstore\parts";
-
-
-
-
-string appDir = @"C:\Projects\devgpt";
-var paths = new StorePaths(appDir);
-
-string logFilePath = @"C:\Projects\devgpt\log";
-
-
-
-var tmpPaths = new StorePaths(@"C:\Projects\devgpt\tempstore");
-
-
-
-var openAIConfig = new OpenAIConfig(openAiApiKey);
+var mainPaths = new StorePaths(AppDirectory);
+var tempPaths = new StorePaths(TempDirectory);
+var openAIConfig = new OpenAIConfig(openAIApiKey);
 var llmClient = new OpenAIClientWrapper(openAIConfig);
 
+var codeBuilder = new CodeBuilder2(
+    AppDirectory, 
+    mainPaths.RootFolder, 
+    mainPaths.EmbeddingsFile, 
+    mainPaths.PartsFile,
+    openAIApiKey, 
+    LogFilePath, 
+    tempPaths.RootFolder, 
+    tempPaths.EmbeddingsFile, 
+    tempPaths.PartsFile);
+codeBuilder.Output = Console.WriteLine;
 
-var builder = new CodeBuilder2(appDir, paths.RootFolder, paths.EmbeddingsFile, paths.PartsFile, openAiApiKey, logFilePath, tmpPaths.RootFolder, tmpPaths.EmbeddingsFile, tmpPaths.PartsFile);
-builder.Output = Console.WriteLine;
+await codeBuilder.AddFiles(["*.cs"], "", ["bin", "obj"]);
+await codeBuilder.AddFiles(["*.cssproj"]);
+await codeBuilder.AddFiles(["*.sln"]);
 
+var codebaseStore = CreateStore(mainPaths, llmClient, "Codebase");
+var teamStore = CreateStore(tempPaths, llmClient, "Teamdocumenten");
 
-await builder.AddFiles(["*.cs"], "", ["bin", "obj"]);
-await builder.AddFiles(["*.cssproj"]);
-await builder.AddFiles(["*.sln"]);
+var agentFactory = new AgentFactory(openAIApiKey, LogFilePath);
+agentFactory.Messages = codeBuilder.History;
 
+// Agents
+var projectManager = await CreateAgent(
+    agentFactory,
+    "ProjectManager",
+    ProjectManagerPrompt,
+    [ (codebaseStore, false), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\projectmanager"), llmClient, "Projectmanagerdocumenten"), true) ],
+    ["delegate"],
+    ["LeadArchitect"]);
 
+var leadArchitect = await CreateAgent(
+    agentFactory,
+    "LeadArchitect",
+    ArchitectPrompt,
+    [ (codebaseStore, true), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\architect"), llmClient, "Architectdocumenten"), true) ],
+    ["git", "build", "delegate"],
+    ["CodeAnalyst", "CodeWriter", "CodeReviewer", "TestEngineer", "RefactorBot", "DocWriter"]);
 
+var codeAnalyst = await CreateAgent(
+    agentFactory,
+    "CodeAnalyst",
+    AnalystPrompt,
+    [ (codebaseStore, false), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codeanalyst"), llmClient, "Codeanalystdocumenten"), true) ],
+    ["read"],
+    []);
 
-var store = CreateStore(paths, llmClient, "Codebase");
-var teamstore = CreateStore(tmpPaths, llmClient, "Teamdocumenten");
+var codeWriter = await CreateAgent(
+    agentFactory,
+    "CodeWriter",
+    WriterPrompt,
+    [ (codebaseStore, true), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codewriter"), llmClient, "Codewriterdocumenten"), true) ],
+    ["read", "write"],
+    []);
 
-var factory = new AgentFactory(openAiApiKey, logFilePath);
+var codeReviewer = await CreateAgent(
+    agentFactory,
+    "CodeReviewer",
+    ReviewerPrompt,
+    [ (codebaseStore, false), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codereviewer"), llmClient, "Codereviewerdocumenten"), true) ],
+    ["read"],
+    []);
 
+var testEngineer = await CreateAgent(
+    agentFactory,
+    "TestEngineer",
+    TesterPrompt,
+    [ (codebaseStore, true), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\testengineer"), llmClient, "Testengineerdocumenten"), true) ],
+    ["read", "write", "build"],
+    []);
 
-var pmPrompt = @"Jij bent een projectmanager. Jij ontvangt de gebruikersprompt, verdeelt deze in logische deeltaken, en roept de LeadArchitect agent aan om deze taken uit te voeren.";
-var pmPaths = new StorePaths(@"C:\Projects\devgpt\roles\projectmanager");
-var pmStore = CreateStore(pmPaths, llmClient, "Projectmanagerdocumenten");
-IEnumerable<(DocumentStore Store, bool Write)> pmStores = [(store, false), (teamstore, true), (pmStore, true)];
-List<string> pmFunctions = ["delegate"];
-List<string> pmAgents = ["LeadArchitect"];
-var projectManager = await factory.CreateAgent("ProjectManager", pmPrompt, pmStores, pmFunctions, pmAgents);
+var refactorBot = await CreateAgent(
+    agentFactory,
+    "RefactorBot",
+    RefactorPrompt,
+    [ (codebaseStore, true), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\refactorbot"), llmClient, "Refactorbotdocumenten"), true) ],
+    ["read", "write"],
+    []);
 
-var architectPrompt = @"Jij bent een ervaren softwarearchitect. Jij begrijpt de structuur en samenhang van de codebase, en plant oplossingsstappen. Je splitst taken in logische eenheden en roept gespecialiseerde agents aan om ze uit te voeren.";
-var architectPaths = new StorePaths(@"C:\Projects\devgpt\roles\architect");
-var architectstore = CreateStore(architectPaths, llmClient, "Architectdocumenten");
-IEnumerable<(DocumentStore Store, bool Write)> architectStores = [(store, true), (teamstore, true), (architectstore, true)];
-List<string> architectFunctions = ["git", "build", "delegate"];
-List<string> architectAgents = ["CodeAnalyst", "CodeWriter", "CodeReviewer", "TestEngineer", "RefactorBot", "DocWriter"];
-var leadArchitect = await factory.CreateAgent("LeadArchitect", architectPrompt, architectStores, architectFunctions, architectAgents);
+var docWriter = await CreateAgent(
+    agentFactory,
+    "DocWriter",
+    DocPrompt,
+    [ (codebaseStore, true), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\docwriter"), llmClient, "Docwriterdocumenten"), true) ],
+    ["read", "write"],
+    []);
 
-var analystPrompt = @"Jij bent een code-analyse-expert. Je leest bestaande code en legt uit wat deze doet, inclusief afhankelijkheden en risico’s.";
-var analystPaths = new StorePaths(@"C:\Projects\devgpt\roles\codeanalyst");
-var analystStore = CreateStore(analystPaths, llmClient, "Codeanalystdocumenten");
-IEnumerable<(DocumentStore Store, bool Write)> analystStores = [(store, false), (teamstore, true), (analystStore, true)];
-List<string> analystFunctions = ["read"];
-List<string> analystAgents = [];
-var codeAnalyst = await factory.CreateAgent("CodeAnalyst", analystPrompt, analystStores, analystFunctions, analystAgents);
+await HandleUserInput(projectManager, codeBuilder);
 
-var writerPrompt = @"Jij bent een professionele softwareontwikkelaar. Je schrijft nette, geteste en functionele code op basis van aangeleverde specificaties.";
-var writerPaths = new StorePaths(@"C:\Projects\devgpt\roles\codewriter");
-var writerStore = CreateStore(writerPaths, llmClient, "Codewriterdocumenten");
-IEnumerable<(DocumentStore Store, bool Write)> writerStores = [(store, true), (teamstore, true), (writerStore, true)];
-List<string> writerFunctions = ["read", "write"];
-List<string> writerAgents = [];
-var codeWriter = await factory.CreateAgent("CodeWriter", writerPrompt, writerStores, writerFunctions, writerAgents);
+#endregion
 
-var reviewerPrompt = @"Jij bent een zeer kritische code reviewer. Je controleert code op leesbaarheid, consistentie, veiligheid en performance.";
-var reviewerPaths = new StorePaths(@"C:\Projects\devgpt\roles\codereviewer");
-var reviewerStore = CreateStore(reviewerPaths, llmClient, "Codereviewerdocumenten");
-IEnumerable<(DocumentStore Store, bool Write)> reviewerStores = [(store, false), (teamstore, true), (reviewerStore, true)];
-List<string> reviewerFunctions = ["read"];
-List<string> reviewerAgents = [];
-var codeReviewer = await factory.CreateAgent("CodeReviewer", reviewerPrompt, reviewerStores, reviewerFunctions, reviewerAgents);
+#region Methods
 
-var testerPrompt = @"Jij bent een testexpert. Jij ontwikkelt tests, voert builds uit, analyseert fouten en rapporteert betrouwbaar.";
-var testerPaths = new StorePaths(@"C:\Projects\devgpt\roles\testengineer");
-var testerStore = CreateStore(testerPaths, llmClient, "Testengineerdocumenten");
-IEnumerable<(DocumentStore Store, bool Write)> testerStores = [(store, true), (teamstore, true), (testerStore, true)];
-List<string> testerFunctions = ["read", "write", "build"];
-List<string> testerAgents = [];
-var testEngineer = await factory.CreateAgent("TestEngineer", testerPrompt, testerStores, testerFunctions, testerAgents);
-
-var refactorPrompt = @"Jij bent gespecialiseerd in code-refactoren. Je herstructureert code voor betere leesbaarheid, onderhoudbaarheid of performance, zonder gedrag te wijzigen.";
-var refactorPaths = new StorePaths(@"C:\Projects\devgpt\roles\refactorbot");
-var refactorStore = CreateStore(refactorPaths, llmClient, "Refactorbotdocumenten");
-IEnumerable<(DocumentStore Store, bool Write)> refactorStores = [(store, true), (teamstore, true), (refactorStore, true)];
-List<string> refactorFunctions = ["read", "write"];
-List<string> refactorAgents = [];
-var refactorBot = await factory.CreateAgent("RefactorBot", refactorPrompt, refactorStores, refactorFunctions, refactorAgents);
-
-var docPrompt = @"Jij schrijft bondige, accurate en bruikbare technische documentatie op basis van de codebase.";
-var docPaths = new StorePaths(@"C:\Projects\devgpt\roles\docwriter");
-var docStore = CreateStore(docPaths, llmClient, "Docwriterdocumenten");
-IEnumerable<(DocumentStore Store, bool Write)> docStores = [(store, true), (teamstore, true), (docStore, true)];
-List<string> docFunctions = ["read", "write"];
-List<string> docAgents = [];
-var docWriter = await factory.CreateAgent("DocWriter", docPrompt, docStores, docFunctions, docAgents);
-
-factory.Messages = builder.History;
-
-
-
-
-
-
-////var appFolderStoreConfig = new DocumentStoreConfig(documentStoreRoot, embeddingsFile, openAiApiKey);
-////var store = new DocumentStore(appFolderStoreConfig);
-
-//var builder = new CodeBuilder2(appDir, documentStoreRoot, embeddingsFile, partsFile, openAiApiKey, logFilePath, tempStoreRoot, tempEmbeddingsFile, tempPartsFile);
-//builder.Output = Console.WriteLine;
-////await builder.AddFiles(["*.js", "*.css", "*.html"]);
-////await builder.AddFiles(["*.js", "*.ts", "*.vue"], @"frontend\src");
-////await builder.AddFiles(["*.cs"], "", ["bin", "obj"]);
-////await builder.AddFiles(["*.cssproj"]);
-////await builder.AddFiles(["*.sln"]);
-
-
-//await builder.AddFiles(["*.cs"], "", ["bin", "obj"]);
-//await builder.AddFiles(["*.cssproj"]);
-//await builder.AddFiles(["*.sln"]);
-
-
-////await builder.AddFiles(["*.*"], "", ["*."]);
-
-
-while (true)
+/// <summary>
+/// Centralized agent creation method.
+/// </summary>
+static async Task<DevGPTAgent> CreateAgent(
+    AgentFactory factory,
+    string name,
+    string systemPrompt,
+    IEnumerable<(DocumentStore Store, bool Write)> stores,
+    IEnumerable<string> functions,
+    IEnumerable<string> agents)
 {
-    Console.WriteLine("Geef een instructie");
-    var input = Console.ReadLine();
-    var response = await projectManager.Generator.UpdateStore(input, builder.History, true, true, projectManager.Tools, null);
-    builder.History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response });
-
-    //await builder.Execute(input);
-    //builder.History.ForEach(m => Console.WriteLine(m.Text));
+    return await factory.CreateAgent(name, systemPrompt, stores, functions, agents);
 }
 
-return;
+/// <summary>
+/// Handles user input and project manager response loop.
+/// </summary>
+static async Task HandleUserInput(DevGPTAgent projectManager, CodeBuilder2 codeBuilder)
+{
+    while (true)
+    {
+        Console.WriteLine("Geef een instructie");
+        var input = Console.ReadLine();
+        var response = await projectManager.Generator.UpdateStore(input, codeBuilder.History, true, true, projectManager.Tools, null);
+        codeBuilder.History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response });
+    }
+}
 
+/// <summary>
+/// Creates a document store for code and agent memory.
+/// </summary>
 static DocumentStore CreateStore(StorePaths paths, OpenAIClientWrapper llmClient, string name)
 {
     var embeddingStore = new EmbeddingFileStore(paths.EmbeddingsFile, llmClient);
@@ -179,12 +170,4 @@ static DocumentStore CreateStore(StorePaths paths, OpenAIClientWrapper llmClient
     return store;
 }
 
-static DocumentStore CreateMemoryStore(string documentStoreRoot, string embeddingsFile, string partsFile, OpenAIClientWrapper llmClient, string n)
-{
-    var embeddingStore = new TextEmbeddingMemoryStore(llmClient);
-    var textStore = new TextFileStore(documentStoreRoot);
-    var partStore = new DocumentPartFileStore(partsFile);
-    var store = new DocumentStore(embeddingStore, textStore, partStore, llmClient);
-    store.Name = n;
-    return store;
-}
+#endregion
