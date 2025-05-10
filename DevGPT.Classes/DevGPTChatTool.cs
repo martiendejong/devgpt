@@ -1,4 +1,5 @@
-﻿using Store.OpnieuwOpnieuw.AIClient;
+﻿using DevGPT.Chat;
+using Store.OpnieuwOpnieuw.AIClient;
 
 public class DevGPTChatTool
 {

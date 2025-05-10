@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using DevGPT.Chat;
 using DevGPT.NewAPI;
 using OpenAI;
 using OpenAI.Chat;

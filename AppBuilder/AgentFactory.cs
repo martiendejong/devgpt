@@ -1,6 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System.Text.Json;
 using System.Xml.Linq;
+using DevGPT.Chat;
 using DevGPT.NewAPI;
 using Microsoft.Extensions.Configuration;
 using Store.OpnieuwOpnieuw;
@@ -153,7 +154,7 @@ public class AgentFactory {
             return "No key given";
         });
         tools.Add(getRelevancy);
-        var getFile = new DevGPTChatTool($"{store.Name}_read", $"Retrieve a file from store {store.Name}", [keyParameter], async (messages, toolCall) =>
+        DevGPTChatTool getFile = new DevGPTChatTool($"{store.Name}_read", $"Retrieve a file from store {store.Name}", [keyParameter], async (messages, toolCall) =>
         {
             if (keyParameter.TryGetValue(toolCall, out string key))
                 return await store.Get(key)?? "File not found";

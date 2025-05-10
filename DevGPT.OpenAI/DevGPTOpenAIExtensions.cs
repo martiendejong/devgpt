@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using DevGPT.Chat;
 using OpenAI.Chat;
 using OpenAI.Images;
 

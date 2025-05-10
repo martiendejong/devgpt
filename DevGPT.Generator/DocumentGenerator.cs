@@ -1,4 +1,5 @@
 using DevGPT.Chat;
+using DevGPT.Core;
 using OpenAI;
 using OpenAI.Chat;
 using Store.OpnieuwOpnieuw;

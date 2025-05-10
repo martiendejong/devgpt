@@ -8,6 +8,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Linq;
 using OpenAI.Images;
 using Store.OpnieuwOpnieuw.AIClient;
+using DevGPT.Chat;
 
 public class SimpleOpenAIClientChatInteraction
 {

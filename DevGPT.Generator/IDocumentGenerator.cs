@@ -1,4 +1,5 @@
 using DevGPT.Chat;
+using DevGPT.NewAPI;
 
 namespace DevGPT.Core
 {
