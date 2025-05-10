@@ -108,7 +108,7 @@ public class CodeBuilder2
                 var text = await Store.Get(question.ToString());
                 //var path = Store.GetFilePath(question.ToString());
                 //var text = File.ReadAllText(path);
-                return text;
+                return text == null ? "File not found" : text;
             }
             catch (Exception ex)
             {
@@ -670,6 +670,7 @@ public class CodeBuilder2
     private async Task<string> UpdateSpecification(string feedback, string guid)
     {
         var e = await TempStore.Get(guid);
+        if (e == null) return "Specification not found";
 
         var config = new OpenAIConfig(OpenAiApiKey);
         var llmClient = new OpenAIClientWrapper(config);

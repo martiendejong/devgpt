@@ -46,6 +46,8 @@ var c = new QuickAgentCreator(agentFactory, llmClient);
 var codebaseStore = c.CreateStore(mainPaths, "Codebase");
 var teamStore = c.CreateStore(tempPaths, "Teamdocumenten");
 
+await codebaseStore.UpdateEmbeddings();
+
 // agents
 
 #region Agent prompts

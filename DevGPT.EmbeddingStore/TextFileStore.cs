@@ -11,7 +11,7 @@
 
         public string GetPath(string key) => Path.Combine(RootFolder, key);
 
-        public async Task<string> Get(string key) => await File.ReadAllTextAsync(GetPath(key));
+        public async Task<string> Get(string key) => File.Exists(GetPath(key)) ? await File.ReadAllTextAsync(GetPath(key)) : null;
 
         public async Task<bool> Remove(string key)
         {

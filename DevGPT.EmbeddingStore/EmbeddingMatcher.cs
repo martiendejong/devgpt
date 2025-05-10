@@ -42,6 +42,7 @@ namespace DevGPT.NewAPI
             foreach (var document in total)
             {
                 var text = await document.GetText(document.Document.Key);
+                if (text == null) continue;
                 var documentView = $"File path: {document.Document.Key}\nFile content:\n{text}";
                 if (document.StoreName != null) documentView = $"Store: {document.StoreName}\n{documentView}";
 

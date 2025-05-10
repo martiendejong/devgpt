@@ -34,6 +34,11 @@ namespace Store.OpnieuwOpnieuw.DocumentStore
         {
             List<string> partKeys = [name];
             var content = await TextStore.Get(name);
+            if (content == null)
+            {
+                await EmbeddingStore.RemoveEmbedding(name);
+                return false;
+            }
             var embed = EmbeddingMatcher.CutOffQuery(content);
             return await EmbeddingStore.StoreEmbedding(name, embed);
         }
