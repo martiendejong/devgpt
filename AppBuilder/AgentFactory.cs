@@ -167,16 +167,16 @@ public class AgentFactory {
                 return "No key given";
             });
             tools.Add(callAgent);
-            if (Agents[agent].IsCoder)
-            {
-                var callCoderAgent = new DevGPTChatTool($"{agent}", $"Calls {agent} to modify the codebase", [instructionParameter], async (messages, toolCall) =>
+            //if (Agents[agent].IsCoder)
+            //{
+                var callCoderAgent = new DevGPTChatTool($"{agent}_code", $"Calls {agent} to modify the codebase", [instructionParameter], async (messages, toolCall) =>
                 {
                     if (instructionParameter.TryGetValue(toolCall, out string key))
                         return await CallCoderAgent(agent, key, caller);
                     return "No key given";
                 });
                 tools.Add(callCoderAgent);
-            }
+            //}
         }
     }
 }
