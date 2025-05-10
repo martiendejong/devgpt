@@ -3,6 +3,8 @@ using Store.OpnieuwOpnieuw.AIClient;
 
 public class ToolsContextBase : IToolsContext
 {
+    public bool WriteMode = false;
+
     public List<DevGPTChatTool> Tools { get; set; } = new List<DevGPTChatTool>();
 
     public void Add(DevGPTChatTool info)

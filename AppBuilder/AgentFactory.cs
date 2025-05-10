@@ -51,7 +51,7 @@ public class AgentFactory {
     {
         var agent = Agents[name];
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{caller}: {query}" });
-        var response = await agent.Generator.UpdateStore(query, null, true, true, agent.Tools, null);
+        var response = await agent.Generator.UpdateStore(query + "\nYou are now in write mode. You cannot call any other {agent}_write tools in this mode.", null, true, true, agent.Tools, null);
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{name}: {response}" });
         return response;
     }
@@ -97,6 +97,7 @@ public class AgentFactory {
     {
         var writeFile = new DevGPTChatTool($"{store.Name}_write", $"Store a file in store {store.Name}", [keyParameter, contentParameter], async (messages, toolCall) =>
         {
+            if (tools.WriteMode) return "Cannot give write instructions when in write mode";
             if (keyParameter.TryGetValue(toolCall, out string key))
                 if (contentParameter.TryGetValue(toolCall, out string content))
                     return await store.Store(key, content, false) ? "success" : "content provided was the same as the file";
@@ -171,8 +172,14 @@ public class AgentFactory {
             //{
                 var callCoderAgent = new DevGPTChatTool($"{agent}_code", $"Calls {agent} to modify the codebase", [instructionParameter], async (messages, toolCall) =>
                 {
+                    if (tools.WriteMode) return "Cannot give write instructions when in write mode";
                     if (instructionParameter.TryGetValue(toolCall, out string key))
-                        return await CallCoderAgent(agent, key, caller);
+                    {
+                        tools.WriteMode = true;
+                        var result = await CallCoderAgent(agent, key, caller);
+                        tools.WriteMode = false;
+                        return result;
+                    }
                     return "No key given";
                 });
                 tools.Add(callCoderAgent);
