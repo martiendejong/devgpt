@@ -25,6 +25,9 @@ public class AgentFactory {
         LogFilePath = logFilePath;
     }
 
+    public bool WriteMode = false;
+
+
     public List<DevGPTChatMessage> Messages;
 
     public string OpenAiApiKey;
@@ -97,7 +100,7 @@ public class AgentFactory {
     {
         var writeFile = new DevGPTChatTool($"{store.Name}_write", $"Store a file in store {store.Name}", [keyParameter, contentParameter], async (messages, toolCall) =>
         {
-            if (tools.WriteMode) return "Cannot give write instructions when in write mode";
+            if (WriteMode) return "Cannot give write instructions when in write mode";
             if (keyParameter.TryGetValue(toolCall, out string key))
                 if (contentParameter.TryGetValue(toolCall, out string content))
                     return await store.Store(key, content, false) ? "success" : "content provided was the same as the file";
@@ -172,12 +175,12 @@ public class AgentFactory {
             //{
                 var callCoderAgent = new DevGPTChatTool($"{agent}_code", $"Calls {agent} to modify the codebase", [instructionParameter], async (messages, toolCall) =>
                 {
-                    if (tools.WriteMode) return "Cannot give write instructions when in write mode";
+                    if (WriteMode) return "Cannot give write instructions when in write mode";
                     if (instructionParameter.TryGetValue(toolCall, out string key))
                     {
-                        tools.WriteMode = true;
+                        WriteMode = true;
                         var result = await CallCoderAgent(agent, key, caller);
-                        tools.WriteMode = false;
+                        WriteMode = false;
                         return result;
                     }
                     return "No key given";
