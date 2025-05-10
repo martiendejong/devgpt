@@ -138,7 +138,7 @@ public class AgentFactory {
         var getFile = new DevGPTChatTool($"{store.Name}_read", $"Retrieve a file from store {store.Name}", [keyParameter], async (messages, toolCall) =>
         {
             if (keyParameter.TryGetValue(toolCall, out string key))
-                return await store.Get(key);
+                return await store.Get(key)?? "File not found";
             return "No key given";
         });
         tools.Add(getFile);

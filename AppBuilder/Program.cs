@@ -46,12 +46,14 @@ var c = new QuickAgentCreator(agentFactory, llmClient);
 var codebaseStore = c.CreateStore(mainPaths, "Codebase");
 var teamStore = c.CreateStore(tempPaths, "Teamdocumenten");
 
+await codebaseStore.UpdateEmbeddings();
+
 // agents
 
 #region Agent prompts
 
-const string BasePrompt = "Wanneer je andere agents aanspreekt geef altijd duidelijk aan welke acties of informatie je verwacht en waarom. Wanneer je een reactie geeft reageer dan beknopt en to the point en met de informatie waar om gevraagd wordt of die relevant is.";
-const string StakeholderPrompt = BasePrompt + "Jij bent een product owner. Jij weet niets van programmeren maar je verzameld de ontvangen input van andere stakeholders en zorgt dat de projectmanager de benodigde functionaliteit laat implementeren.";
+const string BasePrompt = "Wanneer je andere agents aanspreekt geef altijd duidelijk aan welke acties of informatie je verwacht en waarom. Wanneer je een reactie geeft reageer dan beknopt en to the point en met de informatie waar om gevraagd wordt of die relevant is. Gebruik je eigen store en de team store om relevante informatie op te slaan. ";
+const string StakeholderPrompt = BasePrompt + "Jij bent een product owner. Jij weet niets van programmeren maar je verzameld de ontvangen input van andere stakeholders en zorgt dat de projectmanager de benodigde functionaliteit laat implementeren. ";
 
 const string BaseWorkerPrompt = BasePrompt + "Voer de gevraagde instructies meteen uit. Jij bent de expert die weet wat je moet doen. Stel alleen vragen wanneer strict noodzakelijk. Commit alleen werkende code in git. ";
 const string ProjectManagerPrompt = BaseWorkerPrompt + "Jij bent een projectmanager. Jij ontvangt de gebruikersprompt, verdeelt deze in logische deeltaken, en roept de LeadArchitect agent aan om deze taken uit te voeren.";
