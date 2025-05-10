@@ -1,7 +1,6 @@
-﻿using OpenAI.Chat;
-using Store.OpnieuwOpnieuw.AIClient;
+using DevGPT.Chat;
 
-namespace DevGPT.NewAPI
+namespace DevGPT.Core
 {
     public interface IDocumentGenerator
     {

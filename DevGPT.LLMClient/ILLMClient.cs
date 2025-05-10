@@ -1,4 +1,5 @@
-﻿using DevGPT.NewAPI;
+﻿using DevGPT.Chat;
+using DevGPT.NewAPI;
 
 namespace Store.OpnieuwOpnieuw.AIClient
 {

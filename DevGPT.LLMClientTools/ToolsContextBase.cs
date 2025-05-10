@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using DevGPT.Chat;
 using Store.OpnieuwOpnieuw.AIClient;
 
 public class ToolsContextBase : IToolsContext

@@ -1,4 +1,5 @@
 // See https://aka.ms/new-console-template for more information
+using DevGPT.Chat;
 using MathNet.Numerics.Optimization;
 using OpenAI.Chat;
 using Store.OpnieuwOpnieuw;

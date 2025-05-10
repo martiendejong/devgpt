@@ -1,4 +1,4 @@
-﻿namespace Store.OpnieuwOpnieuw.AIClient
+namespace DevGPT.Chat
 {
     public class DevGPTChatMessage
     {
