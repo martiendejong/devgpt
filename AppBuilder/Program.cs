@@ -125,7 +125,7 @@ var leadArchitect = await c.Create(
     ArchitectPrompt,
     [(codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\architect"), "Architectdocumenten"), true)],
     ["git", "build", "delegate"],
-    ["CodeAnalyst", "CodeWriter", "CodeReviewer", "TestEngineer", "RefactorBot", "DocWriter", "ProjectManager"]);
+    ["CodeAnalyst", "CodeWriter", "CodeReviewer", "TestEngineer", "RefactorBot", "DocWriter", "ProjectManager"], true);
 
 var codeAnalyst = await c.Create(
     "CodeAnalyst",
@@ -137,7 +137,7 @@ var codeWriter = await c.Create(
     WriterPrompt,
     [(codebaseStore, true)],
     ["git", "build", "delegate"],
-    ["LeadArchitect"]);
+    ["LeadArchitect"], true);
 
 var codeReviewer = await c.Create(
     "CodeReviewer",
@@ -157,7 +157,7 @@ var refactorBot = await c.Create(
     RefactorPrompt,
     [(codebaseStore, true)],
     ["git", "build", "delegate"],
-    ["LeadArchitect"]);
+    ["LeadArchitect"], true);
 
 var docWriter = await c.Create(
     "DocWriter",
@@ -181,7 +181,7 @@ static async Task HandleUserInput(DevGPTAgent agent, CodeBuilder2 codeBuilder)
     {
         Console.WriteLine("Geef een instructie");
         var input = Console.ReadLine();
-        var response = await agent.Generator.UpdateStore(input, codeBuilder.History, true, true, agent.Tools, null);
+        var response = await agent.Generator.GetResponse(input, codeBuilder.History, true, true, agent.Tools, null);
         codeBuilder.History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response });
     }
 }
@@ -205,11 +205,11 @@ public class QuickAgentCreator
         string systemPrompt,
         IEnumerable<(DocumentStore Store, bool Write)> stores,
         IEnumerable<string> functions = null,
-        IEnumerable<string> agents = null)
+        IEnumerable<string> agents = null, bool isCoder = false)
     {
         if (agents == null) agents = [];
         if (functions == null) functions = [];
-        return await AgentFactory.CreateAgent(name, systemPrompt, stores, functions, agents);
+        return await AgentFactory.CreateAgent(name, systemPrompt, stores, functions, agents, isCoder);
     }
 
     /// <summary>

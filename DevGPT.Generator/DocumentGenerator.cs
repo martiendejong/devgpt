@@ -126,13 +126,11 @@ namespace DevGPT.NewAPI
             //);
             //toolsContext.Add(info);
 
-            var response = await LLMClient.GetResponse(sendMessages, DevGPTChatResponseFormat.Text, toolsContext, images);
+            var response = await LLMClient.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext, images);
 
-            Console.WriteLine();
-            Console.WriteLine(response);
-            //await ModifyDocuments(response);
+            await ModifyDocuments(response);
 
-            return response;
+            return response.ResponseMessage;
         }
 
         public async Task<string> UpdateStore(IEnumerable<DevGPTChatMessage> messages, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext toolsContext = null, List<ImageData> images = null)

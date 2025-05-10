@@ -42,12 +42,21 @@ public class AgentFactory {
     {
         var agent = Agents[name];
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{caller}: {query}" });
+        var response = await agent.Generator.GetResponse(query, null, true, true, agent.Tools, null);
+        Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{name}: {response}" });
+        return response;
+    }
+
+    public async Task<string> CallCoderAgent(string name, string query, string caller)
+    {
+        var agent = Agents[name];
+        Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{caller}: {query}" });
         var response = await agent.Generator.UpdateStore(query, null, true, true, agent.Tools, null);
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{name}: {response}" });
         return response;
     }
 
-    public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(DocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents)
+    public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(DocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, bool isCoder = false)
     {
         var config = new OpenAIConfig(OpenAiApiKey);
         var llmClient = new OpenAIClientWrapper(config);
@@ -59,7 +68,7 @@ public class AgentFactory {
         var tempStores = stores.Select(s => s.Store as IDocumentStore).ToList();
 
         var generator = new DocumentGenerator(stores.First().Store, new List<DevGPTChatMessage>() { new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = systemPrompt } }, llmClient, OpenAiApiKey, LogFilePath, tempStores);
-        var agent = new DevGPTAgent(name, generator, tools);
+        var agent = new DevGPTAgent(name, generator, tools, isCoder);
         Agents[name] = agent;
         return agent;
     }
@@ -151,13 +160,23 @@ public class AgentFactory {
     {
         foreach (var agent in agents)
         {
-            var callAgent = new DevGPTChatTool($"{agent}", $"Calls {agent} to execute a taks and return a message", [instructionParameter], async (messages, toolCall) =>
+            var callAgent = new DevGPTChatTool($"{agent}", $"Calls {agent} to execute a tasks and return a message", [instructionParameter], async (messages, toolCall) =>
             {
                 if (instructionParameter.TryGetValue(toolCall, out string key))
                     return await CallAgent(agent, key, caller);
                 return "No key given";
             });
             tools.Add(callAgent);
+            if (Agents[agent].IsCoder)
+            {
+                var callCoderAgent = new DevGPTChatTool($"{agent}", $"Calls {agent} to modify the codebase", [instructionParameter], async (messages, toolCall) =>
+                {
+                    if (instructionParameter.TryGetValue(toolCall, out string key))
+                        return await CallCoderAgent(agent, key, caller);
+                    return "No key given";
+                });
+                tools.Add(callCoderAgent);
+            }
         }
     }
 }
