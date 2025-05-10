@@ -9,13 +9,51 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using System.Runtime.Serialization;
 
-#region Configuration and Constants
-
+//  Configuration and Constants
 const string AppDirectory = @"C:\Projects\devgpt";
 const string TempDirectory = @"C:\Projects\devgpt\tempstore";
 const string LogFilePath = @"C:\Projects\devgpt\log";
 
-const string BaseWorkerPrompt = "Voer de gevraagde instructies meteen uit. Jij bent de expert die weet wat je moet doen. Stel alleen vragen wanneer strict noodzakelijk. Commit alleen werkende code in git. ";
+// main setup/init
+var openAISettings = OpenAIConfig.Load();
+string openAIApiKey = openAISettings.ApiKey;
+
+var mainPaths = new StorePaths(AppDirectory);
+var tempPaths = new StorePaths(TempDirectory);
+var openAIConfig = new OpenAIConfig(openAIApiKey);
+var llmClient = new OpenAIClientWrapper(openAIConfig);
+
+var codeBuilder = new CodeBuilder2(
+    AppDirectory,
+    mainPaths.RootFolder,
+    mainPaths.EmbeddingsFile,
+    mainPaths.PartsFile,
+    openAIApiKey,
+    LogFilePath,
+    tempPaths.RootFolder,
+    tempPaths.EmbeddingsFile,
+    tempPaths.PartsFile);
+codeBuilder.Output = Console.WriteLine;
+
+await codeBuilder.AddFiles(["*.cs"], "", ["bin", "obj"]);
+await codeBuilder.AddFiles(["*.cssproj"]);
+await codeBuilder.AddFiles(["*.sln"]);
+
+var agentFactory = new AgentFactory(openAIApiKey, LogFilePath);
+agentFactory.Messages = codeBuilder.History;
+
+var c = new QuickAgentCreator(agentFactory, llmClient);
+var codebaseStore = c.CreateStore(mainPaths, "Codebase");
+var teamStore = c.CreateStore(tempPaths, "Teamdocumenten");
+
+// agents
+
+#region Agent prompts
+
+const string BasePrompt = "Wanneer je andere agents aanspreekt geef altijd duidelijk aan welke acties of informatie je verwacht en waarom. Wanneer je een reactie geeft reageer dan beknopt en to the point en met de informatie waar om gevraagd wordt of die relevant is.";
+const string StakeholderPrompt = BasePrompt + "Jij bent een product owner. Jij weet niets van programmeren maar je verzameld de ontvangen input van andere stakeholders en zorgt dat de projectmanager de benodigde functionaliteit laat implementeren.";
+
+const string BaseWorkerPrompt = BasePrompt + "Voer de gevraagde instructies meteen uit. Jij bent de expert die weet wat je moet doen. Stel alleen vragen wanneer strict noodzakelijk. Commit alleen werkende code in git. ";
 const string ProjectManagerPrompt = BaseWorkerPrompt + "Jij bent een projectmanager. Jij ontvangt de gebruikersprompt, verdeelt deze in logische deeltaken, en roept de LeadArchitect agent aan om deze taken uit te voeren.";
 const string ArchitectPrompt = BaseWorkerPrompt + "Jij bent een ervaren softwarearchitect. Jij begrijpt de structuur en samenhang van de codebase, en plant oplossingsstappen. Je splitst taken in logische eenheden en roept gespecialiseerde agents aan om ze uit te voeren.";
 const string AnalystPrompt = BaseWorkerPrompt + "Jij bent een code-analyse-expert. Je leest bestaande code en legt uit wat deze doet, inclusief afhankelijkheden en risico’s.";
@@ -29,146 +67,118 @@ const string DocPrompt = BaseWorkerPrompt + "Jij schrijft bondige, accurate en b
 
 #region Main Logic
 
-var openAISettings = OpenAIConfig.Load();
-string openAIApiKey = openAISettings.ApiKey;
-
-var mainPaths = new StorePaths(AppDirectory);
-var tempPaths = new StorePaths(TempDirectory);
-var openAIConfig = new OpenAIConfig(openAIApiKey);
-var llmClient = new OpenAIClientWrapper(openAIConfig);
-
-var codeBuilder = new CodeBuilder2(
-    AppDirectory, 
-    mainPaths.RootFolder, 
-    mainPaths.EmbeddingsFile, 
-    mainPaths.PartsFile,
-    openAIApiKey, 
-    LogFilePath, 
-    tempPaths.RootFolder, 
-    tempPaths.EmbeddingsFile, 
-    tempPaths.PartsFile);
-codeBuilder.Output = Console.WriteLine;
-
-await codeBuilder.AddFiles(["*.cs"], "", ["bin", "obj"]);
-await codeBuilder.AddFiles(["*.cssproj"]);
-await codeBuilder.AddFiles(["*.sln"]);
-
-var codebaseStore = CreateStore(mainPaths, llmClient, "Codebase");
-var teamStore = CreateStore(tempPaths, llmClient, "Teamdocumenten");
-
-var agentFactory = new AgentFactory(openAIApiKey, LogFilePath);
-agentFactory.Messages = codeBuilder.History;
-
 // Agents
-var projectManager = await CreateAgent(
-    agentFactory,
+var stakeholder = await c.Create(
+    "Stakeholder",
+    StakeholderPrompt,
+    [(teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\stakeholder"), "Stakeholderdocumenten"), true)],
+    ["delegate"],
+    ["ProjectManager"]);
+
+var projectManager = await c.Create(
     "ProjectManager",
     ProjectManagerPrompt,
-    [ (codebaseStore, false), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\projectmanager"), llmClient, "Projectmanagerdocumenten"), true) ],
+    [ (codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\projectmanager"), "Projectmanagerdocumenten"), true) ],
     ["delegate"],
     ["LeadArchitect"]);
 
-var leadArchitect = await CreateAgent(
-    agentFactory,
+var leadArchitect = await c.Create(
     "LeadArchitect",
     ArchitectPrompt,
-    [ (codebaseStore, true), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\architect"), llmClient, "Architectdocumenten"), true) ],
+    [ (codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\architect"), "Architectdocumenten"), true) ],
     ["git", "build", "delegate"],
     ["CodeAnalyst", "CodeWriter", "CodeReviewer", "TestEngineer", "RefactorBot", "DocWriter"]);
 
-var codeAnalyst = await CreateAgent(
-    agentFactory,
+var codeAnalyst = await c.Create(
     "CodeAnalyst",
     AnalystPrompt,
-    [ (codebaseStore, false), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codeanalyst"), llmClient, "Codeanalystdocumenten"), true) ],
-    ["read"],
-    []);
+    [ (codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codeanalyst"), "Codeanalystdocumenten"), true) ]);
 
-var codeWriter = await CreateAgent(
-    agentFactory,
+var codeWriter = await c.Create(
     "CodeWriter",
     WriterPrompt,
-    [ (codebaseStore, true), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codewriter"), llmClient, "Codewriterdocumenten"), true) ],
-    ["read", "write"],
-    []);
+    [ (codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codewriter"), "Codewriterdocumenten"), true) ]);
 
-var codeReviewer = await CreateAgent(
-    agentFactory,
+var codeReviewer = await c.Create(
     "CodeReviewer",
     ReviewerPrompt,
-    [ (codebaseStore, false), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codereviewer"), llmClient, "Codereviewerdocumenten"), true) ],
-    ["read"],
-    []);
+    [ (codebaseStore, false), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\codereviewer"), "Codereviewerdocumenten"), true) ]);
 
-var testEngineer = await CreateAgent(
-    agentFactory,
+var testEngineer = await c.Create(
     "TestEngineer",
     TesterPrompt,
-    [ (codebaseStore, true), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\testengineer"), llmClient, "Testengineerdocumenten"), true) ],
-    ["read", "write", "build"],
-    []);
+    [ (codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\testengineer"), "Testengineerdocumenten"), true) ],
+    ["build"]);
 
-var refactorBot = await CreateAgent(
-    agentFactory,
+var refactorBot = await c.Create(
     "RefactorBot",
     RefactorPrompt,
-    [ (codebaseStore, true), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\refactorbot"), llmClient, "Refactorbotdocumenten"), true) ],
-    ["read", "write"],
-    []);
+    [ (codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\refactorbot"), "Refactorbotdocumenten"), true) ]);
 
-var docWriter = await CreateAgent(
-    agentFactory,
+var docWriter = await c.Create(
     "DocWriter",
     DocPrompt,
-    [ (codebaseStore, true), (teamStore, true), (CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\docwriter"), llmClient, "Docwriterdocumenten"), true) ],
-    ["read", "write"],
-    []);
+    [ (codebaseStore, true), (teamStore, true), (c.CreateStore(new StorePaths(@"C:\Projects\devgpt\roles\docwriter"), "Docwriterdocumenten"), true) ]);
 
-await HandleUserInput(projectManager, codeBuilder);
+await HandleUserInput(stakeholder, codeBuilder);
 
 #endregion
 
 #region Methods
 
-/// <summary>
-/// Centralized agent creation method.
-/// </summary>
-static async Task<DevGPTAgent> CreateAgent(
-    AgentFactory factory,
-    string name,
-    string systemPrompt,
-    IEnumerable<(DocumentStore Store, bool Write)> stores,
-    IEnumerable<string> functions,
-    IEnumerable<string> agents)
-{
-    return await factory.CreateAgent(name, systemPrompt, stores, functions, agents);
-}
 
 /// <summary>
 /// Handles user input and project manager response loop.
 /// </summary>
-static async Task HandleUserInput(DevGPTAgent projectManager, CodeBuilder2 codeBuilder)
+static async Task HandleUserInput(DevGPTAgent agent, CodeBuilder2 codeBuilder)
 {
     while (true)
     {
         Console.WriteLine("Geef een instructie");
         var input = Console.ReadLine();
-        var response = await projectManager.Generator.UpdateStore(input, codeBuilder.History, true, true, projectManager.Tools, null);
+        var response = await agent.Generator.UpdateStore(input, codeBuilder.History, true, true, agent.Tools, null);
         codeBuilder.History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response });
     }
 }
 
-/// <summary>
-/// Creates a document store for code and agent memory.
-/// </summary>
-static DocumentStore CreateStore(StorePaths paths, OpenAIClientWrapper llmClient, string name)
+public class QuickAgentCreator
 {
-    var embeddingStore = new EmbeddingFileStore(paths.EmbeddingsFile, llmClient);
-    var textStore = new TextFileStore(paths.RootFolder);
-    var partStore = new DocumentPartFileStore(paths.PartsFile);
-    var store = new DocumentStore(embeddingStore, textStore, partStore, llmClient);
-    store.Name = name;
-    return store;
+    public QuickAgentCreator(AgentFactory f, ILLMClient client)
+    {
+        AgentFactory = f;
+        Client = client;
+    }
+
+    public AgentFactory AgentFactory { get; set; }
+    public ILLMClient Client{ get; set; }
+
+    /// <summary>
+    /// Centralized agent creation method.
+    /// </summary>
+    public async Task<DevGPTAgent> Create(
+        string name,
+        string systemPrompt,
+        IEnumerable<(DocumentStore Store, bool Write)> stores,
+        IEnumerable<string> functions = null,
+        IEnumerable<string> agents = null)
+    {
+        if (agents == null) agents = [];
+        if (functions == null) functions = [];
+        return await AgentFactory.CreateAgent(name, systemPrompt, stores, functions, agents);
+    }
+
+    /// <summary>
+    /// Creates a document store for code and agent memory.
+    /// </summary>
+    public DocumentStore CreateStore(StorePaths paths, string name)
+    {
+        var embeddingStore = new EmbeddingFileStore(paths.EmbeddingsFile, Client);
+        var textStore = new TextFileStore(paths.RootFolder);
+        var partStore = new DocumentPartFileStore(paths.PartsFile);
+        var store = new DocumentStore(embeddingStore, textStore, partStore, Client);
+        store.Name = name;
+        return store;
+    }
 }
 
 #endregion
