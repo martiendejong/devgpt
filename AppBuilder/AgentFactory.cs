@@ -45,16 +45,18 @@ public class AgentFactory {
     {
         var agent = Agents[name];
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{caller}: {query}" });
-        var response = await agent.Generator.GetResponse(query, null, true, true, agent.Tools, null);
+        var response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), null, true, true, agent.Tools, null);
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{name}: {response}" });
         return response;
     }
+
+    const string writeModeText = "\nYou are now in write mode. You cannot call any other {agent}_write tools or write file tools in this mode. The file modifications need to be included in your response.";
 
     public async Task<string> CallCoderAgent(string name, string query, string caller)
     {
         var agent = Agents[name];
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{caller}: {query}" });
-        var response = await agent.Generator.UpdateStore(query + "\nYou are now in write mode. You cannot call any other {agent}_write tools in this mode.", null, true, true, agent.Tools, null);
+        var response = await agent.Generator.UpdateStore(query + writeModeText, null, true, true, agent.Tools, null);
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{name}: {response}" });
         return response;
     }

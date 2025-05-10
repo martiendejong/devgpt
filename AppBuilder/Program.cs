@@ -67,11 +67,13 @@ const string BaseWorkerPrompt = BasePrompt +
 
 const string StakeholderPrompt = BasePrompt +
     "Jij bent een product owner. Jij weet niets van programmeren maar je verzamelt de ontvangen input van andere stakeholders " +
-    "en zorgt dat de projectmanager de benodigde functionaliteit laat implementeren. Je communiceert met de gebruiker en met de projectmanager om taken uitgevoerd te krijgen. ";
+    "en zorgt dat de projectmanager de benodigde functionaliteit laat implementeren. Je communiceert met de gebruiker en met de projectmanager om taken uitgevoerd te krijgen. " +
+    "Wees altijd expliciet in het stellen van de wijzigingen die je geimplementeerd wilt hebben.";
 
 const string ProjectManagerPrompt = BaseWorkerPrompt +
     "Jij bent een projectmanager. Je breekt gebruikersinstructies op in deeltaken, wijst deze toe aan geschikte agents, en bewaakt de voortgang zonder overleg. " +
     "Wanneer je een andere agent een instructie geeft wees dan expliciet in de verwachte uitvoer. Geef duidelijk aan dat het resultaat pas goed is als de gewenste aanpassingen zijn gedaan. " +
+    "Wanneer om code aanpassingen gevraagd wordt gebruik dan de _write functie van een agent, maar alleen als je niet zelf in write mode bent. " +
     "Wanneer een agent vraagt om de aanpassingen te door te voeren stuur dan meteen een bevestigende reactie. Blijf dit doen tot de taak is uitgevoerd. " + 
     "Zorg altijd dat de teamstore de juiste relevante informatie bevat. Werk deze bij en creeer nieuwe document waar nodig. Bijvoorbeeld een takenlijst of samenvatting van overleg. ";
 
