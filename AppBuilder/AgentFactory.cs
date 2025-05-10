@@ -56,7 +56,7 @@ public class AgentFactory {
     {
         var agent = Agents[name];
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{caller}: {query}" });
-        var response = await agent.Generator.UpdateStore(query + writeModeText, null, true, true, agent.Tools, null);
+        var response = await agent.Generator.UpdateStore(query + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", null, true, true, agent.Tools, null);
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{name}: {response}" });
         return response;
     }
@@ -175,7 +175,7 @@ public class AgentFactory {
             tools.Add(callAgent);
             //if (Agents[agent].IsCoder)
             //{
-                var callCoderAgent = new DevGPTChatTool($"{agent}_code", $"Calls {agent} to modify the codebase", [instructionParameter], async (messages, toolCall) =>
+                var callCoderAgent = new DevGPTChatTool($"{agent}_code", $"Calls {agent} to modify the codebase. Be aware of the token limit of 8000 so only let the agents make small modifications at a time.", [instructionParameter], async (messages, toolCall) =>
                 {
                     if (WriteMode) return "Cannot give write instructions when in write mode";
                     if (instructionParameter.TryGetValue(toolCall, out string key))
