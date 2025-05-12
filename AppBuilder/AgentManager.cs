@@ -106,6 +106,11 @@ public class AgentManager
             filesParts.Add(dir.GetFiles(item, SearchOption.AllDirectories));
         }
         var files = filesParts.SelectMany(f => f).ToList();
+        files = files.Where(file =>
+        {
+            var relPath = file.FullName.Substring((path + "\\").Length);
+            return excludePattern == null || !excludePattern.Any(dir => MatchPattern(relPath, dir));
+        }).ToList();
 
         foreach (var file in files)
         {

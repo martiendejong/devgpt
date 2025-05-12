@@ -160,22 +160,22 @@ public class AgentFactory {
                 return "No key given";
             });
             tools.Add(callAgent);
-            //if (Agents[agent].IsCoder)
-            //{
-            var callCoderAgent = new DevGPTChatTool($"{agent}_code", $"Calls {agent} to modify the codebase. {config.Description} Be aware of the token limit of 8000 so only let the agents make small modifications at a time.", [instructionParameter], async (messages, toolCall) =>
+            if (config.ExplicitModify)
             {
-                if (WriteMode) return "Cannot give write instructions when in write mode";
-                if (instructionParameter.TryGetValue(toolCall, out string key))
+                var callCoderAgent = new DevGPTChatTool($"{agent}_code", $"Calls {agent} to modify the codebase. {config.Description} Be aware of the token limit of 8000 so only let the agents make small modifications at a time.", [instructionParameter], async (messages, toolCall) =>
                 {
-                    WriteMode = true;
-                    var result = await CallCoderAgent(agent, key, caller);
-                    WriteMode = false;
-                    return result;
-                }
-                return "No key given";
-            });
-            tools.Add(callCoderAgent);
-            //}
+                    if (WriteMode) return "Cannot give write instructions when in write mode";
+                    if (instructionParameter.TryGetValue(toolCall, out string key))
+                    {
+                        WriteMode = true;
+                        var result = await CallCoderAgent(agent, key, caller);
+                        WriteMode = false;
+                        return result;
+                    }
+                    return "No key given";
+                });
+                tools.Add(callCoderAgent);
+            }
         }
     }
 }
