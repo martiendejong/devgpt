@@ -4,7 +4,7 @@
         "Path": "C:\\Projects\\socialmediahulp",
         "Write": true,
         "FileFilters": [ "*.cs", "*.ts", "*.js", "*.vue", "*.json", "*.csproj", "*.sln", "*.config", "*.yml", "*.bat" ],
-        "ExcludePattern": [ "tasks", "dist" ]
+        "ExcludePattern": [ "tasks", "dist", "bin", "obj" ]
     },
     {
         "Name": "Taskmanagement",
