@@ -1,0 +1,12 @@
+[
+    {
+        "Name": "Codebase",
+        "Path": "C:\\Projects\\devgpt",
+        "Write": true
+    },
+    {
+        "Name": "Taskmanagement",
+        "Path": "C:\\Projects\\devgp\\tasks",
+        "Write": true
+    }
+]

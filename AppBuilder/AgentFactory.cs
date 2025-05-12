@@ -57,7 +57,7 @@ public class AgentFactory {
         return response;
     }
 
-    public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(DocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, bool isCoder = false)
+    public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, bool isCoder = false)
     {
         var config = new OpenAIConfig(OpenAiApiKey);
         var llmClient = new OpenAIClientWrapper(config);
@@ -74,7 +74,7 @@ public class AgentFactory {
         return agent;
     }
 
-    private void AddStoreTools(IEnumerable<(DocumentStore Store, bool Write)> stores, ToolsContextBase tools, IEnumerable<string> functions, IEnumerable<string> agents, string caller)
+    private void AddStoreTools(IEnumerable<(IDocumentStore Store, bool Write)> stores, ToolsContextBase tools, IEnumerable<string> functions, IEnumerable<string> agents, string caller)
     {
         AddAgentTools(tools, agents, caller);
         var i = 0;
@@ -94,7 +94,7 @@ public class AgentFactory {
         }
     }
 
-    private void AddWriteTools(ToolsContextBase tools, DocumentStore store)
+    private void AddWriteTools(ToolsContextBase tools, IDocumentStore store)
     {
         var writeFile = new DevGPTChatTool($"{store.Name}_write", $"Store a file in store {store.Name}", [keyParameter, contentParameter], async (messages, toolCall) =>
         {
@@ -116,7 +116,7 @@ public class AgentFactory {
         tools.Add(deleteFile);
     }
 
-    private void AddBuildTools(ToolsContextBase tools, IEnumerable<string> functions, DocumentStore store)
+    private void AddBuildTools(ToolsContextBase tools, IEnumerable<string> functions, IDocumentStore store)
     {
         if (functions.Contains("git"))
         {
@@ -138,7 +138,7 @@ public class AgentFactory {
         }
     }
 
-    private void AddReadTools(ToolsContextBase tools, DocumentStore store)
+    private void AddReadTools(ToolsContextBase tools, IDocumentStore store)
     {
         var getFiles = new DevGPTChatTool($"{store.Name}_list", $"Retrieve a list of the files in store {store.Name}", [], async (messages, toolCall) => string.Join("\n", await store.List()));
         tools.Add(getFiles);

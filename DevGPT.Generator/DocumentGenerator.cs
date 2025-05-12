@@ -23,7 +23,7 @@ public class DocumentGenerator : IDocumentGenerator
         return response.Url;
     }
 
-    public DocumentGenerator(DocumentStore store, List<DevGPTChatMessage> baseMessages, ILLMClient client, List<IDocumentStore> readonlyStores)
+    public DocumentGenerator(IDocumentStore store, List<DevGPTChatMessage> baseMessages, ILLMClient client, List<IDocumentStore> readonlyStores)
     {
         Store = store;
         BaseMessages = baseMessages;
@@ -34,7 +34,7 @@ public class DocumentGenerator : IDocumentGenerator
         ReadonlyStores = readonlyStores;
     }
 
-    public DocumentGenerator(DocumentStore store, List<DevGPTChatMessage> baseMessages, ILLMClient client, string openAiApiKey, string logFilePath, List<IDocumentStore> readonlyStores)
+    public DocumentGenerator(IDocumentStore store, List<DevGPTChatMessage> baseMessages, ILLMClient client, string openAiApiKey, string logFilePath, List<IDocumentStore> readonlyStores)
     {
         Store = store;
         ReadonlyStores = readonlyStores;
