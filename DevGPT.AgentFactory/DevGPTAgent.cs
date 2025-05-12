@@ -1,4 +1,4 @@
-﻿public class DevGPTAgent
+public class DevGPTAgent
 {
     public string Name { get; set; }
     public DocumentGenerator Generator { get; set; }

@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
-using static System.Formats.Asn1.AsnWriter;
 
 /// <summary>
 /// AgentManager encapsulates all logic for agent and store initialization, configuration,
@@ -20,7 +14,7 @@ public class AgentManager
     private readonly string _agentsJsonPath;
     private readonly QuickAgentCreator _quickAgentCreator;
 
-    // New: AgentManager owns the interaction history with agents
+    // The interaction history with agents
     public List<DevGPTChatMessage> History { get; } = new List<DevGPTChatMessage>();
 
     /// <summary>
@@ -35,11 +29,6 @@ public class AgentManager
     /// <summary>
     /// Instantiates the AgentManager, loads configuration, and initializes all stores and agents.
     /// </summary>
-    /// <param name="storesJsonPath">Absolute or relative path to stores.json</param>
-    /// <param name="agentsJsonPath">Absolute or relative path to agents.json</param>
-    /// <param name="codeBuilder">CodeBuilder2 instance providing output handling</param>
-    /// <param name="openAIApiKey">OpenAI API Key for agent operation</param>
-    /// <param name="logFilePath">Optional log file path for agent operation</param>
     public AgentManager(string storesJsonPath, string agentsJsonPath, string openAIApiKey, string logFilePath)
     {
         _storesJsonPath = storesJsonPath ?? throw new ArgumentNullException(nameof(storesJsonPath));
@@ -51,8 +40,6 @@ public class AgentManager
         agentFactory.Messages = History; // History now lives in AgentManager
         _quickAgentCreator = new QuickAgentCreator(agentFactory, llmClient);
     }
-
-
 
     /// <summary>
     /// Loads and initializes all document stores and agents from provided configuration files.
@@ -117,7 +104,6 @@ public class AgentManager
             var relPath = file.FullName.Substring((path + "\\").Length);
             if (excludePattern == null || !excludePattern.Any(dir => MatchPattern(relPath, dir)))
             {
-                //var content = await File.ReadAllTextAsync(file.FullName);
                 await store.Embed(relPath);
             }
         }
@@ -133,8 +119,6 @@ public class AgentManager
     /// <summary>
     /// Get an agent by name.
     /// </summary>
-    /// <param name="name">Name of the agent.</param>
-    /// <returns>DevGPTAgent with specified name or null.</returns>
     public DevGPTAgent GetAgent(string name)
     {
         return _agents.FirstOrDefault(a => a.Name == name);
@@ -144,13 +128,11 @@ public class AgentManager
     /// Interactively communicates with a specified agent through the console,
     /// using the agent's context and configuration.
     /// </summary>
-    /// <param name="agentName">The agent's name to interact with</param>
     public async Task InteractiveUserLoop(string agentName = null)
     {
         DevGPTAgent agent;
         if (string.IsNullOrEmpty(agentName))
         {
-            // If agent name not specified, select first agent.
             agent = _agents.FirstOrDefault();
             if (agent == null) throw new InvalidOperationException("No agents loaded.");
         }

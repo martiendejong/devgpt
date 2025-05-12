@@ -39,6 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DevGPT.AgentFactory\DevGPT.AgentFactory.csproj" />
     <ProjectReference Include="..\DevGPT.Classes\DevGPT.Classes.csproj" />
     <ProjectReference Include="..\DevGPT.DocumentStore\DevGPT.DocumentStore.csproj" />
     <ProjectReference Include="..\DevGPT.EmbeddingStore\DevGPT.EmbeddingStore.csproj" />

@@ -1,18 +1,18 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System.Diagnostics;
 
-public static class QuasarBuildOutput
+public static class BuildOutput
 {
     public static string buildFile = "runquasar.bat";
     public static string buildOutputFile = "build.log";
-    public static string buildErrorsFile = "errors.log";
+    public static string buildErrorsFile = "build_errors.log";
 
-    public static Tuple<string, string> GetQuasarBuildOutput(string workingDirectory)
+    public static string GetBuildOutput(string workingDirectory, string file, string logfile)
     {
         ProcessStartInfo psi = new ProcessStartInfo
         {
             WorkingDirectory = workingDirectory,
-            FileName = workingDirectory + "\\" + buildFile,
+            FileName = workingDirectory + "\\" + file,
             //Arguments = "build",
             //RedirectStandardOutput = true,
             //RedirectStandardError = true,
@@ -31,10 +31,9 @@ public static class QuasarBuildOutput
 
             process.WaitForExit();
 
-            var output = File.ReadAllText(workingDirectory + "\\" + buildOutputFile);
-            var error = File.ReadAllText(workingDirectory + "\\" + buildErrorsFile);
+            var output = File.ReadAllText(workingDirectory + "\\" + logfile);
 
-            return new Tuple<string, string>(output, error);
+            return output;
         }
     }
 }

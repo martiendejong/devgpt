@@ -1,4 +1,4 @@
-﻿public class QuickAgentCreator
+public class QuickAgentCreator
 {
     public QuickAgentCreator(AgentFactory f, ILLMClient client)
     {
@@ -7,7 +7,7 @@
     }
 
     public AgentFactory AgentFactory { get; set; }
-    public ILLMClient Client{ get; set; }
+    public ILLMClient Client { get; set; }
 
     /// <summary>
     /// Centralized agent creation method.
@@ -19,8 +19,8 @@
         IEnumerable<string> functions = null,
         IEnumerable<string> agents = null, bool isCoder = false)
     {
-        if (agents == null) agents = [];
-        if (functions == null) functions = [];
+        if (agents == null) agents = new List<string>();
+        if (functions == null) functions = new List<string>();
         return await AgentFactory.CreateAgent(name, systemPrompt, stores, functions, agents, isCoder);
     }
 
@@ -38,5 +38,3 @@
         return store;
     }
 }
-
-
