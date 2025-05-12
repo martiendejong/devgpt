@@ -24,6 +24,10 @@
             {
                 "Name": "Taskmanagement",
                 "Write": true
+            },
+            {
+                "Name": "Teamdocumenten",
+                "Write": true
             }
         ],
         "Functions": [],
@@ -41,6 +45,10 @@
         "Stores": [
             {
                 "Name": "Taskmanagement",
+                "Write": true
+            },
+            {
+                "Name": "Teamdocumenten",
                 "Write": true
             }
         ],
@@ -63,6 +71,10 @@
             },
             {
                 "Name": "Taskmanagement",
+                "Write": true
+            },
+            {
+                "Name": "Teamdocumenten",
                 "Write": true
             }
         ],
@@ -87,6 +99,10 @@
             },
             {
                 "Name": "Taskmanagement",
+                "Write": true
+            },
+            {
+                "Name": "Teamdocumenten",
                 "Write": true
             }
         ],
