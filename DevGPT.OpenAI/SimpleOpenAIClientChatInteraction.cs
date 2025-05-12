@@ -221,7 +221,7 @@ public class SimpleOpenAIClientChatInteraction
                     Console.WriteLine($"Calling {tool.FunctionName}");
                     Console.WriteLine($"Arguments:\n{toolCall.FunctionArguments.ToString()}\n\n");
                     string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT());
-                    if(!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_list")))
+                    if(!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_list") || tool.FunctionName == "build" || tool.FunctionName == "git"))
                         Console.WriteLine($"Result:\n{result}\n\n\n\n");
                     //    Console.WriteLine($"Result: {result}");
                     toolResults.Add(new ToolChatMessage(toolCall.Id, result));
