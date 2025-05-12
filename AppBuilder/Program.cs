@@ -194,7 +194,7 @@ var stores = storesConfig.Select(sc => c.CreateStore(new StorePaths(sc.Path), sc
 var agents = new List<DevGPTAgent>();
 foreach(var ac in agentConfigs)
 {
-    var agent = await c.Create(ac.Name, ac.Prompt, ac.Stores.Select(acs => (stores.First(s => s.Name == acs.Name), true)).ToList(), ac.Functions, ac.CallsAgents, ac.ExplicitModify);
+    var agent = await c.Create(ac.Name, $"Jouw naam: {ac.Name}\nJouw Rol: {ac.Description}\nInstructie: {ac.Prompt}", ac.Stores.Select(acs => (stores.First(s => s.Name == acs.Name), true)).ToList(), ac.Functions, ac.CallsAgents, ac.ExplicitModify);
     agents.Add(agent);
 }
 
