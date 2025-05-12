@@ -1,7 +1,13 @@
 <Window x:Class="DevGPT.ChatWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:DevGPT"
         Title="Chatvenster" Height="600" Width="500" ResizeMode="CanResize" MinWidth="350" MinHeight="350">
+    <Window.Resources>
+        <!-- BoolToVisibilityConverter -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+    </Window.Resources>
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" /> <!-- Chat output fills space -->
@@ -14,17 +20,23 @@
                       VerticalScrollBarVisibility="Auto"
                       Margin="0,0,0,8"
                       VerticalAlignment="Stretch">
-            <TextBox Name="ChatHistoryTextBox" 
-                     FontFamily="Consolas" 
-                     FontSize="14" 
-                     Background="#FAFAFA" 
-                     BorderBrush="Transparent"
-                     IsReadOnly="True"
-                     TextWrapping="Wrap" 
-                     VerticalScrollBarVisibility="Auto"
-                     AcceptsReturn="True"
-                     VerticalAlignment="Stretch"
-                     />
+            <ItemsControl Name="ChatMessagesList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type local:ChatDisplayMessage}">
+                        <StackPanel Margin="0,2,0,2">
+                            <Expander Header="Assistent bericht"
+                                      IsExpanded="False"
+                                      Visibility="{Binding IsAsyncOnMessage, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock TextWrapping="Wrap" FontFamily="Consolas" FontSize="14"
+                                           Text="{Binding Text}"/>
+                            </Expander>
+                            <TextBlock TextWrapping="Wrap" FontFamily="Consolas" FontSize="14"
+                                       Text="{Binding Text}"
+                                       Visibility="{Binding IsAsyncOnMessage, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </ScrollViewer>
 
         <!-- Message Composer -->
