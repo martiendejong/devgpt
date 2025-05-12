@@ -226,7 +226,7 @@ public class SimpleOpenAIClientChatInteraction
                         ToolsContext.SendMessage(message);
                     }
                     string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT());
-                    if (!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_list") || tool.FunctionName.Contains("_relevancy") || tool.FunctionName == "build" || tool.FunctionName == "git"))
+                    if (!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_write") || tool.FunctionName.Contains("_list") || tool.FunctionName.Contains("_relevancy") || tool.FunctionName == "build" || tool.FunctionName == "git"))
                     {
                         Console.WriteLine($"Result:\n{result}\n");
                         if (ToolsContext.SendMessage != null)
