@@ -1,0 +1,12 @@
+# Summary of main logic added to MainWindow.xaml.cs
+
+This update enables reading and displaying the contents of `stores.json` and `agents.json` in the application with DataGrid editing and saving changes:
+
+- Two new ObservableCollections (`_storesList` and `_agentsList`) track the deserialized content of these files.
+- Load buttons for each file prompt the user and load the JSON, showing it in a tabbed DataGrid.
+- Save buttons serialize the in-memory objects back to their source file.
+- Edits in the DataGrid reflect changes in the bound ObservableCollection.
+- Model classes for StoreConfig, AgentConfig, and StoreRef are included for context.
+- Error handling is added for file IO/serialization issues.
+
+UI in `MainWindow.xaml` is updated to use a `TabControl` with editable `DataGrid`s and `Save` buttons.

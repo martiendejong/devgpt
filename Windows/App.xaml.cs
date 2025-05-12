@@ -1,8 +1,8 @@
-﻿using System.Configuration;
+using System.Configuration;
 using System.Data;
 using System.Windows;
 
-namespace Windows
+namespace DevGPT
 {
     /// <summary>
     /// Interaction logic for App.xaml
@@ -10,5 +10,4 @@ namespace Windows
     public partial class App : Application
     {
     }
-
 }
