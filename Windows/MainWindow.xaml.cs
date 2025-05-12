@@ -32,6 +32,10 @@ namespace DevGPT
             }
         }
 
+        // Store for current session the last used save location for both json files
+        private string lastSavedAgentsPath;
+        private string lastSavedStoresPath;
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public MainWindow()
@@ -126,45 +130,96 @@ namespace DevGPT
 
         private void SaveStoresButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(storesFilePath))
+            // Always prompt SaveFileDialog for saving stores.json
+            var saveDlg = new SaveFileDialog
             {
-                MessageBox.Show("No stores.json loaded.");
-                return;
-            }
-            // Validate before saving
-            try
+                Filter = "JSON files (*.json)|*.json",
+                Title = "Save stores.json",
+                FileName = !string.IsNullOrWhiteSpace(lastSavedStoresPath) ? Path.GetFileName(lastSavedStoresPath) : "stores.json",
+                InitialDirectory = !string.IsNullOrWhiteSpace(lastSavedStoresPath) ? Path.GetDirectoryName(lastSavedStoresPath) : null,
+                OverwritePrompt = true
+            };
+            if (saveDlg.ShowDialog() == true)
             {
-                var data = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(storesFilePath, json);
-                _parsedStores = data;
-                MessageBox.Show("stores.json saved.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Cannot save: invalid JSON!\n" + ex.Message);
+                string filePath = saveDlg.FileName;
+                try
+                {
+                    // Validate JSON before saving
+                    var data = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+                    File.WriteAllText(filePath, json);
+                    _parsedStores = data;
+
+                    storesFilePath = filePath; // update current file, so can load again if needed
+                    lastSavedStoresPath = filePath; // remember for next save
+
+                    MessageBox.Show($"stores.json saved.\nPad en bestandsnaam: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (UnauthorizedAccessException uae)
+                {
+                    MessageBox.Show($"Kan niet opslaan: u heeft geen rechten tot deze locatie.\n{uae.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (IOException ioe)
+                {
+                    MessageBox.Show($"Fout bij bestandsbewerking:\n{ioe.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (JsonException je)
+                {
+                    MessageBox.Show($"Kan niet opslaan: JSON is ongeldig!\n{je.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Onbekende fout bij opslaan:\n{ex.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
+        // Modified according to requirements:
         private void SaveAgentsButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(agentsFilePath))
+            // Always prompt SaveFileDialog for saving agents.json
+            var saveDlg = new SaveFileDialog
             {
-                MessageBox.Show("No agents.json loaded.");
-                return;
-            }
-            // Validate before saving
-            try
+                Filter = "JSON files (*.json)|*.json",
+                Title = "Save agents.json",
+                FileName = !string.IsNullOrWhiteSpace(lastSavedAgentsPath) ? Path.GetFileName(lastSavedAgentsPath) : "agents.json",
+                InitialDirectory = !string.IsNullOrWhiteSpace(lastSavedAgentsPath) ? Path.GetDirectoryName(lastSavedAgentsPath) : null,
+                OverwritePrompt = true // shows overwrite confirmation dialog
+            };
+
+            // User confirms
+            if (saveDlg.ShowDialog() == true)
             {
-                var data = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(agentsFilePath, json);
-                _parsedAgents = data;
-                MessageBox.Show("agents.json saved.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Cannot save: invalid JSON!\n" + ex.Message);
+                string filePath = saveDlg.FileName;
+                try
+                {
+                    // Validate JSON before saving
+                    var data = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+                    File.WriteAllText(filePath, json);
+                    _parsedAgents = data;
+
+                    agentsFilePath = filePath; // update current file, so can load again if needed
+                    lastSavedAgentsPath = filePath; // remember for next save
+
+                    MessageBox.Show($"agents.json saved.\nPad en bestandsnaam: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (UnauthorizedAccessException uae)
+                {
+                    MessageBox.Show($"Kan niet opslaan: u heeft geen rechten tot deze locatie.\n{uae.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (IOException ioe)
+                {
+                    MessageBox.Show($"Fout bij bestandsbewerking:\n{ioe.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (JsonException je)
+                {
+                    MessageBox.Show($"Kan niet opslaan: JSON is ongeldig!\n{je.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Onbekende fout bij opslaan:\n{ex.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
@@ -174,7 +229,7 @@ namespace DevGPT
             // Defensive: make sure we always have parsed JSON. Otherwise try parsing
             EnsureLatestJson();
 
-            const string LogFilePath = @"C:\Projects\devgpt\log";
+            const string LogFilePath = @"C:\\Projects\\devgpt\\log";
             const string StoresJsonPath = "stores.json";
             const string AgentsJsonPath = "agents.json";
 
