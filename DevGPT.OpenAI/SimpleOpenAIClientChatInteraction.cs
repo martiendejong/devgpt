@@ -222,8 +222,8 @@ public class SimpleOpenAIClientChatInteraction
                     Console.WriteLine($"Arguments:\n{toolCall.FunctionArguments.ToString()}");
                     if(ToolsContext.SendMessage != null)
                     {
-                        ToolsContext.SendMessage($"Calling {tool.FunctionName}");
-                        ToolsContext.SendMessage($"Arguments:\n{toolCall.FunctionArguments.ToString()}");
+                        var message = $"Calling {tool.FunctionName}\n{toolCall.FunctionArguments.ToString()}";
+                        ToolsContext.SendMessage(message);
                     }
                     string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT());
                     if (!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_list") || tool.FunctionName.Contains("_relevancy") || tool.FunctionName == "build" || tool.FunctionName == "git"))
@@ -231,7 +231,7 @@ public class SimpleOpenAIClientChatInteraction
                         Console.WriteLine($"Result:\n{result}\n");
                         if (ToolsContext.SendMessage != null)
                         {
-                            ToolsContext.SendMessage($"Result:\n{result}\n");
+                            ToolsContext.SendMessage($"{result}\n");
                         }
                     }
                     toolResults.Add(new ToolChatMessage(toolCall.Id, result));
