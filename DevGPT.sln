@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34928.147
@@ -26,6 +25,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Classes", "DevGPT.Classes\DevGPT.Classes.csproj", "{7CBA03E0-99EC-4C2E-BB43-1F6D9D6663AF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Generator", "DevGPT.Generator\DevGPT.Generator.csproj", "{D1D815B1-B873-46C4-9F10-7B40DB15A383}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.AgentFactory", "DevGPT.AgentFactory\DevGPT.AgentFactory.csproj", "{F99380A6-91DB-4335-A902-BEF55806BAF7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -77,6 +78,10 @@ Global
 		{D1D815B1-B873-46C4-9F10-7B40DB15A383}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1D815B1-B873-46C4-9F10-7B40DB15A383}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1D815B1-B873-46C4-9F10-7B40DB15A383}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F99380A6-91DB-4335-A902-BEF55806BAF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F99380A6-91DB-4335-A902-BEF55806BAF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F99380A6-91DB-4335-A902-BEF55806BAF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F99380A6-91DB-4335-A902-BEF55806BAF7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
