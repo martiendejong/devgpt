@@ -16,6 +16,14 @@ namespace DevGPT
             InitializeComponent();
             ChatHistoryTextBox.Text = "";
             MessageEditor.Focus();
+
+            foreach (var a in _agentManager.Agents)
+            {
+                a.Tools.SendMessage = (string output) =>
+                {
+                    ChatHistoryTextBox.AppendText($"{output}\n");
+                };
+            }
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
@@ -29,14 +37,6 @@ namespace DevGPT
             {
                 ChatHistoryTextBox.AppendText($"Gebruiker: {text}\n");
                 MessageEditor.Text = string.Empty;
-
-                foreach(var a in _agentManager.Agents)
-                {
-                    a.Tools.SendMessage = (string output) => 
-                    {
-                        ChatHistoryTextBox.AppendText($"{output}\n");
-                    };
-                }
 
                 var response = await _agentManager.SendMessage(text);
                 ChatHistoryTextBox.AppendText($"{response}\n");
