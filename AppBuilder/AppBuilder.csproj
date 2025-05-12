@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -7,47 +7,5 @@
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT</RootNamespace>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="appsettings.json" />
-    <None Remove="CodePrompt.txt" />
-    <None Remove="stores.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="agents.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ReviewPrompt.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="CodePrompt.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="stores.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.4" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.4" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\DevGPT.AgentFactory\DevGPT.AgentFactory.csproj" />
-    <ProjectReference Include="..\DevGPT.Classes\DevGPT.Classes.csproj" />
-    <ProjectReference Include="..\DevGPT.DocumentStore\DevGPT.DocumentStore.csproj" />
-    <ProjectReference Include="..\DevGPT.EmbeddingStore\DevGPT.EmbeddingStore.csproj" />
-    <ProjectReference Include="..\DevGPT.Generator\DevGPT.Generator.csproj" />
-    <ProjectReference Include="..\DevGPT.Helpers\DevGPT.Helpers.csproj" />
-    <ProjectReference Include="..\DevGPT.LLMClientTools\DevGPT.LLMClientTools.csproj" />
-    <ProjectReference Include="..\DevGPT.LLMClient\DevGPT.LLMClient.csproj" />
-    <ProjectReference Include="..\DevGPT.OpenAI\DevGPT.OpenAI.csproj" />
-  </ItemGroup>
 
 </Project>
