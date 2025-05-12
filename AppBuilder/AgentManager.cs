@@ -166,9 +166,9 @@ public class AgentManager
             if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
                 break;
             var response = await agent.Generator.GetResponse<IsReadyResult>(input, History, true, true, agent.Tools, null);
-            while (!response.IsRequestImplemented)
+            while (!response.IsTheUserRequestProperlyHandledAndFinished)
             {
-                response = await agent.Generator.GetResponse<IsReadyResult>("Continue implementing the requested features", History, true, true, agent.Tools, null);
+                response = await agent.Generator.GetResponse<IsReadyResult>("Continue handling the user request: " + input, History, true, true, agent.Tools, null);
                 Console.WriteLine(response.Message);
             }
             History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response.Message });

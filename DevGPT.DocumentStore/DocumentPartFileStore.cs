@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Linq;
+using System.Text.Json;
 
 public class DocumentPartFileStore : IDocumentPartStore
 {
@@ -39,7 +40,7 @@ public class DocumentPartFileStore : IDocumentPartStore
 
     public async Task<IEnumerable<string>> Get(string name)
     {
-        return Parts[name];
+        return Parts.ContainsKey(name) ? Parts[name] : [];
     }
 
     public async Task<bool> Remove(string name, IEnumerable<string> partKeys)

@@ -2,10 +2,10 @@
 
 public class IsReadyResult : ChatResponse<IsReadyResult>
 {
-    public bool IsRequestImplemented { get; set; }
+    public bool IsTheUserRequestProperlyHandledAndFinished { get; set; }
     public string Message { get; set; }
     [JsonIgnore]
-    public override IsReadyResult _example => new IsReadyResult { IsRequestImplemented = true };
+    public override IsReadyResult _example => new IsReadyResult { IsTheUserRequestProperlyHandledAndFinished = true };
     [JsonIgnore]
     public override string _signature => "{ IsReady: bool, Message: string }";
 }
