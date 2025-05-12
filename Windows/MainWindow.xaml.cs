@@ -6,7 +6,6 @@ using System.Text.Json;
 using System.Windows;
 using Microsoft.Win32;
 using System.ComponentModel;
-// using DevGPT.AgentFactory; // Remove this and add direct file-level classes usage
 
 namespace DevGPT
 {
@@ -32,10 +31,8 @@ namespace DevGPT
             }
         }
 
-        // Store for current session the last used save location for both json files
         private string lastSavedAgentsPath;
         private string lastSavedStoresPath;
-
         public event PropertyChangedEventHandler PropertyChanged;
 
         public MainWindow()
@@ -67,7 +64,6 @@ namespace DevGPT
                     _parsedStores = JsonSerializer.Deserialize<List<StoreConfig>>(_storesJsonRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<StoreConfig>();
                     storesLoaded = true;
                     SetChatVisibilityIfReady();
-                    MessageBox.Show("Loaded stores.json: " + storesFilePath, "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
@@ -93,7 +89,6 @@ namespace DevGPT
                     _parsedAgents = JsonSerializer.Deserialize<List<AgentConfig>>(_agentsJsonRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<AgentConfig>();
                     agentsLoaded = true;
                     SetChatVisibilityIfReady();
-                    MessageBox.Show("Loaded agents.json: " + agentsFilePath, "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
@@ -130,7 +125,6 @@ namespace DevGPT
 
         private void SaveStoresButton_Click(object sender, RoutedEventArgs e)
         {
-            // Always prompt SaveFileDialog for saving stores.json
             var saveDlg = new SaveFileDialog
             {
                 Filter = "JSON files (*.json)|*.json",
@@ -144,15 +138,12 @@ namespace DevGPT
                 string filePath = saveDlg.FileName;
                 try
                 {
-                    // Validate JSON before saving
                     var data = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
                     File.WriteAllText(filePath, json);
                     _parsedStores = data;
-
-                    storesFilePath = filePath; // update current file, so can load again if needed
-                    lastSavedStoresPath = filePath; // remember for next save
-
+                    storesFilePath = filePath;
+                    lastSavedStoresPath = filePath;
                     MessageBox.Show($"stores.json saved.\nPad en bestandsnaam: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (UnauthorizedAccessException uae)
@@ -174,34 +165,27 @@ namespace DevGPT
             }
         }
 
-        // Modified according to requirements:
         private void SaveAgentsButton_Click(object sender, RoutedEventArgs e)
         {
-            // Always prompt SaveFileDialog for saving agents.json
             var saveDlg = new SaveFileDialog
             {
                 Filter = "JSON files (*.json)|*.json",
                 Title = "Save agents.json",
                 FileName = !string.IsNullOrWhiteSpace(lastSavedAgentsPath) ? Path.GetFileName(lastSavedAgentsPath) : "agents.json",
                 InitialDirectory = !string.IsNullOrWhiteSpace(lastSavedAgentsPath) ? Path.GetDirectoryName(lastSavedAgentsPath) : null,
-                OverwritePrompt = true // shows overwrite confirmation dialog
+                OverwritePrompt = true
             };
-
-            // User confirms
             if (saveDlg.ShowDialog() == true)
             {
                 string filePath = saveDlg.FileName;
                 try
                 {
-                    // Validate JSON before saving
                     var data = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
                     File.WriteAllText(filePath, json);
                     _parsedAgents = data;
-
-                    agentsFilePath = filePath; // update current file, so can load again if needed
-                    lastSavedAgentsPath = filePath; // remember for next save
-
+                    agentsFilePath = filePath;
+                    lastSavedAgentsPath = filePath;
                     MessageBox.Show($"agents.json saved.\nPad en bestandsnaam: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (UnauthorizedAccessException uae)
@@ -226,13 +210,9 @@ namespace DevGPT
         // --- Nieuw chatvenster openen feature --- //
         private async void NewChatWindowButton_Click(object sender, RoutedEventArgs e)
         {
-            // Defensive: make sure we always have parsed JSON. Otherwise try parsing
             EnsureLatestJson();
 
             const string LogFilePath = @"C:\\Projects\\devgpt\\log";
-            const string StoresJsonPath = "stores.json";
-            const string AgentsJsonPath = "agents.json";
-
             var openAISettings = OpenAIConfig.Load();
             string openAIApiKey = openAISettings.ApiKey;
 
@@ -245,11 +225,11 @@ namespace DevGPT
             );
             await agentManager.LoadStoresAndAgents();
 
-
             var newChatWindow = new ChatWindow(agentManager);
-            newChatWindow.Owner = this; // for UX
+            newChatWindow.Owner = this;
             newChatWindow.Show();
         }
+
         private void EnsureLatestJson()
         {
             try
@@ -260,6 +240,14 @@ namespace DevGPT
                     _parsedAgents = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<AgentConfig>();
             }
             catch { }
+        }
+
+        // SETTINGS BUTTON HANDLER
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var settingsWin = new SettingsWindow();
+            settingsWin.Owner = this;
+            settingsWin.ShowDialog();
         }
     }
 }

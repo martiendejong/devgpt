@@ -40,6 +40,13 @@
                     <TextBlock Text="Save agents.json" />
                 </StackPanel>
             </Button>
+            <!-- Settings knop -->
+            <Button Name="SettingsButton" Width="160" Margin="60,0,0,0" Click="SettingsButton_Click" Padding="4">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE713;" FontSize="16" Margin="0,0,4,0" />
+                    <TextBlock Text="Instellingen (OpenAI)" />
+                </StackPanel>
+            </Button>
             <!-- New chat window -->
             <Button Name="NewChatWindowButton"
                     Width="210"
