@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 /// <summary>
 /// AgentManager encapsulates all logic for agent and store initialization, configuration,
@@ -49,14 +50,14 @@ public class AgentManager
         var agentFactory = new AgentFactory(openAIApiKey, logFilePath);
         agentFactory.Messages = History; // History now lives in AgentManager
         _quickAgentCreator = new QuickAgentCreator(agentFactory, llmClient);
-
-        LoadStoresAndAgents();
     }
+
+
 
     /// <summary>
     /// Loads and initializes all document stores and agents from provided configuration files.
     /// </summary>
-    private void LoadStoresAndAgents()
+    public async Task LoadStoresAndAgents()
     {
         if (!File.Exists(_storesJsonPath))
             throw new FileNotFoundException("Could not find stores configuration.", _storesJsonPath);
@@ -64,13 +65,20 @@ public class AgentManager
             throw new FileNotFoundException("Could not find agents configuration.", _agentsJsonPath);
         string storesjson = File.ReadAllText(_storesJsonPath);
         string agentsjson = File.ReadAllText(_agentsJsonPath);
-        var storesConfig = JsonSerializer.Deserialize<List<StoreConfig>>(storesjson) ?? new List<StoreConfig>();
-        var agentsConfig = JsonSerializer.Deserialize<List<AgentConfig>>(agentsjson) ?? new List<AgentConfig>();
+        _quickAgentCreator.AgentFactory.storesConfig = JsonSerializer.Deserialize<List<StoreConfig>>(storesjson) ?? new List<StoreConfig>();
+        _quickAgentCreator.AgentFactory.agentsConfig = JsonSerializer.Deserialize<List<AgentConfig>>(agentsjson) ?? new List<AgentConfig>();
+
+        var storesConfig = _quickAgentCreator.AgentFactory.storesConfig;
+        var agentsConfig = _quickAgentCreator.AgentFactory.agentsConfig;
 
         // Create all document stores
-        _stores = storesConfig
-            .Select(sc => _quickAgentCreator.CreateStore(new StorePaths(sc.Path), sc.Name) as IDocumentStore)
-            .ToList();
+        _stores = new List<IDocumentStore>();
+        foreach (var sc in storesConfig)
+        {
+            var store = _quickAgentCreator.CreateStore(new StorePaths(sc.Path), sc.Name) as IDocumentStore;
+            await AddFiles(store, sc.Path, sc.FileFilters, sc.SubDirectory, sc.ExcludePattern);
+            _stores.Add(store);
+        }
 
         // Create all agents and set up their communication/roles
         _agents = new List<DevGPTAgent>();
@@ -86,6 +94,35 @@ public class AgentManager
             ).Result;
             _agents.Add(agent);
         }
+    }
+
+    public async Task AddFiles(IDocumentStore store, string path, string[] fileFilters, string subDirectory = "", string[] excludePattern = null)
+    {
+        var dir = subDirectory == "" ? new DirectoryInfo(path) : new DirectoryInfo(Path.Combine(path, subDirectory));
+
+        var filesParts = new List<FileInfo[]>();
+        foreach (var item in fileFilters)
+        {
+            filesParts.Add(dir.GetFiles(item, SearchOption.AllDirectories));
+        }
+        var files = filesParts.SelectMany(f => f).ToList();
+
+        foreach (var file in files)
+        {
+            var relPath = file.FullName.Substring((path + "\\").Length);
+            if (excludePattern == null || !excludePattern.Any(dir => MatchPattern(relPath, dir)))
+            {
+                //var content = await File.ReadAllTextAsync(file.FullName);
+                await store.Embed(relPath);
+            }
+        }
+    }
+
+    public bool MatchPattern(string text, string pattern)
+    {
+        if (pattern.StartsWith("*"))
+            return text.StartsWith(pattern, StringComparison.InvariantCultureIgnoreCase);
+        return text.Contains(pattern, StringComparison.InvariantCultureIgnoreCase);
     }
 
     /// <summary>

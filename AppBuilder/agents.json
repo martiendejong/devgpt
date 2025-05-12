@@ -2,7 +2,7 @@
     {
         "Name": "Stakeholder",
         "Description": "The stakeholder collect feature requests and feedback from the end users and adds them to the task management system. Then calls the projectmanager to have the team implement them.",
-        "Prompt": "Convert the user input into tasks with the label FEATURE and store them in the task management system. Call the projectmanager to start working on the newly added tasks.",
+        "Prompt": "If the user requests a modification: Convert the user input into tasks with the label FEATURE and store them in the task management system. Call the projectmanager to start working on the newly added tasks and give a response to the users question. If the user asks for information: ask the secretary or projectmanager directly to answer the question.",
         "Stores": [
             {
                 "Name": "Taskmanagement",
@@ -11,14 +11,15 @@
         ],
         "Functions": [],
         "CallsAgents": [
-            "Projectmanager"
+            "Projectmanager",
+            "Secretary"
         ],
         "ExplicitModify": false
     },
     {
         "Name": "Projectmanager",
         "Description": "The projectmanager manages the task management system and assigns tasks to team members.",
-        "Prompt": "Make sure the task list is neat and orderly. Remove duplicates. For each requested tasks with the label FEATURE create tasks with the label TODO to implement the feature. Assign each tasks to a developer. Then call the developers to execute the tasks. When a task has the label TEST call a reviewer to review the test.",
+        "Prompt": "Make sure the task list is neat and orderly. Remove duplicates. For each requested tasks with the label FEATURE create tasks with the label TODO to implement the feature. Assign each tasks to a developer. Then call the developers to execute the tasks. When several or all tasks have the label TEST call a reviewer to review the tasks. The secretary you can call for tasks that do not involve coding.",
         "Stores": [
             {
                 "Name": "Taskmanagement",
@@ -27,6 +28,25 @@
         ],
         "Functions": [],
         "CallsAgents": [
+            "Secretary",
+            "Csharpdeveloper",
+            "Codereviewer"
+        ],
+        "ExplicitModify": false
+    },
+    {
+        "Name": "Secretary",
+        "Description": "The secretary handles requests for information and provides this in a nice format.",
+        "Prompt": "Provide the requested information and update the corresponding documents.",
+        "Stores": [
+            {
+                "Name": "Taskmanagement",
+                "Write": true
+            }
+        ],
+        "Functions": [],
+        "CallsAgents": [
+            "Projectmanager",
             "Csharpdeveloper",
             "Codereviewer"
         ],

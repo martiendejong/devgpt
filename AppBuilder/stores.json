@@ -1,12 +1,15 @@
 [
     {
         "Name": "Codebase",
-        "Path": "C:\\Projects\\devgpt",
-        "Write": true
+        "Path": "C:\\Projects\\socialmediahulp",
+        "Write": true,
+        "FileFilters": [ "*.cs", "*.ts", "*.js", "*.vue", "*.json", "*.csproj", "*.sln", "*.config", "*.yml", "*.bat" ],
+        "ExcludePattern": [ "tasks", "dist" ]
     },
     {
         "Name": "Taskmanagement",
-        "Path": "C:\\Projects\\devgpt\\tasks",
-        "Write": true
+        "Path": "C:\\Projects\\socialmediahulp\\tasks",
+        "Write": true,
+        "FileFilters": [ "*.*" ]
     }
 ]

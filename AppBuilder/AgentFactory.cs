@@ -4,6 +4,7 @@ using System.Xml.Linq;
 using Microsoft.Extensions.Configuration;
 using static System.Formats.Asn1.AsnWriter;
 using System.Collections.Generic;
+using MathNet.Numerics.RootFinding;
 
 public class AgentFactory {
     public AgentFactory(string openAIApiKey, string logFilePath)
@@ -11,6 +12,9 @@ public class AgentFactory {
         OpenAiApiKey = openAIApiKey;
         LogFilePath = logFilePath;
     }
+
+    public List<StoreConfig> storesConfig;
+    public List<AgentConfig> agentsConfig;
 
     public bool WriteMode = false;
     public List<DevGPTChatMessage> Messages; // Set on init by AgentManager.
@@ -58,11 +62,120 @@ public class AgentFactory {
         return agent;
     }
 
-    // ---| Added implementation here |---
-    // Implements AddStoreTools for the agent creation process.
-    private void AddStoreTools(IEnumerable<(IDocumentStore Store, bool Write)> stores, ToolsContextBase tools, IEnumerable<string> functions, IEnumerable<string> agents, string agentName)
+    private void AddStoreTools(IEnumerable<(IDocumentStore Store, bool Write)> stores, ToolsContextBase tools, IEnumerable<string> functions, IEnumerable<string> agents, string caller)
     {
-        // This is a stub implementation - add your custom logic for tools based on stores, functions, or agents
-        // Optionally add standard tools to tools.Tools
+        AddAgentTools(tools, agents, caller);
+        var i = 0;
+        foreach (var storeItem in stores)
+        {
+            var store = storeItem.Store;
+            AddReadTools(tools, store);
+            if (storeItem.Write)
+            {
+                AddWriteTools(tools, store);
+                if (i == 0)
+                {
+                    AddBuildTools(tools, functions, store);
+                }
+            }
+            ++i;
+        }
+    }
+
+    private void AddWriteTools(ToolsContextBase tools, IDocumentStore store)
+    {
+        var config = storesConfig.First(x => x.Name == store.Name);
+        var writeFile = new DevGPTChatTool($"{store.Name}_write", $"Store a file in store {store.Name}. {config.Description}", [keyParameter, contentParameter], async (messages, toolCall) =>
+        {
+            if (WriteMode) return "Cannot give write instructions when in write mode";
+            if (keyParameter.TryGetValue(toolCall, out string key))
+                if (contentParameter.TryGetValue(toolCall, out string content))
+                    return await store.Store(key, content, false) ? "success" : "content provided was the same as the file";
+                else
+                    return "No content given";
+            return "No key given";
+        });
+        tools.Add(writeFile);
+        var deleteFile = new DevGPTChatTool($"{store.Name}_delete", $"Removes a file from store {store.Name}. {config.Description}", [keyParameter], async (messages, toolCall) =>
+        {
+            if (keyParameter.TryGetValue(toolCall, out string key))
+                return await store.Remove(key) ? "success" : "the file was already deleted"; ;
+            return "No key given";
+        });
+        tools.Add(deleteFile);
+    }
+
+    private void AddBuildTools(ToolsContextBase tools, IEnumerable<string> functions, IDocumentStore store)
+    {
+        if (functions.Contains("git"))
+        {
+            var git = new DevGPTChatTool($"git", $"Calls git and returns the output.", [argumentsParameter], async (messages, toolCall) =>
+            {
+                if (argumentsParameter.TryGetValue(toolCall, out string args))
+                {
+                    var output = GitOutput.GetGitOutput(store.TextStore.RootFolder, args);
+                    return output.Item1 + "\n" + output.Item2;
+                }
+                return "arguments not provided";
+            });
+            tools.Add(git);
+        }
+        if (functions.Contains("build"))
+        {
+            var build = new DevGPTChatTool($"build", $"Builds the solution and returns the output.", [], async (messages, toolCall) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build.bat", "build_errors.log"));
+            tools.Add(build);
+        }
+    }
+
+    private void AddReadTools(ToolsContextBase tools, IDocumentStore store)
+    {
+        var config = storesConfig.First(x => x.Name == store.Name);
+        var getFiles = new DevGPTChatTool($"{store.Name}_list", $"Retrieve a list of the files in store {store.Name}. {config.Description}", [], async (messages, toolCall) => string.Join("\n", await store.List()));
+        tools.Add(getFiles);
+        var getRelevancy = new DevGPTChatTool($"{store.Name}_relevancy", $"Retrieve a list of relevant files in store {store.Name}. {config.Description}", [relevancyParameter], async (messages, toolCall) =>
+        {
+            if (relevancyParameter.TryGetValue(toolCall, out string key))
+                return string.Join("\n", await store.RelevantItems(key));
+            return "No key given";
+        });
+        tools.Add(getRelevancy);
+        DevGPTChatTool getFile = new DevGPTChatTool($"{store.Name}_read", $"Retrieve a file from store {store.Name}. {config.Description}", [keyParameter], async (messages, toolCall) =>
+        {
+            if (keyParameter.TryGetValue(toolCall, out string key))
+                return await store.Get(key) ?? "File not found";
+            return "No key given";
+        });
+        tools.Add(getFile);
+    }
+
+    private void AddAgentTools(ToolsContextBase tools, IEnumerable<string> agents, string caller)
+    {
+        foreach (var agent in agents)
+        {
+            var config = agentsConfig.First(x => x.Name == agent);
+            var callAgent = new DevGPTChatTool($"{agent}", $"Calls {agent} to execute a tasks and return a message. {config.Description}", [instructionParameter], async (messages, toolCall) =>
+            {
+                if (instructionParameter.TryGetValue(toolCall, out string key))
+                    return await CallAgent(agent, key, caller);
+                return "No key given";
+            });
+            tools.Add(callAgent);
+            //if (Agents[agent].IsCoder)
+            //{
+            var callCoderAgent = new DevGPTChatTool($"{agent}_code", $"Calls {agent} to modify the codebase. {config.Description} Be aware of the token limit of 8000 so only let the agents make small modifications at a time.", [instructionParameter], async (messages, toolCall) =>
+            {
+                if (WriteMode) return "Cannot give write instructions when in write mode";
+                if (instructionParameter.TryGetValue(toolCall, out string key))
+                {
+                    WriteMode = true;
+                    var result = await CallCoderAgent(agent, key, caller);
+                    WriteMode = false;
+                    return result;
+                }
+                return "No key given";
+            });
+            tools.Add(callCoderAgent);
+            //}
+        }
     }
 }

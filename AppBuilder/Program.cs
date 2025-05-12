@@ -11,17 +11,18 @@ class Program
         const string AgentsJsonPath = "agents.json";
 
 
-
-        // API key
-        string openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ?? "your-api-key-here";
+        var openAISettings = OpenAIConfig.Load();
+        string openAIApiKey = openAISettings.ApiKey;
 
         // Instantiate AgentManager with paths and a new codeBuilder (for file/build/tools context only).
         var agentManager = new AgentManager(
             StoresJsonPath,
             AgentsJsonPath,
-            openAiApiKey,
+            openAIApiKey,
             LogFilePath
         );
+        await agentManager.LoadStoresAndAgents();
+
 
         // Start the interactive agent user loop. The AgentManager now manages all agent history.
         await agentManager.InteractiveUserLoop();
