@@ -1,21 +1,38 @@
 [
-    {
-        "Name": "Codebase",
-        "Path": "C:\\Projects\\devgpt",
-        "Write": true,
-        "FileFilters": [ "*.cs", "*.ts", "*.js", "*.vue", "*.json", "*.csproj", "*.sln", "*.config", "*.yml", "*.bat" ],
-        "ExcludePattern": [ "tasks", "team", "dist", "bin", "obj", "node_modules" ]
-    },
-    {
-        "Name": "Taskmanagement",
-        "Path": "C:\\Projects\\devgpt\\tasks",
-        "Write": true,
-        "FileFilters": [ "*.*" ]
-    },
-    {
-        "Name": "Teamdocumenten",
-        "Path": "C:\\Projects\\devgpt\\team",
-        "Write": true,
-        "FileFilters": [ "*.*" ]
-    }
+  {
+    "Name": "Codebase",
+    "Description": null,
+    "Path": "C:\\Projects\\devgpt",
+    "FileFilters": [
+      "*.cs",
+      "*.ts",
+      "*.js",
+      "*.vue",
+      "*.json",
+      "*.csproj",
+      "*.sln",
+      "*.config",
+      "*.yml",
+      "*.bat"
+    ],
+    "SubDirectory": "",
+    "ExcludePattern": [
+      "tasks",
+      "team",
+      "dist",
+      "bin",
+      "obj",
+      "node_modules"
+    ]
+  },
+  {
+    "Name": "Taskmanagement",
+    "Description": null,
+    "Path": "C:\\Projects\\devgpt\\tasks",
+    "FileFilters": [
+      "*.*"
+    ],
+    "SubDirectory": "",
+    "ExcludePattern": []
+  }
 ]
