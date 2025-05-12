@@ -10,9 +10,12 @@ public class AgentManager
 {
     private List<IDocumentStore> _stores;
     private List<DevGPTAgent> _agents;
+    private string _storesJson;
+    private string _agentsJson;
+    private bool _isContent;
     private readonly string _storesJsonPath;
     private readonly string _agentsJsonPath;
-    private readonly QuickAgentCreator _quickAgentCreator;
+    public readonly QuickAgentCreator _quickAgentCreator;
 
     // The interaction history with agents
     public List<DevGPTChatMessage> History { get; } = new List<DevGPTChatMessage>();
@@ -41,17 +44,40 @@ public class AgentManager
         _quickAgentCreator = new QuickAgentCreator(agentFactory, llmClient);
     }
 
+    public AgentManager(string storesJson, string agentsJson, string openAIApiKey, string logFilePath, bool isContent)
+    {
+        _storesJson = storesJson;
+        _agentsJson = agentsJson;
+        _isContent = isContent;
+
+        var openAIConfig = new OpenAIConfig(openAIApiKey);
+        var llmClient = new OpenAIClientWrapper(openAIConfig);
+        var agentFactory = new AgentFactory(openAIApiKey, logFilePath);
+        agentFactory.Messages = History; // History now lives in AgentManager
+        _quickAgentCreator = new QuickAgentCreator(agentFactory, llmClient);
+    }
+
     /// <summary>
     /// Loads and initializes all document stores and agents from provided configuration files.
     /// </summary>
     public async Task LoadStoresAndAgents()
     {
-        if (!File.Exists(_storesJsonPath))
-            throw new FileNotFoundException("Could not find stores configuration.", _storesJsonPath);
-        if (!File.Exists(_agentsJsonPath))
-            throw new FileNotFoundException("Could not find agents configuration.", _agentsJsonPath);
-        string storesjson = File.ReadAllText(_storesJsonPath);
-        string agentsjson = File.ReadAllText(_agentsJsonPath);
+        string storesjson;
+        string agentsjson;
+        if (!_isContent) { 
+            if (!File.Exists(_storesJsonPath))
+                throw new FileNotFoundException("Could not find stores configuration.", _storesJsonPath);
+            if (!File.Exists(_agentsJsonPath))
+                throw new FileNotFoundException("Could not find agents configuration.", _agentsJsonPath);
+            storesjson = File.ReadAllText(_storesJsonPath);
+            agentsjson = File.ReadAllText(_agentsJsonPath);
+        }
+        else
+        {
+            storesjson = _storesJson;
+            agentsjson = _agentsJson;
+        }
+
         _quickAgentCreator.AgentFactory.storesConfig = JsonSerializer.Deserialize<List<StoreConfig>>(storesjson) ?? new List<StoreConfig>();
         _quickAgentCreator.AgentFactory.agentsConfig = JsonSerializer.Deserialize<List<AgentConfig>>(agentsjson) ?? new List<AgentConfig>();
 
@@ -155,5 +181,23 @@ public class AgentManager
             }
             History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response.Message });
         }
+    }
+
+    public async Task<string> SendMessage(string input, string agentName = null)
+    {
+        DevGPTAgent agent;
+        if (string.IsNullOrEmpty(agentName))
+        {
+            agent = _agents.FirstOrDefault();
+            if (agent == null) throw new InvalidOperationException("No agents loaded.");
+        }
+        else
+        {
+            agent = GetAgent(agentName);
+            if (agent == null) throw new InvalidOperationException($"Agent not found: {agentName}");
+        }
+
+        var response = await agent.Generator.GetResponse<IsReadyResult>(input, History, true, true, agent.Tools, null);
+        return response.Message;
     }
 }

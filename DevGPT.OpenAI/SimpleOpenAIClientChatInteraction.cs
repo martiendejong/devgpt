@@ -219,11 +219,21 @@ public class SimpleOpenAIClientChatInteraction
                 if (toolCall.FunctionName == tool.FunctionName)
                 {
                     Console.WriteLine($"Calling {tool.FunctionName}");
-                    Console.WriteLine($"Arguments:\n{toolCall.FunctionArguments.ToString()}\n\n");
+                    Console.WriteLine($"Arguments:\n{toolCall.FunctionArguments.ToString()}");
+                    if(ToolsContext.SendMessage != null)
+                    {
+                        ToolsContext.SendMessage($"Calling {tool.FunctionName}");
+                        ToolsContext.SendMessage($"Arguments:\n{toolCall.FunctionArguments.ToString()}");
+                    }
                     string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT());
-                    if(!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_list") || tool.FunctionName.Contains("_relevancy") || tool.FunctionName == "build" || tool.FunctionName == "git"))
-                        Console.WriteLine($"Result:\n{result}\n\n\n\n");
-                    //    Console.WriteLine($"Result: {result}");
+                    if (!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_list") || tool.FunctionName.Contains("_relevancy") || tool.FunctionName == "build" || tool.FunctionName == "git"))
+                    {
+                        Console.WriteLine($"Result:\n{result}\n");
+                        if (ToolsContext.SendMessage != null)
+                        {
+                            ToolsContext.SendMessage($"Result:\n{result}\n");
+                        }
+                    }
                     toolResults.Add(new ToolChatMessage(toolCall.Id, result));
                 }
             }

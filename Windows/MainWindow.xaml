@@ -40,6 +40,18 @@
                     <TextBlock Text="Save agents.json" />
                 </StackPanel>
             </Button>
+            <!-- New chat window -->
+            <Button Name="NewChatWindowButton"
+                    Width="210"
+                    Margin="30,0,0,0"
+                    Click="NewChatWindowButton_Click"
+                    Padding="4"
+                    Visibility="{Binding IsChatVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE710;" FontSize="16" Margin="0,0,4,0" />
+                    <TextBlock Text="Nieuw chatvenster openen" />
+                </StackPanel>
+            </Button>
         </StackPanel>
         <!-- Tab panel -->
         <TabControl Name="ConfigTabControl" Margin="10,0,10,10">
@@ -60,7 +72,6 @@
                              TextWrapping="Wrap"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
                         <Button Name="ValidateStoresJsonButton" Content="Validate" Click="ValidateStoresJsonButton_Click" Margin="0,0,10,0"/>
-                        <!-- SaveStoresButton verwijderd uit tabblad-->
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -81,7 +92,6 @@
                              TextWrapping="Wrap"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
                         <Button Name="ValidateAgentsJsonButton" Content="Validate" Click="ValidateAgentsJsonButton_Click" Margin="0,0,10,0"/>
-                        <!-- SaveAgentsButton verwijderd uit tabblad-->
                     </StackPanel>
                 </Grid>
             </TabItem>

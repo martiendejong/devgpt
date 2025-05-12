@@ -3,6 +3,7 @@
 public class ToolsContextBase : IToolsContext
 {
     public List<DevGPTChatTool> Tools { get; set; } = new List<DevGPTChatTool>();
+    public Action<string> SendMessage { get; set; } = null;
 
     public void Add(DevGPTChatTool info)
     {
