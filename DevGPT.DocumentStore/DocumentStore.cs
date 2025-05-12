@@ -74,10 +74,12 @@ public class DocumentStore : IDocumentStore
     public async Task<bool> Remove(string name)
     {
         await EmbeddingStore.RemoveEmbedding(name);
+        await TextStore.Remove(name);
         var parts = await PartStore.Get(name);
         foreach (var part in parts)
         {
             await EmbeddingStore.RemoveEmbedding(part);
+            await TextStore.Remove(name);
         }
         return true;
     }
