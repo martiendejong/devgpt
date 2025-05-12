@@ -66,7 +66,7 @@ public class AgentFactory {
 
         AddStoreTools(stores, tools, function, agents, name);
 
-        var tempStores = stores.Select(s => s.Store as IDocumentStore).ToList();
+        var tempStores = stores.Skip(1).Select(s => s.Store as IDocumentStore).ToList();
 
         var generator = new DocumentGenerator(stores.First().Store, new List<DevGPTChatMessage>() { new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = systemPrompt } }, llmClient, OpenAiApiKey, LogFilePath, tempStores);
         var agent = new DevGPTAgent(name, generator, tools, isCoder);

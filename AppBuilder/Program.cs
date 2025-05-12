@@ -306,7 +306,7 @@ static async Task HandleUserInput(DevGPTAgent agent, CodeBuilder2 codeBuilder)
         while (!response.IsRequestImplemented)
         {
             response = await agent.Generator.GetResponse<IsReadyResult>("Continue implementing the requested features", codeBuilder.History, true, true, agent.Tools, null);
-            Console.WriteLine(response);
+            Console.WriteLine(response.Message);
         }
         codeBuilder.History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response.Message });
     }

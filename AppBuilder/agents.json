@@ -27,13 +27,13 @@
         ],
         "Functions": [],
         "CallsAgents": [
-            "C# developer",
-            "Code reviewer"
+            "Csharpdeveloper",
+            "Codereviewer"
         ],
         "ExplicitModify": false
     },
     {
-        "Name": "C# developer",
+        "Name": "Csharpdeveloper",
         "Description": "A developer who is specialized in C# and ASP.NET core.",
         "Prompt": "Modify the files in the codebase to implement the requested changes. Then update the relevant tasks to label TEST.",
         "Stores": [
@@ -51,13 +51,13 @@
             "build"
         ],
         "CallsAgents": [
-            "Code reviewer",
+            "Codereviewer",
             "Projectmanager"
         ],
         "ExplicitModify": true
     },
     {
-        "Name": "Code reviewer",
+        "Name": "Codereviewer",
         "Description": "A developer who is specialized in reviewing code.",
         "Prompt": "Review the requested changes to see if there are any errors. Use the build and compare the uncommitted git changes to verify that the code is good and has not created any problems. If there are any problems update the relevant tasks and set the label from TEST to TODO. If there are no problems set the task to DONE.",
         "Stores": [
@@ -75,7 +75,7 @@
             "build"
         ],
         "CallsAgents": [
-            "C# developer",
+            "Csharpdeveloper",
             "Projectmanager"
         ],
         "ExplicitModify": false
