@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Windows", "Windows\Windows.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AppBuilder", "AppBuilder\AppBuilder.csproj", "{BDD60274-B364-401D-8033-DAB43C51AA5A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "javanalyze", "javanalyze\javanalyze.csproj", "{860C9336-A8F9-4072-9B35-3CF8662A49AB}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OpnieuwOpnieuw", "OpnieuwOpnieuw", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Helpers", "DevGPT.Helpers\DevGPT.Helpers.csproj", "{8D9049DF-FA2D-4212-97CF-82F74B39BCBC}"
@@ -47,10 +45,6 @@ Global
 		{BDD60274-B364-401D-8033-DAB43C51AA5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDD60274-B364-401D-8033-DAB43C51AA5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDD60274-B364-401D-8033-DAB43C51AA5A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{860C9336-A8F9-4072-9B35-3CF8662A49AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{860C9336-A8F9-4072-9B35-3CF8662A49AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{860C9336-A8F9-4072-9B35-3CF8662A49AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{860C9336-A8F9-4072-9B35-3CF8662A49AB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8D9049DF-FA2D-4212-97CF-82F74B39BCBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8D9049DF-FA2D-4212-97CF-82F74B39BCBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D9049DF-FA2D-4212-97CF-82F74B39BCBC}.Release|Any CPU.ActiveCfg = Release|Any CPU

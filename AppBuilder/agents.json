@@ -18,7 +18,7 @@
     {
         "Name": "Projectmanager",
         "Description": "The projectmanager manages the task management system and assigns tasks to team members.",
-        "Prompt": "For each requested tasks with the label FEATURE create tasks with the label TODO to implement the feature. Assign each tasks to a developer. Then call the developers to execute the tasks. When a task has the label TEST call a reviewer to review the test.",
+        "Prompt": "Make sure the task list is neat and orderly. Remove duplicates. For each requested tasks with the label FEATURE create tasks with the label TODO to implement the feature. Assign each tasks to a developer. Then call the developers to execute the tasks. When a task has the label TEST call a reviewer to review the test.",
         "Stores": [
             {
                 "Name": "Taskmanagement",

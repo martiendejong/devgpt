@@ -2,10 +2,6 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DevGPT.DocumentStore;
-using DevGPT.EmbeddingStore;
-using DevGPT.OpenAI;
-using DevGPT.Classes;
 
 class Program
 {
@@ -56,7 +52,7 @@ class Program
             };
             string simulatedInterview = await chatClient.GetResponse(
                 messages, 
-                DevGPTChatResponseFormat.CreateTextFormat(), 
+                DevGPTChatResponseFormat.Text, 
                 null, 
                 new List<ImageData>());
 
@@ -70,7 +66,7 @@ class Program
             };
             string analysis = await chatClient.GetResponse(
                 analysisMessages, 
-                DevGPTChatResponseFormat.CreateTextFormat(), 
+                DevGPTChatResponseFormat.Text, 
                 null, 
                 new List<ImageData>());
 
