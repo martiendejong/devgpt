@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Store;
-using Store.Model;
+using DevGPT.DocumentStore;
+using DevGPT.EmbeddingStore;
 using DevGPT.OpenAI;
 using DevGPT.Classes;
 
@@ -12,15 +12,20 @@ class Program
     static async Task Main(string[] args)
     {
         // Load OpenAI settings using DevGPT libraries
-        var openAISettings = Store.OpenAISettings.Load();
-        string apikey = openAISettings.ApiKey;
+        var openAIConfig = OpenAIConfig.Load();
+        string apikey = openAIConfig.ApiKey;
+        var llmClient = new OpenAIClientWrapper(openAIConfig);
 
-        // Configure document stores for werkzoekenden and bedrijven using Store.DocumentStore and DocumentStoreConfig
-        var werkzoekendenconfig = new DocumentStoreConfig(@"c:\stores\crosslink\werkzoekenden", @"c:\stores\crosslink\werkzoekenden.embed", apikey);
-        var werkzoekenden = new DocumentStore(werkzoekendenconfig);
+        // Prepare document stores for werkzoekenden and bedrijven with your in-repo DocumentStore components
+        var werkzoekendenEmbeddingStore = new EmbeddingFileStore(@"c:\stores\crosslink\werkzoekenden.embed", llmClient);
+        var werkzoekendenTextStore = new TextFileStore(@"c:\stores\crosslink\werkzoekenden");
+        var werkzoekendenPartStore = new DocumentPartFileStore(@"c:\stores\crosslink\werkzoekenden.parts");
+        var werkzoekenden = new DocumentStore(werkzoekendenEmbeddingStore, werkzoekendenTextStore, werkzoekendenPartStore, llmClient);
 
-        var bedrijvenconfig = new DocumentStoreConfig(@"c:\stores\crosslink\bedrijven", @"c:\stores\crosslink\bedrijven.embed", apikey);
-        var bedrijven = new DocumentStore(bedrijvenconfig);
+        var bedrijvenEmbeddingStore = new EmbeddingFileStore(@"c:\stores\crosslink\bedrijven.embed", llmClient);
+        var bedrijvenTextStore = new TextFileStore(@"c:\stores\crosslink\bedrijven");
+        var bedrijvenPartStore = new DocumentPartFileStore(@"c:\stores\crosslink\bedrijven.parts");
+        var bedrijven = new DocumentStore(bedrijvenEmbeddingStore, bedrijvenTextStore, bedrijvenPartStore, llmClient);
 
         // Example CV data (this would be loaded dynamically in a production scenario)
         var candidateCV = @"**Curriculum Vitae**\n        \n**Persoonlijke gegevens**\nNaam: Mark van den Berg\nAdres: Keizersgracht 112, 1015 CV Amsterdam\nTelefoonnummer: 06-12345678\nE-mail: markvandenberg@email.com\nGeboortedatum: 12 mei 1990\nNationaliteit: Nederlands\nRijbewijs: B\n\n---\n**Profiel**\nAnalytische en gedreven IT-professional met een passie voor softwareontwikkeling en procesoptimalisatie. Ik ben een probleemoplosser die graag complexe vraagstukken analyseert en vertaalt naar efficiënte technologische oplossingen. Mijn sterke communicatieve vaardigheden maken mij een bruggenbouwer tussen techniek en eindgebruikers. ... (etc, rest of CV as per sample)";
@@ -29,8 +34,8 @@ class Program
         Console.WriteLine(candidateCV);
         Console.WriteLine();
 
-        // Find relevant jobs/vacancies using bedrijven store's interface
-        List<string> relevantVacancies = await bedrijven.GetRelevantDocuments(candidateCV, new List<IStore>());
+        // Find relevant jobs/vacancies using bedrijven store's interface, using RelevantItems
+        List<string> relevantVacancies = await bedrijven.RelevantItems(candidateCV);
 
         int matchCount = 0;
         foreach (var vacature in relevantVacancies)
@@ -42,14 +47,12 @@ class Program
             Console.WriteLine();
 
             // Use DevGPT.OpenAI and DevGPT chat classes for interview/chat simulation
-            var api = new OpenAIClient(apikey);
-            var chatClient = new SimpleOpenAIClient(api, apikey, null);
-
-            var messages = new List<ChatMessage>
+            var chatClient = llmClient;
+            var messages = new List<DevGPTChatMessage>
             {
-                new AssistantChatMessage("De CV van de kandidaat: " + candidateCV),
-                new AssistantChatMessage("De vacature: " + vacature),
-                new AssistantChatMessage("Genereer een sollicitatiegesprek tussen de kandidaat en de interviewer...")
+                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "De CV van de kandidaat: " + candidateCV },
+                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "De vacature: " + vacature },
+                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "Genereer een sollicitatiegesprek tussen de kandidaat en de interviewer..." }
             };
             string simulatedInterview = await chatClient.GetResponse(
                 messages, 
@@ -57,13 +60,13 @@ class Program
                 null, 
                 new List<ImageData>());
 
-            // Analyse the match with DevGPT chat classes
-            var analysisMessages = new List<ChatMessage>
+            // Analyse the match
+            var analysisMessages = new List<DevGPTChatMessage>
             {
-                new AssistantChatMessage("De CV van de kandidaat: " + candidateCV),
-                new AssistantChatMessage("De vacature: " + vacature),
-                new AssistantChatMessage("Het gesimuleerde gesprek: " + simulatedInterview),
-                new AssistantChatMessage("Geef een voorlopige analyse conclusie beoordeling van de match en het gesimuleerde gesprek. Geef de match een score tussen 0 en 100...")
+                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "De CV van de kandidaat: " + candidateCV },
+                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "De vacature: " + vacature },
+                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "Het gesimuleerde gesprek: " + simulatedInterview },
+                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "Geef een voorlopige analyse conclusie beoordeling van de match en het gesimuleerde gesprek. Geef de match een score tussen 0 en 100..." }
             };
             string analysis = await chatClient.GetResponse(
                 analysisMessages, 
