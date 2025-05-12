@@ -1,8 +1,10 @@
-﻿using System.Text.Json;
+﻿using System.ClientModel;
+using System.Text.Json;
 using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Embeddings;
 using OpenAI.Images;
+using static System.Net.Mime.MediaTypeNames;
 
 public partial class OpenAIClientWrapper : ILLMClient
 {
@@ -42,9 +44,12 @@ public partial class OpenAIClientWrapper : ILLMClient
 
     public async Task<Embedding> GenerateEmbedding(string text)
     {
-        var response = await EmbeddingClient.GenerateEmbeddingAsync(text);
-        var embeddings = response.Value.ToFloats().ToArray().Select(f => (double)f);
-        return new Embedding(embeddings);
+        return await Retry.Run(async () =>
+        {
+            var response = await EmbeddingClient.GenerateEmbeddingAsync(text);
+            var embeddings = response.Value.ToFloats().ToArray().Select(f => (double)f);
+            return new Embedding(embeddings);
+        });
     }
 
     public async Task<string> GetResponseStream(
