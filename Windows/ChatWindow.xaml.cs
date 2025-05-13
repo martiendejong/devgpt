@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows.Data;

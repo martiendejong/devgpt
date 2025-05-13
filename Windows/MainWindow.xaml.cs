@@ -4,8 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Windows;
+using MessageBox = System.Windows.MessageBox;
 using Microsoft.Win32;
 using System.ComponentModel;
+using System.Windows.Controls;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using Orientation = System.Windows.Controls.Orientation; // <- For ContentControl, StackPanel
 
 namespace DevGPT
 {
@@ -39,6 +44,7 @@ namespace DevGPT
         {
             InitializeComponent();
             DataContext = this;
+            UpdateStoresEditorContent();
         }
 
         private void SetChatVisibilityIfReady()
@@ -64,6 +70,7 @@ namespace DevGPT
                     _parsedStores = JsonSerializer.Deserialize<List<StoreConfig>>(_storesJsonRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<StoreConfig>();
                     storesLoaded = true;
                     SetChatVisibilityIfReady();
+                    UpdateStoresEditorContent();
                 }
                 catch (Exception ex)
                 {
@@ -101,7 +108,7 @@ namespace DevGPT
         {
             try
             {
-                var data = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var data = JsonSerializer.Deserialize<List<StoreConfig>>(GetStoresEditorJsonText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 MessageBox.Show("Valid JSON", "Validation", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -138,7 +145,11 @@ namespace DevGPT
                 string filePath = saveDlg.FileName;
                 try
                 {
-                    var data = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    List<StoreConfig> data;
+                    if (_editorMode == EditorMode.Text)
+                        data = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    else
+                        data = _parsedStores;
                     var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
                     File.WriteAllText(filePath, json);
                     _parsedStores = data;
@@ -207,6 +218,55 @@ namespace DevGPT
             }
         }
 
+        private enum EditorMode { Text, Form }
+        private EditorMode _editorMode = EditorMode.Text;
+
+        private void RadioEditorMode_Checked(object sender, RoutedEventArgs e)
+        {
+            if (RadioTextEditor != null && (RadioTextEditor.IsChecked ?? false))
+                _editorMode = EditorMode.Text;
+            else
+                _editorMode = EditorMode.Form;
+            UpdateStoresEditorContent();
+        }
+
+        private void UpdateStoresEditorContent()
+        {
+            if (StoresEditorContent == null) return;
+            if (_editorMode == EditorMode.Text)
+            {
+                StoresJsonEditor.Visibility = Visibility.Visible;
+                var dummy = new ContentControl { Content = null };
+                StoresEditorContent.Content = dummy;
+            }
+            else if (_editorMode == EditorMode.Form)
+            {
+                StoresJsonEditor.Visibility = Visibility.Collapsed;
+                var sp = new StackPanel { Orientation = Orientation.Vertical };
+                if (_parsedStores == null || _parsedStores.Count == 0)
+                {
+                    sp.Children.Add(new TextBlock { Text = "Geen stores gevonden in geladen JSON.", Foreground = System.Windows.Media.Brushes.Red });
+                }
+                else
+                {
+                    foreach (var store in _parsedStores)
+                    {
+                        var ctl = new StoreFormEditor(store);
+                        sp.Children.Add(ctl);
+                    }
+                }
+                StoresEditorContent.Content = sp;
+            }
+        }
+
+        private string GetStoresEditorJsonText()
+        {
+            if (_editorMode == EditorMode.Text)
+                return StoresJsonEditor.Text;
+            else
+                return JsonSerializer.Serialize(_parsedStores, new JsonSerializerOptions { WriteIndented = true });
+        }
+
         // --- Nieuw chatvenster openen feature --- //
         private async void NewChatWindowButton_Click(object sender, RoutedEventArgs e)
         {
@@ -217,7 +277,7 @@ namespace DevGPT
             string openAIApiKey = openAISettings.ApiKey;
 
             var agentManager = new AgentManager(
-                StoresJsonEditor.Text,
+                GetStoresEditorJsonText(),
                 AgentsJsonEditor.Text,
                 openAIApiKey,
                 LogFilePath,
@@ -234,10 +294,14 @@ namespace DevGPT
         {
             try
             {
-                if (_parsedStores == null || _parsedStores.Count == 0)
-                    _parsedStores = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<StoreConfig>();
-                if (_parsedAgents == null || _parsedAgents.Count == 0)
-                    _parsedAgents = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<AgentConfig>();
+                if (_editorMode == EditorMode.Text)
+                {
+                    if (_parsedStores == null || _parsedStores.Count == 0)
+                        _parsedStores = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<StoreConfig>();
+                    if (_parsedAgents == null || _parsedAgents.Count == 0)
+                        _parsedAgents = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<AgentConfig>();
+                }
+                // otherwise form mode is always synced because of two-way binding per field
             }
             catch { }
         }
