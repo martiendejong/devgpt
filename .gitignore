@@ -20,3 +20,4 @@ bin
 /roles/projectmanager
 /tasks
 /Windows/appsettings.json
+/Windows/googleaccount.json

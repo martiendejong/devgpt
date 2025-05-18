@@ -1,3 +1,6 @@
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.BigQuery.V2;
+
 public class AgentFactory {
     public AgentFactory(string openAIApiKey, string logFilePath)
     {
@@ -18,6 +21,7 @@ public class AgentFactory {
     public ChatToolParameter relevancyParameter = new ChatToolParameter { Name = "query", Description = "The relevancy search query.", Type = "string", Required = true };
     public ChatToolParameter instructionParameter = new ChatToolParameter { Name = "instruction", Description = "The instruction to send to the agent.", Type = "string", Required = true };
     public ChatToolParameter argumentsParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call git with.", Type = "string", Required = true };
+    public ChatToolParameter bigQueryParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call Google BigQuery with.", Type = "string", Required = true };
 
     public Dictionary<string, DevGPTAgent> Agents = new Dictionary<string, DevGPTAgent>();
 
@@ -116,6 +120,44 @@ public class AgentFactory {
         {
             var build = new DevGPTChatTool($"build", $"Builds the solution and returns the output.", [], async (messages, toolCall) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build.bat", "build_errors.log"));
             tools.Add(build);
+        }
+        if (functions.Contains("bigquery"))
+        {
+            var bigQueryTool = new DevGPTChatTool(
+                "query_bigquery",
+                "Runs a read-only SQL query on Google BigQuery and returns the results as a list of rows.",
+                [bigQueryParameter],
+                async (messages, toolCall) =>
+                {
+                    if (!bigQueryParameter.TryGetValue(toolCall, out string sql))
+                        return "No query provided.";
+
+                    try
+                    {
+                        // Use credentials from environment variable or key file path
+                        var client = BigQueryClient.Create("your-project-id", GoogleCredential.);
+
+                        var result = await client.ExecuteQueryAsync(sql, parameters: null);
+                        var output = new List<string>();
+
+                        foreach (var row in result)
+                        {
+                            Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", "googleaccount.json");
+                            var rowValues = string.Join(", ", row.Select(kv => $"{kv.Key}: {kv.Value}"));
+                            output.Add(rowValues);
+                        }
+
+                        return output.Count > 0
+                            ? string.Join("\n", output.Take(10))  // Limit output for GPT
+                            : "Query executed, but no results found.";
+                    }
+                    catch (Exception ex)
+                    {
+                        return $"BigQuery error: {ex.Message}";
+                    }
+                }
+            );
+            tools.Add(bigQueryTool);
         }
     }
 

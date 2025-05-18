@@ -5,7 +5,23 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT</RootNamespace>
+    <!-- NuGet metadata -->
+    <PackageId>DevGPT.AgentFactory</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Csharpdeveloper</Authors>
+    <Company>DevGPT</Company>
+    <Description>DevGPT.AgentFactory provides intelligent agent factory functionality to generate and manage AI agents with integrated tools and generators.</Description>
+    <PackageProjectUrl>https://github.com/DevGPT/DevGPT.AgentFactory</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/DevGPT/DevGPT.AgentFactory</RepositoryUrl>
+    <PackageTags>AI;Agent;Factory;LLM;DevGPT</PackageTags>
+    <Copyright>Copyright © 2024 DevGPT</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.11.0" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DevGPT.DocumentStore\DevGPT.DocumentStore.csproj" />
