@@ -54,11 +54,11 @@ public static class DevGPTStoreConfigParser
                 case "Description": current.Description = value; break;
                 case "Path": current.Path = value; break;
                 case "FileFilters":
-                    current.FileFilters = string.IsNullOrWhiteSpace(value) ? Array.Empty<string>() : value.Split(',');
+                    current.FileFilters = string.IsNullOrWhiteSpace(value) ? Array.Empty<string>() : value.Split(',').Select(item => item.Trim()).ToArray();
                     break;
                 case "SubDirectory": current.SubDirectory = value; break;
                 case "ExcludePattern":
-                    current.ExcludePattern = string.IsNullOrWhiteSpace(value) ? Array.Empty<string>() : value.Split(',');
+                    current.ExcludePattern = string.IsNullOrWhiteSpace(value) ? Array.Empty<string>() : value.Split(',').Select(item => item.Trim()).ToArray();
                     break;
             }
         }
