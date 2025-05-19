@@ -2,9 +2,10 @@ using Google.Apis.Auth.OAuth2;
 using Google.Cloud.BigQuery.V2;
 
 public class AgentFactory {
-    public AgentFactory(string openAIApiKey, string logFilePath)
+    public AgentFactory(string openAIApiKey, string logFilePath, string googleProjectId = "")
     {
         OpenAiApiKey = openAIApiKey;
+        GoogleProjectId = googleProjectId;
         LogFilePath = logFilePath;
     }
 
@@ -14,6 +15,7 @@ public class AgentFactory {
     public bool WriteMode = false;
     public List<DevGPTChatMessage> Messages; // Set on init by AgentManager.
     public string OpenAiApiKey;
+    public string GoogleProjectId;
     public string LogFilePath;
 
     public ChatToolParameter keyParameter = new ChatToolParameter { Name = "key", Description = "The key/path of the file.", Type = "string", Required = true };
@@ -134,6 +136,7 @@ public class AgentFactory {
 
                     try
                     {
+                        
                         var client = new BigQueryClientBuilder
                         {
                             ProjectId = "wide-lattice-389014",

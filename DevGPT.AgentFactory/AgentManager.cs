@@ -32,19 +32,19 @@ public class AgentManager
     /// <summary>
     /// Instantiates the AgentManager, loads configuration, and initializes all stores and agents.
     /// </summary>
-    public AgentManager(string storesJsonPath, string agentsJsonPath, string openAIApiKey, string logFilePath)
+    public AgentManager(string storesJsonPath, string agentsJsonPath, string openAIApiKey, string logFilePath, string googleProjectId = "")
     {
         _storesJsonPath = storesJsonPath ?? throw new ArgumentNullException(nameof(storesJsonPath));
         _agentsJsonPath = agentsJsonPath ?? throw new ArgumentNullException(nameof(agentsJsonPath));
 
         var openAIConfig = new OpenAIConfig(openAIApiKey);
         var llmClient = new OpenAIClientWrapper(openAIConfig);
-        var agentFactory = new AgentFactory(openAIApiKey, logFilePath);
+        var agentFactory = new AgentFactory(openAIApiKey, logFilePath, googleProjectId);
         agentFactory.Messages = History; // History now lives in AgentManager
         _quickAgentCreator = new QuickAgentCreator(agentFactory, llmClient);
     }
 
-    public AgentManager(string storesJson, string agentsJson, string openAIApiKey, string logFilePath, bool isContent)
+    public AgentManager(string storesJson, string agentsJson, string openAIApiKey, string logFilePath, bool isContent, string googleProjectId = "")
     {
         _storesJson = storesJson;
         _agentsJson = agentsJson;
@@ -52,7 +52,7 @@ public class AgentManager
 
         var openAIConfig = new OpenAIConfig(openAIApiKey);
         var llmClient = new OpenAIClientWrapper(openAIConfig);
-        var agentFactory = new AgentFactory(openAIApiKey, logFilePath);
+        var agentFactory = new AgentFactory(openAIApiKey, logFilePath, googleProjectId);
         agentFactory.Messages = History; // History now lives in AgentManager
         _quickAgentCreator = new QuickAgentCreator(agentFactory, llmClient);
     }

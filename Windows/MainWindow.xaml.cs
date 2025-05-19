@@ -273,6 +273,7 @@ namespace DevGPT
             EnsureLatestJson();
 
             const string LogFilePath = @"C:\\Projects\\devgpt\\log";
+            var googleSettings = GoogleConfig.Load();
             var openAISettings = OpenAIConfig.Load();
             string openAIApiKey = openAISettings.ApiKey;
 
@@ -281,7 +282,8 @@ namespace DevGPT
                 AgentsJsonEditor.Text,
                 openAIApiKey,
                 LogFilePath,
-                true
+                true,
+                googleSettings.ProjectId
             );
             await agentManager.LoadStoresAndAgents();
 
