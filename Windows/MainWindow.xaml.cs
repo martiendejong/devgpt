@@ -10,22 +10,29 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
-using Orientation = System.Windows.Controls.Orientation; // <- For ContentControl, StackPanel
-
-// Add required using to resolve DevGPTStoreConfigParser
-// Assume StoreConfig and DevGPTStoreConfigParser are accessible in the same assembly or with using
+using Orientation = System.Windows.Controls.Orientation;
 
 namespace DevGPT
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        private string storesFilePath;
-        private string agentsFilePath;
-        private string _storesJsonRaw;
-        private string _agentsJsonRaw;
-        private bool storesLoaded = false;
+        private string agentsFilePath = null;
+        private string _agentsJsonRaw = string.Empty;
+        private string _agentsDevGPTRaw = string.Empty;
+        private string lastSavedAgentsPath = null;
         private bool agentsLoaded = false;
-        
+        private string agentsLoadedFormat = "json"; // Track last format
+
+        private enum AgentEditorMode { Text, Form, DevGPT }
+        private AgentEditorMode _agentEditorMode = AgentEditorMode.Text;
+
+        private string storesJsonRaw = string.Empty;
+        private string storesDevGPTRaw = string.Empty;
+        private string storesFilePath = null;
+        private string lastSavedStoresPath = null;
+        private bool storesLoaded = false;
+        private enum StoreEditorMode { Text, Form, DevGPT }
+        private StoreEditorMode _storeEditorMode = StoreEditorMode.Text;
         private List<StoreConfig> _parsedStores = new List<StoreConfig>();
         private List<AgentConfig> _parsedAgents = new List<AgentConfig>();
 
@@ -37,15 +44,15 @@ namespace DevGPT
         public bool IsChatVisible
         {
             get => _isChatVisible;
-            set {
-                _isChatVisible = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsChatVisible)));
-            }
+            set { _isChatVisible = value; OnPropertyChanged(nameof(IsChatVisible)); }
         }
 
-        private string lastSavedAgentsPath;
-        private string lastSavedStoresPath;
+        // INotifyPropertyChanged implementation
         public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public MainWindow()
         {
@@ -54,64 +61,45 @@ namespace DevGPT
             StoresJsonEditor.TextChanged += StoresJsonEditor_TextChanged;
             StoresDevGPTEditor.TextChanged += StoresDevGPTEditor_TextChanged;
             UpdateStoresEditorContent();
+            AgentsJsonEditor.TextChanged += AgentsJsonEditor_TextChanged;
+            AgentsDevGPTEditor.TextChanged += AgentsDevGPTEditor_TextChanged;
+            UpdateAgentsEditorContent();
+            SetChatVisibilityIfReady();
         }
 
         private string SelectedStoreFormat =>
             (StoreFormatComboBox.SelectedItem is ComboBoxItem item && item.Tag is string tag) ? tag : "json";
 
-        private void SetChatVisibilityIfReady()
-        {
-            if (storesLoaded && agentsLoaded)
-                IsChatVisible = true;
-        }
-
         private void LoadStoresButton_Click(object sender, RoutedEventArgs e)
         {
-            string filter = "Alle ondersteunde bestanden (*.json;*.devgpt)|*.json;*.devgpt|JSON files (*.json)|*.json|DevGPT files (*.devgpt)|*.devgpt";
             var dlg = new OpenFileDialog
             {
-                Filter = filter,
-                Title = "Select stores.json/.devgpt"
+                Filter = "Stores config (.json, .devgpt)|*.json;*.devgpt|JSON files (*.json)|*.json|DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
+                Title = "Select stores.json or .devgpt"
             };
             if (dlg.ShowDialog() == true)
             {
                 storesFilePath = dlg.FileName;
-                string extension = Path.GetExtension(storesFilePath).ToLowerInvariant();
-                string format = SelectedStoreFormat;
-                if (extension == ".devgpt")
-                    format = "devgpt";
-                else if (extension == ".json")
-                    format = "json";
-                // Override combo to match file type
-                for (int i = 0; i < StoreFormatComboBox.Items.Count; ++i)
-                {
-                    var item = (ComboBoxItem)StoreFormatComboBox.Items[i];
-                    if ((string)item.Tag == format)
-                    {
-                        StoreFormatComboBox.SelectedIndex = i;
-                        break;
-                    }
-                }
                 try
                 {
-                    _storesJsonRaw = File.ReadAllText(storesFilePath);
-                    if (format == "devgpt")
+                    var rawTxt = File.ReadAllText(storesFilePath);
+                    // Detect format (.json or .devgpt)
+                    if (StoreConfigFormatHelper.IsLikelyJson(rawTxt) || storesFilePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
                     {
-                        _parsedStores = DevGPTStoreConfigParser.Parse(_storesJsonRaw) ?? new List<StoreConfig>();
-                        _lastDevGPTText = _storesJsonRaw;
-                        _lastJsonText = JsonSerializer.Serialize(_parsedStores, new JsonSerializerOptions { WriteIndented = true });
-                        StoresDevGPTEditor.Text = _lastDevGPTText;
-                        StoresJsonEditor.Text = _lastJsonText;
+                        StoresJsonEditor.Text = rawTxt;
+                        _parsedStores = JsonSerializer.Deserialize<List<StoreConfig>>(rawTxt, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<StoreConfig>();
+                        storesJsonRaw = rawTxt;
+                        storesDevGPTRaw = string.Empty;
                     }
-                    else // json
+                    else
                     {
-                        _parsedStores = JsonSerializer.Deserialize<List<StoreConfig>>(_storesJsonRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<StoreConfig>();
-                        _lastJsonText = JsonSerializer.Serialize(_parsedStores, new JsonSerializerOptions { WriteIndented = true });
-                        _lastDevGPTText = DevGPTStoreConfigParser.Serialize(_parsedStores);
-                        StoresJsonEditor.Text = _lastJsonText;
-                        StoresDevGPTEditor.Text = _lastDevGPTText;
+                        StoresDevGPTEditor.Text = rawTxt;
+                        _parsedStores = DevGPTStoreConfigParser.Parse(rawTxt);
+                        storesDevGPTRaw = rawTxt;
+                        storesJsonRaw = string.Empty;
                     }
                     storesLoaded = true;
+                    lastSavedStoresPath = storesFilePath;
                     SetChatVisibilityIfReady();
                     UpdateStoresEditorContent();
                 }
@@ -126,19 +114,36 @@ namespace DevGPT
         {
             var dlg = new OpenFileDialog
             {
-                Filter = "JSON files (*.json)|*.json",
-                Title = "Select agents.json"
+                Filter = "Agents config (.json, .devgpt)|*.json;*.devgpt|JSON files (*.json)|*.json|DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
+                Title = "Select agents.json or .devgpt"
             };
             if (dlg.ShowDialog() == true)
             {
                 agentsFilePath = dlg.FileName;
                 try
                 {
-                    _agentsJsonRaw = File.ReadAllText(agentsFilePath);
-                    AgentsJsonEditor.Text = _agentsJsonRaw;
-                    _parsedAgents = JsonSerializer.Deserialize<List<AgentConfig>>(_agentsJsonRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<AgentConfig>();
+                    var rawTxt = File.ReadAllText(agentsFilePath);
+                    // Detect format (.json or .devgpt)
+                    if (AgentConfigFormatHelper.IsLikelyJson(rawTxt) || agentsFilePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        agentsLoadedFormat = "json";
+                        AgentsJsonEditor.Text = rawTxt;
+                        _parsedAgents = JsonSerializer.Deserialize<List<AgentConfig>>(rawTxt, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<AgentConfig>();
+                        _agentsJsonRaw = rawTxt;
+                        _agentsDevGPTRaw = string.Empty;
+                    }
+                    else
+                    {
+                        agentsLoadedFormat = "devgpt";
+                        AgentsDevGPTEditor.Text = rawTxt;
+                        _parsedAgents = DevGPTAgentConfigParser.Parse(rawTxt);
+                        _agentsDevGPTRaw = rawTxt;
+                        _agentsJsonRaw = string.Empty;
+                    }
                     agentsLoaded = true;
+                    lastSavedAgentsPath = agentsFilePath;
                     SetChatVisibilityIfReady();
+                    UpdateAgentsEditorContent();
                 }
                 catch (Exception ex)
                 {
@@ -159,12 +164,12 @@ namespace DevGPT
                 }
                 else if (format == "devgpt")
                 {
-                    var data = DevGPTStoreConfigParser.Parse(GetStoresEditorJsonText());
+                    var data = DevGPTStoreConfigParser.Parse(AgentsJsonEditor.Text);
                     MessageBox.Show("Valid .devgpt format", "Validation", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    var data = JsonSerializer.Deserialize<List<StoreConfig>>(GetStoresEditorJsonText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    var data = JsonSerializer.Deserialize<List<StoreConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     MessageBox.Show("Valid JSON", "Validation", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
@@ -174,23 +179,31 @@ namespace DevGPT
             }
         }
 
+
         private void ValidateAgentsJsonButton_Click(object sender, RoutedEventArgs e)
         {
+            // Validate based on current mode
             try
             {
-                var data = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                MessageBox.Show("Valid JSON", "Validation", MessageBoxButton.OK, MessageBoxImage.Information);
+                List<AgentConfig> testAgents = null;
+                if (_agentEditorMode == AgentEditorMode.Text)
+                    testAgents = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text);
+                else if (_agentEditorMode == AgentEditorMode.DevGPT)
+                    testAgents = DevGPTAgentConfigParser.Parse(AgentsDevGPTEditor.Text);
+                else // Form mode
+                    testAgents = _parsedAgents;
+                MessageBox.Show($"Valid. Loaded {testAgents?.Count ?? 0} agents.", "Validatie", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Invalid JSON: " + ex.Message, "Validation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Invalid agent configuration: " + ex.Message);
             }
         }
 
         private void SaveStoresButton_Click(object sender, RoutedEventArgs e)
         {
             string format = SelectedStoreFormat;
-            string filter = format == "devgpt" 
+            string filter = format == "devgpt"
                 ? "DevGPT files (*.devgpt)|*.devgpt|JSON files (*.json)|*.json|Alle ondersteunde bestanden (*.devgpt;*.json)|*.devgpt;*.json"
                 : "JSON files (*.json)|*.json|DevGPT files (*.devgpt)|*.devgpt|Alle ondersteunde bestanden (*.devgpt;*.json)|*.devgpt;*.json";
 
@@ -258,8 +271,8 @@ namespace DevGPT
         {
             var saveDlg = new SaveFileDialog
             {
-                Filter = "JSON files (*.json)|*.json",
-                Title = "Save agents.json",
+                Filter = "Agents config (.json, .devgpt)|*.json;*.devgpt|JSON files (*.json)|*.json|DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
+                Title = "Save agents.json/.devgpt",
                 FileName = !string.IsNullOrWhiteSpace(lastSavedAgentsPath) ? Path.GetFileName(lastSavedAgentsPath) : "agents.json",
                 InitialDirectory = !string.IsNullOrWhiteSpace(lastSavedAgentsPath) ? Path.GetDirectoryName(lastSavedAgentsPath) : null,
                 OverwritePrompt = true
@@ -269,13 +282,38 @@ namespace DevGPT
                 string filePath = saveDlg.FileName;
                 try
                 {
-                    var data = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-                    File.WriteAllText(filePath, json);
+                    List<AgentConfig> data = null;
+                    string output = null;
+
+                    if (_agentEditorMode == AgentEditorMode.Form)
+                    {
+                        data = _parsedAgents;
+                    }
+                    else if (_agentEditorMode == AgentEditorMode.DevGPT)
+                    {
+                        // Parse DevGPT
+                        data = DevGPTAgentConfigParser.Parse(AgentsDevGPTEditor.Text);
+                    }
+                    else // Text (JSON)
+                    {
+                        data = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    }
+
+                    // Choose the serialization logic
+                    if (filePath.EndsWith(".devgpt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        output = DevGPTAgentConfigParser.Serialize(data);
+                    }
+                    else // Default to JSON
+                    {
+                        output = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+                    }
+                    File.WriteAllText(filePath, output);
                     _parsedAgents = data;
                     agentsFilePath = filePath;
                     lastSavedAgentsPath = filePath;
-                    MessageBox.Show($"agents.json saved.\nPad en bestandsnaam: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"Agent config opgeslagen.\nPad en bestandsnaam: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    UpdateAgentsEditorContent();
                 }
                 catch (UnauthorizedAccessException uae)
                 {
@@ -298,39 +336,69 @@ namespace DevGPT
 
         private enum EditorMode { Text, Form, DevGptText }
         private EditorMode _editorMode = EditorMode.Text;
-
         private void RadioEditorMode_Checked(object sender, RoutedEventArgs e)
         {
-            if (RadioDevGPTEditor != null && (RadioDevGPTEditor.IsChecked ?? false))
-                _editorMode = EditorMode.DevGptText;
-            else if (RadioTextEditor != null && (RadioTextEditor.IsChecked ?? false))
-                _editorMode = EditorMode.Text;
+            if (RadioTextEditor != null && (RadioTextEditor.IsChecked ?? false))
+            {
+                _storeEditorMode = StoreEditorMode.Text;
+                if (!string.IsNullOrEmpty(storesJsonRaw))
+                    StoresJsonEditor.Text = storesJsonRaw;
+            }
+            else if (RadioFormEditor != null && (RadioFormEditor.IsChecked ?? false))
+            {
+                _storeEditorMode = StoreEditorMode.Form;
+                // No raw assignment needed
+            }
             else
-                _editorMode = EditorMode.Form;
+            {
+                _storeEditorMode = StoreEditorMode.DevGPT;
+                if (!string.IsNullOrEmpty(storesDevGPTRaw))
+                    StoresDevGPTEditor.Text = storesDevGPTRaw;
+            }
             UpdateStoresEditorContent();
+        }
+
+        private void StoresJsonEditor_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_storeEditorMode != StoreEditorMode.Text) return;
+            try
+            {
+                var stores = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                _parsedStores = stores ?? new List<StoreConfig>();
+                storesJsonRaw = StoresJsonEditor.Text;
+            }
+            catch { }
+        }
+
+        private void StoresDevGPTEditor_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_storeEditorMode != StoreEditorMode.DevGPT) return;
+            // Possible: parse or preview .devgpt content
+            try { _parsedStores = DevGPTStoreConfigParser.Parse(StoresDevGPTEditor.Text); storesDevGPTRaw = StoresDevGPTEditor.Text; } catch { }
         }
 
         private void UpdateStoresEditorContent()
         {
             if (StoresEditorContent == null) return;
-            if (_editorMode == EditorMode.Text)
+            if (_storeEditorMode == StoreEditorMode.Text)
             {
                 StoresJsonEditor.Visibility = Visibility.Visible;
                 StoresDevGPTEditor.Visibility = Visibility.Collapsed;
-                var dummy = new ContentControl { Content = null };
-                StoresEditorContent.Content = dummy;
+                StoresEditorContent.Visibility = Visibility.Collapsed;
+                StoresEditorContent.Content = null;
             }
-            else if (_editorMode == EditorMode.DevGptText)
+            else if (_storeEditorMode == StoreEditorMode.DevGPT)
             {
                 StoresJsonEditor.Visibility = Visibility.Collapsed;
                 StoresDevGPTEditor.Visibility = Visibility.Visible;
-                var dummy = new ContentControl { Content = null };
-                StoresEditorContent.Content = dummy;
+                StoresEditorContent.Visibility = Visibility.Collapsed;
+                StoresEditorContent.Content = null;
             }
-            else if (_editorMode == EditorMode.Form)
+            else
             {
                 StoresJsonEditor.Visibility = Visibility.Collapsed;
                 StoresDevGPTEditor.Visibility = Visibility.Collapsed;
+                StoresEditorContent.Visibility = Visibility.Visible;
                 var sp = new StackPanel { Orientation = Orientation.Vertical };
                 if (_parsedStores == null || _parsedStores.Count == 0)
                 {
@@ -348,41 +416,72 @@ namespace DevGPT
             }
         }
 
-        // Keep .devgpt & JSON text editors in sync. When switching, update content based on last parse.
-        private void StoresJsonEditor_TextChanged(object sender, TextChangedEventArgs e)
+        private void SetChatVisibilityIfReady()
         {
-            if (_suppressEditorSync) return;
-            if (_editorMode != EditorMode.Text) return;
-            try
-            {
-                _suppressEditorSync = true;
-                var stores = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                _parsedStores = stores ?? new List<StoreConfig>();
-                _lastJsonText = StoresJsonEditor.Text;
-                var devgpt = DevGPTStoreConfigParser.Serialize(_parsedStores);
-                _lastDevGPTText = devgpt;
-                StoresDevGPTEditor.Text = devgpt;
-            }
-            catch { }
-            finally { _suppressEditorSync = false; }
+            // Chat visible if both agentsLoaded and storesLoaded
+            IsChatVisible = agentsLoaded && storesLoaded;
         }
-        private void StoresDevGPTEditor_TextChanged(object sender, TextChangedEventArgs e)
+
+        private void RadioAgentEditorMode_Checked(object sender, RoutedEventArgs e)
         {
-            if (_suppressEditorSync) return;
-            if (_editorMode != EditorMode.DevGptText) return;
-            try
+            if (RadioAgentsTextEditor != null && (RadioAgentsTextEditor.IsChecked ?? false))
             {
-                _suppressEditorSync = true;
-                var stores = DevGPTStoreConfigParser.Parse(StoresDevGPTEditor.Text);
-                _parsedStores = stores ?? new List<StoreConfig>();
-                _lastDevGPTText = StoresDevGPTEditor.Text;
-                var json = JsonSerializer.Serialize(_parsedStores, new JsonSerializerOptions { WriteIndented = true });
-                _lastJsonText = json;
-                StoresJsonEditor.Text = json;
+                _agentEditorMode = AgentEditorMode.Text;
+                if (!string.IsNullOrEmpty(_agentsJsonRaw))
+                    AgentsJsonEditor.Text = _agentsJsonRaw;
             }
-            catch { }
-            finally { _suppressEditorSync = false; }
+            else if (RadioAgentsFormEditor != null && (RadioAgentsFormEditor.IsChecked ?? false))
+            {
+                _agentEditorMode = AgentEditorMode.Form;
+            }
+            else
+            {
+                _agentEditorMode = AgentEditorMode.DevGPT;
+                if (!string.IsNullOrEmpty(_agentsDevGPTRaw))
+                    AgentsDevGPTEditor.Text = _agentsDevGPTRaw;
+            }
+            UpdateAgentsEditorContent();
         }
+
+        private void UpdateAgentsEditorContent()
+        {
+            if (AgentsEditorContent == null) return;
+            if (_agentEditorMode == AgentEditorMode.Text)
+            {
+                AgentsJsonEditor.Visibility = Visibility.Visible;
+                AgentsDevGPTEditor.Visibility = Visibility.Collapsed;
+                AgentsEditorContent.Visibility = Visibility.Collapsed;
+                AgentsEditorContent.Content = null;
+            }
+            else if (_agentEditorMode == AgentEditorMode.DevGPT)
+            {
+                AgentsJsonEditor.Visibility = Visibility.Collapsed;
+                AgentsDevGPTEditor.Visibility = Visibility.Visible;
+                AgentsEditorContent.Visibility = Visibility.Collapsed;
+                AgentsEditorContent.Content = null;
+            }
+            else
+            {
+                AgentsJsonEditor.Visibility = Visibility.Collapsed;
+                AgentsDevGPTEditor.Visibility = Visibility.Collapsed;
+                AgentsEditorContent.Visibility = Visibility.Visible;
+                var sp = new StackPanel { Orientation = Orientation.Vertical };
+                if (_parsedAgents == null || _parsedAgents.Count == 0)
+                {
+                    sp.Children.Add(new TextBlock { Text = "Geen agents gevonden in geladen JSON.", Foreground = System.Windows.Media.Brushes.Red });
+                }
+                else
+                {
+                    foreach (var agent in _parsedAgents)
+                    {
+                        var ctl = new AgentFormEditor(agent);
+                        sp.Children.Add(ctl);
+                    }
+                }
+                AgentsEditorContent.Content = sp;
+            }
+        }
+
 
         private string GetStoresEditorJsonText()
         {
@@ -399,7 +498,6 @@ namespace DevGPT
             }
         }
 
-        // --- Nieuw chatvenster openen feature --- //
         private async void NewChatWindowButton_Click(object sender, RoutedEventArgs e)
         {
             EnsureLatestJson();
@@ -422,6 +520,24 @@ namespace DevGPT
             var newChatWindow = new ChatWindow(agentManager);
             newChatWindow.Owner = this;
             newChatWindow.Show();
+        }
+
+        private void AgentsJsonEditor_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_agentEditorMode != AgentEditorMode.Text) return;
+            try
+            {
+                var agents = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                _parsedAgents = agents ?? new List<AgentConfig>();
+                _agentsJsonRaw = AgentsJsonEditor.Text;
+            }
+            catch { }
+        }
+
+        private void AgentsDevGPTEditor_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_agentEditorMode != AgentEditorMode.DevGPT) return;
+            try { _parsedAgents = DevGPTAgentConfigParser.Parse(AgentsDevGPTEditor.Text); _agentsDevGPTRaw = AgentsDevGPTEditor.Text; } catch { }
         }
 
         private void EnsureLatestJson()
@@ -455,7 +571,6 @@ namespace DevGPT
             catch { }
         }
 
-        // SETTINGS BUTTON HANDLER
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
             var settingsWin = new SettingsWindow();

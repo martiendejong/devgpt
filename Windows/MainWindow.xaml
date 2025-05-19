@@ -23,7 +23,7 @@
             <Button Name="LoadAgentsButton" Width="150" Margin="0,0,10,0" Click="LoadAgentsButton_Click" Padding="4">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8E5;" FontSize="16" Margin="0,0,4,0" />
-                    <TextBlock Text="Open agents.json" />
+                    <TextBlock Text="Open agents.json/.devgpt" />
                 </StackPanel>
             </Button>
             <!-- Save Stores -->
@@ -37,7 +37,7 @@
             <Button Name="SaveAgentsButton" Width="150" Click="SaveAgentsButton_Click" Padding="4">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74E;" FontSize="16" Margin="0,0,4,0" />
-                    <TextBlock Text="Save agents.json" />
+                    <TextBlock Text="Save agents.json/.devgpt" />
                 </StackPanel>
             </Button>
             <!-- Settings knop -->
@@ -123,22 +123,55 @@
             <TabItem Header="Agents">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <TextBox Name="AgentsJsonEditor"
-                             AcceptsReturn="True"
-                             AcceptsTab="True"
-                             HorizontalScrollBarVisibility="Auto"
-                             VerticalScrollBarVisibility="Auto"
-                             FontFamily="Consolas"
-                             FontSize="14"
-                             Margin="0"
-                             TextWrapping="Wrap"
-                             VerticalAlignment="Stretch"
-                             HorizontalAlignment="Stretch"
-                             />
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
+                    <!-- Format selection row for Agents -->
+                    <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,3">
+                        <TextBlock Text="Bestandsformaat:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="AgentFormatComboBox" Width="140" VerticalAlignment="Center">
+                            <ComboBoxItem Content="JSON (.json)" Tag="json" IsSelected="True"/>
+                            <ComboBoxItem Content="DevGPT (.devgpt)" Tag="devgpt"/>
+                        </ComboBox>
+                    </StackPanel>
+                    <!-- Editor mode selection row for Agents -->
+                    <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,0,3">
+                        <RadioButton Name="RadioAgentsTextEditor" Content="Tekst-editor (JSON)" IsChecked="True" Checked="RadioAgentEditorMode_Checked" Margin="0,0,15,0"/>
+                        <RadioButton Name="RadioAgentsFormEditor" Content="Formulier-editor" Checked="RadioAgentEditorMode_Checked" Margin="0,0,15,0"/>
+                        <RadioButton Name="RadioAgentsDevGPTEditor" Content=".devgpt Text-editor" Checked="RadioAgentEditorMode_Checked"/>
+                    </StackPanel>
+                    <!-- Editors / Form goes here -->
+                    <Grid Grid.Row="2">
+                        <TextBox Name="AgentsJsonEditor"
+                                 AcceptsReturn="True"
+                                 AcceptsTab="True"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 VerticalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas"
+                                 FontSize="14"
+                                 Margin="0"
+                                 TextWrapping="Wrap"
+                                 VerticalAlignment="Stretch"
+                                 HorizontalAlignment="Stretch"
+                                 Visibility="Visible"/>
+                        <TextBox Name="AgentsDevGPTEditor"
+                                 AcceptsReturn="True" AcceptsTab="True"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 VerticalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas"
+                                 FontSize="14"
+                                 Margin="0"
+                                 TextWrapping="Wrap"
+                                 Visibility="Collapsed"
+                                 VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                        />
+                        <ContentControl x:Name="AgentsEditorContent"
+                                        VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                                        Visibility="Collapsed"/>
+                    </Grid>
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
                         <Button Name="ValidateAgentsJsonButton" Content="Validate" Click="ValidateAgentsJsonButton_Click" Margin="0,0,10,0"/>
                     </StackPanel>
                 </Grid>

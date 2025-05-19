@@ -85,8 +85,11 @@ public class AgentManager
         var agentsConfig = _quickAgentCreator.AgentFactory.agentsConfig;
         // ----------------------------------------------------------
 
-        // Create all document stores
+        // FIX: Always clear the current store/agent lists to avoid duplications
         _stores = new List<IDocumentStore>();
+        _agents = new List<DevGPTAgent>();
+
+        // Create all document stores
         foreach (var sc in storesConfig)
         {
             var store = _quickAgentCreator.CreateStore(new StorePaths(sc.Path), sc.Name) as IDocumentStore;
@@ -95,17 +98,27 @@ public class AgentManager
         }
 
         // Create all agents and set up their communication/roles
-        _agents = new List<DevGPTAgent>();
         foreach (var ac in agentsConfig)
         {
-            var agent = _quickAgentCreator.Create(
+            // Improved: Check each agent store reference (robust error)
+            var agentStores = ac.Stores.Select(acs => {
+                var found = _stores.FirstOrDefault(s => s.Name == acs.Name);
+                if (found == null)
+                {
+                    throw new InvalidOperationException($"Agent '{ac.Name}' requires store '{acs.Name}' but it was not found in store config.");
+                }
+                return (found, acs.Write);
+            }).ToList();
+
+            // Always await agent creation
+            var agent = await _quickAgentCreator.Create(
                 ac.Name,
                 $"Jouw naam: {ac.Name}\nJouw Rol: {ac.Description}\nInstructie: {ac.Prompt}",
-                ac.Stores.Select(acs => (_stores.First(s => s.Name == acs.Name), true)).ToList(),
+                agentStores,
                 ac.Functions,
                 ac.CallsAgents,
                 ac.ExplicitModify
-            ).Result;
+            );
             _agents.Add(agent);
         }
     }
