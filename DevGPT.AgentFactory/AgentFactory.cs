@@ -134,21 +134,42 @@ public class AgentFactory {
 
                     try
                     {
-                        // Use credentials from environment variable or key file path
-                        var client = BigQueryClient.Create("your-project-id", GoogleCredential.);
+                        var client = new BigQueryClientBuilder
+                        {
+                            ProjectId = "wide-lattice-389014",
+                            JsonCredentials = File.ReadAllText("C:/Projects/devgpt/Windows/googleaccount.json")
+                        }.Build();
 
-                        var result = await client.ExecuteQueryAsync(sql, parameters: null);
+
+
+                        //Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", "googleaccount.json");
+                        //var client = BigQueryClient.Create("wide-lattice-389014");
+
                         var output = new List<string>();
+
+                        //await foreach (var row in client.ExecuteQuery Async(sql, parameters: null))
+                        //{
+                        //    Console.WriteLine(row["your_field"]);
+                        //}
+
+
+                        var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
 
                         foreach (var row in result)
                         {
-                            Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", "googleaccount.json");
-                            var rowValues = string.Join(", ", row.Select(kv => $"{kv.Key}: {kv.Value}"));
-                            output.Add(rowValues);
+                            var rowValues = new List<string>();
+
+                            foreach (var field in row.Schema.Fields)
+                            {
+                                var value = row[field.Name];
+                                rowValues.Add($"{field.Name}: {value}");
+                            }
+
+                            output.Add(string.Join(", ", rowValues));
                         }
 
                         return output.Count > 0
-                            ? string.Join("\n", output.Take(10))  // Limit output for GPT
+                            ? string.Join("\n", output)  // Limit output for GPT
                             : "Query executed, but no results found.";
                     }
                     catch (Exception ex)
