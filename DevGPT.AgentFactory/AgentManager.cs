@@ -62,27 +62,28 @@ public class AgentManager
     /// </summary>
     public async Task LoadStoresAndAgents()
     {
-        string storesjson;
+        string storesContent;
         string agentsjson;
         if (!_isContent) { 
             if (!File.Exists(_storesJsonPath))
                 throw new FileNotFoundException("Could not find stores configuration.", _storesJsonPath);
             if (!File.Exists(_agentsJsonPath))
                 throw new FileNotFoundException("Could not find agents configuration.", _agentsJsonPath);
-            storesjson = File.ReadAllText(_storesJsonPath);
+            storesContent = File.ReadAllText(_storesJsonPath);
             agentsjson = File.ReadAllText(_agentsJsonPath);
         }
         else
         {
-            storesjson = _storesJson;
+            storesContent = _storesJson;
             agentsjson = _agentsJson;
         }
 
-        _quickAgentCreator.AgentFactory.storesConfig = JsonSerializer.Deserialize<List<StoreConfig>>(storesjson) ?? new List<StoreConfig>();
+        // ---- FORMAT AUTO-DETECTION (support both JSON/.devgpt) ----
+        var storesConfig = StoreConfigFormatHelper.AutoDetectAndParse(storesContent) ?? new List<StoreConfig>();
+        _quickAgentCreator.AgentFactory.storesConfig = storesConfig;
         _quickAgentCreator.AgentFactory.agentsConfig = JsonSerializer.Deserialize<List<AgentConfig>>(agentsjson) ?? new List<AgentConfig>();
-
-        var storesConfig = _quickAgentCreator.AgentFactory.storesConfig;
         var agentsConfig = _quickAgentCreator.AgentFactory.agentsConfig;
+        // ----------------------------------------------------------
 
         // Create all document stores
         _stores = new List<IDocumentStore>();
@@ -121,13 +122,14 @@ public class AgentManager
         var files = filesParts.SelectMany(f => f).ToList();
         files = files.Where(file =>
         {
-            var relPath = file.FullName.Substring((path + "\\").Length);
+            // Use Path.GetRelativePath for platform-correct relative file paths
+            var relPath = Path.GetRelativePath(path, file.FullName);
             return excludePattern == null || !excludePattern.Any(dir => MatchPattern(relPath, dir));
         }).ToList();
 
         foreach (var file in files)
         {
-            var relPath = file.FullName.Substring((path + "\\").Length);
+            var relPath = Path.GetRelativePath(path, file.FullName);
             if (excludePattern == null || !excludePattern.Any(dir => MatchPattern(relPath, dir)))
             {
                 await store.Embed(relPath);

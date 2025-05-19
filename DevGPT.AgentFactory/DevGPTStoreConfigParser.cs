@@ -28,7 +28,8 @@ public static class DevGPTStoreConfigParser
     {
         var stores = new List<StoreConfig>();
         StoreConfig current = null;
-        foreach (var line in input.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
+
+        foreach (var line in input.Split(["\r\n", "\n"], StringSplitOptions.TrimEntries))
         {
             var trimmed = line.Trim();
             if (string.IsNullOrEmpty(trimmed))
