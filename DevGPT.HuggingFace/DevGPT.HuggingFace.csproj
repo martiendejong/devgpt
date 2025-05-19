@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Add appropriate HuggingFace or Transformers.NET package references -->
+    <PackageReference Include="Transformers.Net" Version="0.11.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DevGPT.LLMClient\DevGPT.LLMClient.csproj" />
+  </ItemGroup>
+
+</Project>
