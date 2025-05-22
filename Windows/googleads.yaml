@@ -1,0 +1,5 @@
+developer_token: INSERT_YOUR_DEV_TOKEN_HERE
+client_id: INSERT_YOUR_OAUTH2_CLIENT_ID
+client_secret: INSERT_YOUR_OAUTH2_CLIENT_SECRET
+refresh_token: INSERT_YOUR_REFRESH_TOKEN
+login_customer_id: INSERT_MANAGER_ACCOUNT_ID (optioneel)

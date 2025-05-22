@@ -29,7 +29,6 @@ namespace DevGPT
 
         private EditorMode _storesEditorMode = EditorMode.Json;
 
-
         private string storesJsonRaw = string.Empty;
         private string storesDevGPTRaw = string.Empty;
         private string storesFilePath = null;
@@ -41,6 +40,10 @@ namespace DevGPT
         private string _lastDevGPTText = "";
         private string _lastJsonText = "";
         private bool _suppressEditorSync = false;
+
+        // NEW: Per-type suppressors for realtime bidirectional syncing
+        private bool _suppressStoresEditorSync = false;
+        private bool _suppressAgentsEditorSync = false;
 
         private bool _isChatVisible = false;
         public bool IsChatVisible
@@ -62,9 +65,13 @@ namespace DevGPT
             DataContext = this;
             StoresJsonEditor.TextChanged += StoresJsonEditor_TextChanged;
             StoresDevGPTEditor.TextChanged += StoresDevGPTEditor_TextChanged;
+            StoresJsonEditor.TextChanged += StoresJsonEditor_SyncRealtime;
+            StoresDevGPTEditor.TextChanged += StoresDevGPTEditor_SyncRealtime;
             UpdateStoresEditorContent();
             AgentsJsonEditor.TextChanged += AgentsJsonEditor_TextChanged;
             AgentsDevGPTEditor.TextChanged += AgentsDevGPTEditor_TextChanged;
+            AgentsJsonEditor.TextChanged += AgentsJsonEditor_SyncRealtime;
+            AgentsDevGPTEditor.TextChanged += AgentsDevGPTEditor_SyncRealtime;
             UpdateAgentsEditorContent();
             SetChatVisibilityIfReady();
         }
@@ -180,7 +187,6 @@ namespace DevGPT
                 MessageBox.Show("Invalid format: " + ex.Message, "Validation Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
 
         private void ValidateAgentsJsonButton_Click(object sender, RoutedEventArgs e)
         {
@@ -376,6 +382,90 @@ namespace DevGPT
             // Possible: parse or preview .devgpt content
             try { _parsedStores = DevGPTStoreConfigParser.Parse(StoresDevGPTEditor.Text); storesDevGPTRaw = StoresDevGPTEditor.Text; } catch { }
         }
+
+        // ---- ADDITION: Real-time bidirectional syncing logic for Stores/Agents below ----
+
+        // STORES: JSON to devgpt
+        private void StoresJsonEditor_SyncRealtime(object sender, TextChangedEventArgs e)
+        {
+            if (_storesEditorMode != EditorMode.Json) return;
+            if (_suppressStoresEditorSync) return;
+            try
+            {
+                _suppressStoresEditorSync = true;
+                var stores = JsonSerializer.Deserialize<List<StoreConfig>>(StoresJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (stores != null)
+                {
+                    var devgptText = DevGPTStoreConfigParser.Serialize(stores);
+                    if (StoresDevGPTEditor.Text != devgptText)
+                        StoresDevGPTEditor.Text = devgptText;
+                }
+            }
+            catch { }
+            finally { _suppressStoresEditorSync = false; }
+        }
+
+        // STORES: devgpt to JSON
+        private void StoresDevGPTEditor_SyncRealtime(object sender, TextChangedEventArgs e)
+        {
+            if (_storesEditorMode != EditorMode.DevGpt) return;
+            if (_suppressStoresEditorSync) return;
+            try
+            {
+                _suppressStoresEditorSync = true;
+                var stores = DevGPTStoreConfigParser.Parse(StoresDevGPTEditor.Text);
+                if (stores != null)
+                {
+                    var jsonText = JsonSerializer.Serialize(stores, new JsonSerializerOptions { WriteIndented = true });
+                    if (StoresJsonEditor.Text != jsonText)
+                        StoresJsonEditor.Text = jsonText;
+                }
+            }
+            catch { }
+            finally { _suppressStoresEditorSync = false; }
+        }
+
+        // AGENTS: JSON to devgpt
+        private void AgentsJsonEditor_SyncRealtime(object sender, TextChangedEventArgs e)
+        {
+            if (_agentsEditorMode != EditorMode.Json) return;
+            if (_suppressAgentsEditorSync) return;
+            try
+            {
+                _suppressAgentsEditorSync = true;
+                var agents = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (agents != null)
+                {
+                    var devgptText = DevGPTAgentConfigParser.Serialize(agents);
+                    if (AgentsDevGPTEditor.Text != devgptText)
+                        AgentsDevGPTEditor.Text = devgptText;
+                }
+            }
+            catch { }
+            finally { _suppressAgentsEditorSync = false; }
+        }
+
+        // AGENTS: devgpt to JSON
+        private void AgentsDevGPTEditor_SyncRealtime(object sender, TextChangedEventArgs e)
+        {
+            if (_agentsEditorMode != EditorMode.DevGpt) return;
+            if (_suppressAgentsEditorSync) return;
+            try
+            {
+                _suppressAgentsEditorSync = true;
+                var agents = DevGPTAgentConfigParser.Parse(AgentsDevGPTEditor.Text);
+                if (agents != null)
+                {
+                    var jsonText = JsonSerializer.Serialize(agents, new JsonSerializerOptions { WriteIndented = true });
+                    if (AgentsJsonEditor.Text != jsonText)
+                        AgentsJsonEditor.Text = jsonText;
+                }
+            }
+            catch { }
+            finally { _suppressAgentsEditorSync = false; }
+        }
+
+        // ---- END OF REALTIME SYNC LOGIC ----
 
         private void UpdateStoresEditorContent()
         {

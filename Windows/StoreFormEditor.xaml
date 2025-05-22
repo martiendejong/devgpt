@@ -3,44 +3,80 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    mc:Ignorable="d" d:DesignHeight="120" d:DesignWidth="600">
-    <Border BorderBrush="Gray" BorderThickness="1" Margin="4" Padding="6">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid Grid.Row="0">
+    mc:Ignorable="d" d:DesignHeight="320" d:DesignWidth="700">
+    <DockPanel>
+        <Border BorderBrush="Gray" BorderThickness="1" Margin="4" Padding="6" DockPanel.Dock="Top">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="80" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Name:" Grid.Column="0" VerticalAlignment="Center"/>
-                <TextBox Grid.Column="1" MinWidth="100" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" />
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Name:" Grid.Column="0" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="1" MinWidth="100" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Grid Grid.Row="1" Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Description:" Grid.Column="0" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="1" MinWidth="200" Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" />
+                </Grid>
+                <Grid Grid.Row="2" Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="100" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Path:" Grid.Column="0" VerticalAlignment="Center"/>
+                    <TextBox x:Name="PathBox" Grid.Column="1" MinWidth="200" Text="{Binding Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextChanged="PathBox_TextChanged" HorizontalAlignment="Stretch" />
+                    <Button Content="Bladeren..." Grid.Column="2" Margin="8,0,0,0" Width="90" Click="BrowsePath_Click"/>
+                </Grid>
             </Grid>
-            <Grid Grid.Row="1" Margin="0,6,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="Description:" Grid.Column="0" VerticalAlignment="Center"/>
-                <TextBox Grid.Column="1" MinWidth="200" Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" />
-            </Grid>
-            <Grid Grid.Row="2" Margin="0,6,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="80" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="100" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="Path:" Grid.Column="0" VerticalAlignment="Center"/>
-                <TextBox x:Name="PathBox" Grid.Column="1" MinWidth="200" Text="{Binding Path, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextChanged="PathBox_TextChanged" HorizontalAlignment="Stretch" />
-                <Button Content="Bladeren..." Grid.Column="2" Margin="8,0,0,0" Width="90" Click="BrowsePath_Click"/>
-            </Grid>
-            <!-- Andere velden kunnen naar wens toegevoegd worden -->
-        </Grid>
-    </Border>
+        </Border>
+        <TabControl x:Name="EditModeTab" DockPanel.Dock="Bottom" Margin="4" SelectionChanged="EditModeTab_SelectionChanged">
+            <TabItem Header="JSON">
+                <Grid>
+                    <TextBox x:Name="JsonBox"
+                         AcceptsReturn="True"
+                         Height="120"
+                         TextChanged="JsonBox_TextChanged"
+                         VerticalScrollBarVisibility="Auto"
+                         FontFamily="Consolas" FontSize="13"
+                         Margin="0,0,0,2"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="devgpt">
+                <Grid>
+                    <TextBox x:Name="DevgptBox"
+                         AcceptsReturn="True"
+                         Height="120"
+                         TextChanged="DevgptBox_TextChanged"
+                         VerticalScrollBarVisibility="Auto"
+                         FontFamily="Consolas" FontSize="13"
+                         Margin="0,0,0,2"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <StackPanel DockPanel.Dock="Bottom" Margin="4">
+            <TextBlock x:Name="ErrorText"
+                       Foreground="Red"
+                       Margin="0,3,0,0"
+                       TextWrapping="Wrap" />
+            <Button x:Name="SaveButton"
+                    Content="Opslaan"
+                    Margin="0,8,0,0"
+                    IsEnabled="False"
+                    Click="SaveButton_Click"/>
+        </StackPanel>
+    </DockPanel>
 </UserControl>
