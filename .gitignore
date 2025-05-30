@@ -21,3 +21,4 @@ bin
 /tasks
 /Windows/appsettings.json
 /Windows/googleaccount.json
+/Windows/googleads.yaml
