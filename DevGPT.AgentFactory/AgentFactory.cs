@@ -139,22 +139,14 @@ public class AgentFactory {
                         
                         var client = new BigQueryClientBuilder
                         {
-                            ProjectId = "wide-lattice-389014",
+                            ProjectId = "social-media-hulp",
+                            //ProjectId = "wide-lattice-389014",
                             JsonCredentials = File.ReadAllText("C:/Projects/devgpt/Windows/googleaccount.json")
                         }.Build();
 
 
 
-                        //Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", "googleaccount.json");
-                        //var client = BigQueryClient.Create("wide-lattice-389014");
-
                         var output = new List<string>();
-
-                        //await foreach (var row in client.ExecuteQuery Async(sql, parameters: null))
-                        //{
-                        //    Console.WriteLine(row["your_field"]);
-                        //}
-
 
                         var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
 
