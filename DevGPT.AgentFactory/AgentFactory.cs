@@ -48,7 +48,16 @@ public class AgentFactory {
         foreach(var agent in flow.Agents)
         {
             Agents[agent].Tools.SendMessage($"Calling {agent}:\n{query}\n");
-            query = await CallAgent(agent, query, caller);
+            if (Agents[agent].IsCoder && !WriteMode)
+            {
+                WriteMode = true;
+                query = await CallCoderAgent(agent, query, caller);
+                WriteMode = false;
+            }
+            else
+            {
+                query = await CallAgent(agent, query, caller);
+            }
         }
         Agents[flow.Agents.Last()].Tools.SendMessage($"Response from {flow.Agents.Last()}:\n{query}\n");
         return query;
