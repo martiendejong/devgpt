@@ -16,6 +16,12 @@ namespace DevGPT
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        private enum EditorMode { Json, Form, DevGpt }
+
+        private EditorMode _agentsEditorMode = EditorMode.Json;
+        private EditorMode _storesEditorMode = EditorMode.Json;
+        private EditorMode _flowsEditorMode = EditorMode.Json;
+
         private string agentsFilePath = null;
         private string _agentsJsonRaw = string.Empty;
         private string _agentsDevGPTRaw = string.Empty;
@@ -23,19 +29,23 @@ namespace DevGPT
         private bool agentsLoaded = false;
         private string agentsLoadedFormat = "json"; // Track last format
 
-        private enum EditorMode { Json, Form, DevGpt }
-
-        private EditorMode _agentsEditorMode = EditorMode.Json;
-
-        private EditorMode _storesEditorMode = EditorMode.Json;
-
         private string storesJsonRaw = string.Empty;
         private string storesDevGPTRaw = string.Empty;
         private string storesFilePath = null;
         private string lastSavedStoresPath = null;
         private bool storesLoaded = false;
+
+        private string _flowsJsonRaw = string.Empty;
+        private string _flowsDevGPTRaw = string.Empty;
+        private string flowsFilePath = null;
+        private string lastSavedFlowsPath = null;
+        private bool flowsLoaded = false;
+        private string flowsLoadedFormat = "json"; // Track last format
+
+
         private List<StoreConfig> _parsedStores = new List<StoreConfig>();
         private List<AgentConfig> _parsedAgents = new List<AgentConfig>();
+        private List<FlowConfig> _parsedFlows = new List<FlowConfig>();
 
         private string _lastDevGPTText = "";
         private string _lastJsonText = "";
@@ -161,6 +171,48 @@ namespace DevGPT
             }
         }
 
+        private void LoadFlowsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "Flows config (.json, .devgpt)|*.json;*.devgpt|JSON files (*.json)|*.json|DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
+                Title = "Select flows.json or .devgpt"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                flowsFilePath = dlg.FileName;
+                try
+                {
+                    var rawTxt = File.ReadAllText(flowsFilePath);
+                    // Detect format (.json or .devgpt)
+                    if (AgentConfigFormatHelper.IsLikelyJson(rawTxt) || flowsFilePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        flowsLoadedFormat = "json";
+                        FlowsJsonEditor.Text = rawTxt;
+                        _parsedFlows = JsonSerializer.Deserialize<List<FlowConfig>>(rawTxt, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<FlowConfig>();
+                        _flowsJsonRaw = rawTxt;
+                        _flowsDevGPTRaw = string.Empty;
+                    }
+                    else
+                    {
+                        agentsLoadedFormat = "devgpt";
+                        FlowsDevGPTEditor.Text = rawTxt;
+                        _parsedFlows = DevGPTFlowConfigParser.Parse(rawTxt);
+                        _flowsDevGPTRaw = rawTxt;
+                        _flowsJsonRaw = string.Empty;
+                    }
+                    flowsLoaded = true;
+                    lastSavedFlowsPath = flowsFilePath;
+                    SetChatVisibilityIfReady();
+                    UpdateFlowsEditorContent();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error reading file: " + ex.Message);
+                }
+            }
+        }
+
         private void ValidateStoresJsonButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -201,6 +253,26 @@ namespace DevGPT
                 else // Form mode
                     testAgents = _parsedAgents;
                 MessageBox.Show($"Valid. Loaded {testAgents?.Count ?? 0} agents.", "Validatie", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Invalid agent configuration: " + ex.Message);
+            }
+        }
+
+        private void ValidateFlowsJsonButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Validate based on current mode
+            try
+            {
+                List<FlowConfig> testFlows = null;
+                if (_agentsEditorMode == EditorMode.Json)
+                    testFlows = JsonSerializer.Deserialize<List<FlowConfig>>(FlowsJsonEditor.Text);
+                else if (_agentsEditorMode == EditorMode.DevGpt)
+                    testFlows = DevGPTFlowConfigParser.Parse(FlowsDevGPTEditor.Text);
+                else // Form mode
+                    testFlows = _parsedFlows;
+                MessageBox.Show($"Valid. Loaded {testFlows?.Count ?? 0} agents.", "Validatie", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -329,6 +401,68 @@ namespace DevGPT
             }
         }
 
+        private void SaveFlowsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var saveDlg = new SaveFileDialog
+            {
+                Filter = "Flows config (.json, .devgpt)|*.json;*.devgpt|JSON files (*.json)|*.json|DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
+                Title = "Save flows.json/.devgpt",
+                FileName = !string.IsNullOrWhiteSpace(lastSavedFlowsPath) ? Path.GetFileName(lastSavedFlowsPath) : "flows.json",
+                InitialDirectory = !string.IsNullOrWhiteSpace(lastSavedFlowsPath) ? Path.GetDirectoryName(lastSavedFlowsPath) : null,
+                OverwritePrompt = true
+            };
+            if (saveDlg.ShowDialog() == true)
+            {
+                string filePath = saveDlg.FileName;
+                try
+                {
+                    List<FlowConfig> data = null;
+                    string output = null;
+
+                    data = GetFlowsConfigFormData();
+                    SaveFlowsConfigData(filePath, data);
+
+                    _parsedFlows = data;
+                    flowsFilePath = filePath;
+                    lastSavedFlowsPath = filePath;
+                    MessageBox.Show($"Flow config opgeslagen.\nPad en bestandsnaam: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    UpdateAgentsEditorContent();
+                }
+                catch (UnauthorizedAccessException uae)
+                {
+                    MessageBox.Show($"Kan niet opslaan: u heeft geen rechten tot deze locatie.\n{uae.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (IOException ioe)
+                {
+                    MessageBox.Show($"Fout bij bestandsbewerking:\n{ioe.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (JsonException je)
+                {
+                    MessageBox.Show($"Kan niet opslaan: JSON is ongeldig!\n{je.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Onbekende fout bij opslaan:\n{ex.Message}", "Opslaan mislukt", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+
+        private static void SaveFlowsConfigData(string filePath, List<FlowConfig> data)
+        {
+            string output;
+            // Choose the serialization logic
+            if (filePath.EndsWith(".devgpt", StringComparison.OrdinalIgnoreCase))
+            {
+                output = DevGPTFlowConfigParser.Serialize(data);
+            }
+            else // Default to JSON
+            {
+                output = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+            }
+            File.WriteAllText(filePath, output);
+        }
+
         private static void SaveAgentsConfigData(string filePath, List<AgentConfig> data)
         {
             string output;
@@ -359,6 +493,26 @@ namespace DevGPT
             else // Text (JSON)
             {
                 data = JsonSerializer.Deserialize<List<AgentConfig>>(AgentsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+
+            return data;
+        }
+
+        private List<FlowConfig> GetFlowsConfigFormData()
+        {
+            List<FlowConfig> data;
+            if (_flowsEditorMode == EditorMode.Form)
+            {
+                data = _parsedFlows;
+            }
+            else if (_flowsEditorMode == EditorMode.DevGpt)
+            {
+                // Parse DevGPT
+                data = DevGPTFlowConfigParser.Parse(FlowsDevGPTEditor.Text);
+            }
+            else // Text (JSON)
+            {
+                data = JsonSerializer.Deserialize<List<FlowConfig>>(FlowsJsonEditor.Text, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
 
             return data;
@@ -594,6 +748,45 @@ namespace DevGPT
             }
         }
 
+        private void UpdateFlowsEditorContent()
+        {
+            if (FlowsEditorContent == null) return;
+            if (_flowsEditorMode == EditorMode.Json)
+            {
+                FlowsJsonEditor.Visibility = Visibility.Visible;
+                FlowsDevGPTEditor.Visibility = Visibility.Collapsed;
+                FlowsEditorContent.Visibility = Visibility.Collapsed;
+                FlowsEditorContent.Content = null;
+            }
+            else if (_agentsEditorMode == EditorMode.DevGpt)
+            {
+                FlowsJsonEditor.Visibility = Visibility.Collapsed;
+                FlowsDevGPTEditor.Visibility = Visibility.Visible;
+                FlowsEditorContent.Visibility = Visibility.Collapsed;
+                FlowsEditorContent.Content = null;
+            }
+            else
+            {
+                FlowsJsonEditor.Visibility = Visibility.Collapsed;
+                FlowsDevGPTEditor.Visibility = Visibility.Collapsed;
+                FlowsEditorContent.Visibility = Visibility.Visible;
+                var sp = new StackPanel { Orientation = Orientation.Vertical };
+                if (_parsedFlows == null || _parsedFlows.Count == 0)
+                {
+                    sp.Children.Add(new TextBlock { Text = "Geen agents gevonden in geladen JSON.", Foreground = System.Windows.Media.Brushes.Red });
+                }
+                else
+                {
+                    foreach (var flow in _parsedFlows)
+                    {
+                        var ctl = new FlowFormEditor(flow);
+                        sp.Children.Add(ctl);
+                    }
+                }
+                FlowsEditorContent.Content = sp;
+            }
+        }
+
         private async void NewChatWindowButton_Click(object sender, RoutedEventArgs e)
         {
             EnsureLatestJson();
@@ -607,10 +800,13 @@ namespace DevGPT
             var storesJson = JsonSerializer.Serialize(storesData, new JsonSerializerOptions { WriteIndented = true });
             var agentsData = GetAgentsConfigFormData();
             var agentsJson = JsonSerializer.Serialize(agentsData, new JsonSerializerOptions { WriteIndented = true });
+            var flowsData = GetFlowsConfigFormData();
+            var flowsJson = JsonSerializer.Serialize(flowsData, new JsonSerializerOptions { WriteIndented = true });
 
             var agentManager = new AgentManager(
                 storesJson,
                 agentsJson,
+                flowsJson,
                 openAIApiKey,
                 LogFilePath,
                 true,
@@ -677,6 +873,27 @@ namespace DevGPT
             var settingsWin = new SettingsWindow();
             settingsWin.Owner = this;
             settingsWin.ShowDialog();
+        }
+
+        private void RadioFlowEditorMode_Checked(object sender, RoutedEventArgs e)
+        {
+            if (RadioFlowsTextEditor != null && (RadioFlowsTextEditor.IsChecked ?? false))
+            {
+                _flowsEditorMode = EditorMode.Json;
+                if (!string.IsNullOrEmpty(_flowsJsonRaw))
+                    FlowsJsonEditor.Text = _flowsJsonRaw;
+            }
+            else if (RadioFlowsFormEditor != null && (RadioFlowsFormEditor.IsChecked ?? false))
+            {
+                _flowsEditorMode = EditorMode.Form;
+            }
+            else
+            {
+                _flowsEditorMode = EditorMode.DevGpt;
+                if (!string.IsNullOrEmpty(_flowsDevGPTRaw))
+                    FlowsDevGPTEditor.Text = _flowsDevGPTRaw;
+            }
+            UpdateFlowsEditorContent();
         }
     }
 }

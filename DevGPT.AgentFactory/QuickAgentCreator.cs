@@ -17,11 +17,19 @@ public class QuickAgentCreator
         string systemPrompt,
         IEnumerable<(IDocumentStore Store, bool Write)> stores,
         IEnumerable<string> functions = null,
-        IEnumerable<string> agents = null, bool isCoder = false)
+        IEnumerable<string> agents = null,
+        IEnumerable<string> flows = null,
+        bool isCoder = false)
     {
         if (agents == null) agents = new List<string>();
+        if (flows == null) flows = new List<string>();
         if (functions == null) functions = new List<string>();
-        return await AgentFactory.CreateAgent(name, systemPrompt, stores, functions, agents, isCoder);
+        return await AgentFactory.CreateAgent(name, systemPrompt, stores, functions, agents, flows, isCoder);
+    }
+
+    public DevGPTFlow CreateFlow(string name, List<string> agents)
+    {
+        return AgentFactory.CreateFlow(name, agents);
     }
 
     /// <summary>

@@ -10,11 +10,14 @@ public class AgentManager
 {
     private List<IDocumentStore> _stores;
     private List<DevGPTAgent> _agents;
+    private List<DevGPTFlow> _flows;
     private string _storesJson;
     private string _agentsJson;
+    private string _flowsJson;
     private bool _isContent;
     private readonly string _storesJsonPath;
     private readonly string _agentsJsonPath;
+    private readonly string _flowsJsonPath;
     public readonly QuickAgentCreator _quickAgentCreator;
 
     // The interaction history with agents
@@ -32,10 +35,11 @@ public class AgentManager
     /// <summary>
     /// Instantiates the AgentManager, loads configuration, and initializes all stores and agents.
     /// </summary>
-    public AgentManager(string storesJsonPath, string agentsJsonPath, string openAIApiKey, string logFilePath, string googleProjectId = "")
+    public AgentManager(string storesJsonPath, string agentsJsonPath, string flowsJsonPath, string openAIApiKey, string logFilePath, string googleProjectId = "")
     {
         _storesJsonPath = storesJsonPath ?? throw new ArgumentNullException(nameof(storesJsonPath));
         _agentsJsonPath = agentsJsonPath ?? throw new ArgumentNullException(nameof(agentsJsonPath));
+        _flowsJsonPath = flowsJsonPath ?? throw new ArgumentNullException(nameof(flowsJsonPath));
 
         var openAIConfig = new OpenAIConfig(openAIApiKey);
         var llmClient = new OpenAIClientWrapper(openAIConfig);
@@ -44,10 +48,11 @@ public class AgentManager
         _quickAgentCreator = new QuickAgentCreator(agentFactory, llmClient);
     }
 
-    public AgentManager(string storesJson, string agentsJson, string openAIApiKey, string logFilePath, bool isContent, string googleProjectId = "")
+    public AgentManager(string storesJson, string agentsJson, string flowsJson, string openAIApiKey, string logFilePath, bool isContent, string googleProjectId = "")
     {
         _storesJson = storesJson;
         _agentsJson = agentsJson;
+        _flowsJson = flowsJson;
         _isContent = isContent;
 
         var openAIConfig = new OpenAIConfig(openAIApiKey);
@@ -62,99 +67,18 @@ public class AgentManager
     /// </summary>
     public async Task LoadStoresAndAgents()
     {
-        string storesContent;
-        string agentsjson;
-        if (!_isContent) { 
-            if (!File.Exists(_storesJsonPath))
-                throw new FileNotFoundException("Could not find stores configuration.", _storesJsonPath);
-            if (!File.Exists(_agentsJsonPath))
-                throw new FileNotFoundException("Could not find agents configuration.", _agentsJsonPath);
-            storesContent = File.ReadAllText(_storesJsonPath);
-            agentsjson = File.ReadAllText(_agentsJsonPath);
+        var loader = new StoresAndAgentsAndFlowLoader(_quickAgentCreator);
+        if (!_isContent)
+        {
+            await loader.LoadFiles(_storesJsonPath, _agentsJsonPath, _flowsJsonPath);
         }
         else
         {
-            storesContent = _storesJson;
-            agentsjson = _agentsJson;
+            await loader.LoadFromText(_storesJson, _agentsJson, _flowsJson);
         }
-
-        // ---- FORMAT AUTO-DETECTION (support both JSON/.devgpt) ----
-        var storesConfig = StoreConfigFormatHelper.AutoDetectAndParse(storesContent) ?? new List<StoreConfig>();
-        _quickAgentCreator.AgentFactory.storesConfig = storesConfig;
-        _quickAgentCreator.AgentFactory.agentsConfig = JsonSerializer.Deserialize<List<AgentConfig>>(agentsjson) ?? new List<AgentConfig>();
-        var agentsConfig = _quickAgentCreator.AgentFactory.agentsConfig;
-        // ----------------------------------------------------------
-
-        // FIX: Always clear the current store/agent lists to avoid duplications
-        _stores = new List<IDocumentStore>();
-        _agents = new List<DevGPTAgent>();
-
-        // Create all document stores
-        foreach (var sc in storesConfig)
-        {
-            var store = _quickAgentCreator.CreateStore(new StorePaths(sc.Path), sc.Name) as IDocumentStore;
-            await AddFiles(store, sc.Path, sc.FileFilters, sc.SubDirectory, sc.ExcludePattern);
-            _stores.Add(store);
-        }
-
-        // Create all agents and set up their communication/roles
-        foreach (var ac in agentsConfig)
-        {
-            // Improved: Check each agent store reference (robust error)
-            var agentStores = ac.Stores.Select(acs => {
-                var found = _stores.FirstOrDefault(s => s.Name == acs.Name);
-                if (found == null)
-                {
-                    throw new InvalidOperationException($"Agent '{ac.Name}' requires store '{acs.Name}' but it was not found in store config.");
-                }
-                return (found, acs.Write);
-            }).ToList();
-
-            // Always await agent creation
-            var agent = await _quickAgentCreator.Create(
-                ac.Name,
-                $"Jouw naam: {ac.Name}\nJouw Rol: {ac.Description}\nInstructie: {ac.Prompt}",
-                agentStores,
-                ac.Functions,
-                ac.CallsAgents,
-                ac.ExplicitModify
-            );
-            _agents.Add(agent);
-        }
-    }
-
-    public async Task AddFiles(IDocumentStore store, string path, string[] fileFilters, string subDirectory = "", string[] excludePattern = null)
-    {
-        var dir = subDirectory == "" ? new DirectoryInfo(path) : new DirectoryInfo(Path.Combine(path, subDirectory));
-
-        var filesParts = new List<FileInfo[]>();
-        foreach (var item in fileFilters)
-        {
-            filesParts.Add(dir.GetFiles(item, SearchOption.AllDirectories));
-        }
-        var files = filesParts.SelectMany(f => f).ToList();
-        files = files.Where(file =>
-        {
-            // Use Path.GetRelativePath for platform-correct relative file paths
-            var relPath = Path.GetRelativePath(path, file.FullName);
-            return excludePattern == null || !excludePattern.Any(dir => MatchPattern(relPath, dir));
-        }).ToList();
-
-        foreach (var file in files)
-        {
-            var relPath = Path.GetRelativePath(path, file.FullName);
-            if (excludePattern == null || !excludePattern.Any(dir => MatchPattern(relPath, dir)))
-            {
-                await store.Embed(relPath);
-            }
-        }
-    }
-
-    public bool MatchPattern(string text, string pattern)
-    {
-        if (pattern.StartsWith("*"))
-            return text.StartsWith(pattern, StringComparison.InvariantCultureIgnoreCase);
-        return text.Contains(pattern, StringComparison.InvariantCultureIgnoreCase);
+        _agents = loader._agents;
+        _stores = loader._stores;
+        _flows = loader._flows;
     }
 
     /// <summary>

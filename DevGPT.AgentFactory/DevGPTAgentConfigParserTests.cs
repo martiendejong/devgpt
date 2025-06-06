@@ -17,6 +17,7 @@ public class DevGPTAgentConfigParserTests
                 Stores = new List<StoreRef>{ new StoreRef { Name = "Codebase", Write = true }, new StoreRef { Name = "Docs", Write = false } },
                 Functions = new List<string> { "build", "git" },
                 CallsAgents = new List<string> { "CodeReviewer" },
+                CallsFlows = new List<string> { "MyFlow" },
                 ExplicitModify = true
             }
         };
@@ -33,6 +34,7 @@ public class DevGPTAgentConfigParserTests
         Assert.False(parsed[0].Stores[1].Write);
         Assert.Equal(new List<string>{"build","git"}, parsed[0].Functions);
         Assert.Equal(new List<string>{"CodeReviewer"}, parsed[0].CallsAgents);
+        Assert.Equal(new List<string>{"MyFlow"}, parsed[0].CallsFlows);
         Assert.True(parsed[0].ExplicitModify);
     }
 
@@ -70,6 +72,7 @@ public class DevGPTAgentConfigParserTests
         Assert.Equal("AGENT_X", agents[0].Name);
         Assert.Empty(agents[0].Functions);
         Assert.Empty(agents[0].CallsAgents);
+        Assert.Empty(agents[0].CallsFlows);
         Assert.Empty(agents[0].Stores);
         Assert.False(agents[0].ExplicitModify);
     }
@@ -87,6 +90,7 @@ public class DevGPTAgentConfigParserTests
                     Stores = new List<StoreRef>() { new StoreRef { Name = "Test", Write = false } },
                     Functions = new List<string> { },
                     CallsAgents = new List<string> { },
+                    CallsFlows = new List<string> { },
                     ExplicitModify = false
                 }
             };
@@ -111,7 +115,8 @@ public class DevGPTAgentConfigParserTests
             Prompt = "Go",
             Stores = new List<StoreRef>{ new StoreRef { Name = "Code", Write = true } },
             Functions = new List<string>{ "a" },
-            CallsAgents = new List<string>{},
+            CallsAgents = new List<string>{ },
+            CallsFlows = new List<string> { },
             ExplicitModify = true
         };
         var list = new List<AgentConfig> { agent };

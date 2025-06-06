@@ -26,6 +26,13 @@
                     <TextBlock Text="Open agents.json/.devgpt" />
                 </StackPanel>
             </Button>
+            <!-- Load Flows -->
+            <Button Name="LoadFlowsButton" Width="150" Margin="0,0,10,0" Click="LoadFlowsButton_Click" Padding="4">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8E5;" FontSize="16" Margin="0,0,4,0" />
+                    <TextBlock Text="Open flows.json/.devgpt" />
+                </StackPanel>
+            </Button>
             <!-- Save Stores -->
             <Button Name="SaveStoresButton" Width="150" Margin="0,0,10,0" Click="SaveStoresButton_Click" Padding="4">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -38,6 +45,13 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74E;" FontSize="16" Margin="0,0,4,0" />
                     <TextBlock Text="Save agents.json/.devgpt" />
+                </StackPanel>
+            </Button>
+            <!-- Save Flows -->
+            <Button Name="SaveFlowsButton" Width="150" Click="SaveFlowsButton_Click" Padding="4">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE74E;" FontSize="16" Margin="0,0,4,0" />
+                    <TextBlock Text="Save flows.json/.devgpt" />
                 </StackPanel>
             </Button>
             <!-- Settings knop -->
@@ -176,6 +190,62 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
+            <TabItem Header="Flows">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <!-- Format selection row for Agents -->
+                    <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,3">
+                        <TextBlock Text="Bestandsformaat:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="FlowFormatComboBox" Width="140" VerticalAlignment="Center">
+                            <ComboBoxItem Content="JSON (.json)" Tag="json" IsSelected="True"/>
+                            <ComboBoxItem Content="DevGPT (.devgpt)" Tag="devgpt"/>
+                        </ComboBox>
+                    </StackPanel>
+                    <!-- Editor mode selection row for Agents -->
+                    <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,0,3">
+                        <RadioButton Name="RadioFlowsTextEditor" Content="Tekst-editor (JSON)" IsChecked="True" Checked="RadioFlowEditorMode_Checked" Margin="0,0,15,0"/>
+                        <RadioButton Name="RadioFlowsFormEditor" Content="Formulier-editor" Checked="RadioFlowEditorMode_Checked" Margin="0,0,15,0"/>
+                        <RadioButton Name="RadioFlowsDevGPTEditor" Content=".devgpt Text-editor" Checked="RadioFlowEditorMode_Checked"/>
+                    </StackPanel>
+                    <!-- Editors / Form goes here -->
+                    <Grid Grid.Row="2">
+                        <TextBox Name="FlowsJsonEditor"
+                                 AcceptsReturn="True"
+                                 AcceptsTab="True"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 VerticalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas"
+                                 FontSize="14"
+                                 Margin="0"
+                                 TextWrapping="Wrap"
+                                 VerticalAlignment="Stretch"
+                                 HorizontalAlignment="Stretch"
+                                 Visibility="Visible"/>
+                        <TextBox Name="FlowsDevGPTEditor"
+                                 AcceptsReturn="True" AcceptsTab="True"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 VerticalScrollBarVisibility="Auto"
+                                 FontFamily="Consolas"
+                                 FontSize="14"
+                                 Margin="0"
+                                 TextWrapping="Wrap"
+                                 Visibility="Collapsed"
+                                 VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                        />
+                        <ContentControl x:Name="FlowsEditorContent"
+                                        VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                                        Visibility="Collapsed"/>
+                    </Grid>
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
+                        <Button Name="ValidateFlowsJsonButton" Content="Validate" Click="ValidateFlowsJsonButton_Click" Margin="0,0,10,0"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>            
             <TabItem Header="Chat" x:Name="ChatTab" Visibility="{Binding IsChatVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <TextBlock Text="Chat window: This becomes visible after both JSON files are loaded."

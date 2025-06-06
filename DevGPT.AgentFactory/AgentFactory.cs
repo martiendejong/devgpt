@@ -1,4 +1,5 @@
 using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Responses;
 using Google.Cloud.BigQuery.V2;
 
 public class AgentFactory {
@@ -11,6 +12,7 @@ public class AgentFactory {
 
     public List<StoreConfig> storesConfig;
     public List<AgentConfig> agentsConfig;
+    public List<FlowConfig> flowsConfig;
 
     public bool WriteMode = false;
     public List<DevGPTChatMessage> Messages; // Set on init by AgentManager.
@@ -24,8 +26,12 @@ public class AgentFactory {
     public ChatToolParameter instructionParameter = new ChatToolParameter { Name = "instruction", Description = "The instruction to send to the agent.", Type = "string", Required = true };
     public ChatToolParameter argumentsParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call git with.", Type = "string", Required = true };
     public ChatToolParameter bigQueryParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call Google BigQuery with.", Type = "string", Required = true };
+    public ChatToolParameter bigQueryDataSetParameter = new ChatToolParameter { Name = "datacollection", Description = "The dataset in Google BigQuery.", Type = "string", Required = true };
+
+    
 
     public Dictionary<string, DevGPTAgent> Agents = new Dictionary<string, DevGPTAgent>();
+    public Dictionary<string, DevGPTFlow> Flows = new Dictionary<string, DevGPTFlow>();
 
     public async Task<string> CallAgent(string name, string query, string caller)
     {
@@ -34,6 +40,18 @@ public class AgentFactory {
         var response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), null, true, true, agent.Tools, null);
         Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{name}: {response}" });
         return response;
+    }
+
+    public async Task<string> CallFlow(string name, string query, string caller)
+    {
+        var flow = Flows[name];
+        foreach(var agent in flow.Agents)
+        {
+            Agents[agent].Tools.SendMessage($"Calling {agent}:\n{query}\n");
+            query = await CallAgent(agent, query, caller);
+        }
+        Agents[flow.Agents.Last()].Tools.SendMessage($"Response from {flow.Agents.Last()}:\n{query}\n");
+        return query;
     }
 
     const string writeModeText = "\nYou are now in write mode. You cannot call any other {agent}_write tools or write file tools in this mode. The file modifications need to be included in your response.";
@@ -47,12 +65,12 @@ public class AgentFactory {
         return response;
     }
 
-    public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, bool isCoder = false)
+    public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, IEnumerable<string> flows, bool isCoder = false)
     {
         var config = new OpenAIConfig(OpenAiApiKey);
         var llmClient = new OpenAIClientWrapper(config);
         var tools = new ToolsContextBase();
-        AddStoreTools(stores, tools, function, agents, name);
+        AddStoreTools(stores, tools, function, agents, flows, name);
         var tempStores = stores.Skip(1).Select(s => s.Store as IDocumentStore).ToList();
         var generator = new DocumentGenerator(stores.First().Store, new List<DevGPTChatMessage>() { new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = systemPrompt } }, llmClient, OpenAiApiKey, LogFilePath, tempStores);
         var agent = new DevGPTAgent(name, generator, tools, isCoder);
@@ -60,9 +78,17 @@ public class AgentFactory {
         return agent;
     }
 
-    private void AddStoreTools(IEnumerable<(IDocumentStore Store, bool Write)> stores, ToolsContextBase tools, IEnumerable<string> functions, IEnumerable<string> agents, string caller)
+    public DevGPTFlow CreateFlow(string name, List<string> agents)
+    {
+        var flow = new DevGPTFlow(name, agents);
+        Flows[name] = flow;
+        return flow;
+    }
+
+    private void AddStoreTools(IEnumerable<(IDocumentStore Store, bool Write)> stores, ToolsContextBase tools, IEnumerable<string> functions, IEnumerable<string> agents, IEnumerable<string> flows, string caller)
     {
         AddAgentTools(tools, agents, caller);
+        AddFlowTools(tools, flows, caller);
         var i = 0;
         foreach (var storeItem in stores)
         {
@@ -125,6 +151,53 @@ public class AgentFactory {
         }
         if (functions.Contains("bigquery"))
         {
+            var bigQueryCollectionsTool = new DevGPTChatTool(
+                "bigquery_datasets",
+                "Retrieves the available datasets in Google BigQuery.",
+                [],
+                async (messages, toolCall) =>
+                {
+                    try
+                    {
+                        var sql = "SELECT schema_name FROM `region-eu`.INFORMATION_SCHEMA.SCHEMATA;";
+                        BigQueryClient client = BigQuery_GetClient();
+
+                        var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
+
+                        return BigQuery_ExtractAsString(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        return $"BigQuery error: {ex.Message}";
+                    }
+                }
+            );            
+            tools.Add(bigQueryCollectionsTool);
+            var bigQueryTablesTool = new DevGPTChatTool(
+                "query_tables",
+                "Returns the tables in a Google BigQuery dataset.",
+                [bigQueryDataSetParameter],
+                async (messages, toolCall) =>
+                {
+                    if (!bigQueryDataSetParameter.TryGetValue(toolCall, out string collection))
+                        return "No query provided.";
+
+                    try
+                    {
+                        BigQueryClient client = BigQuery_GetClient();
+                        var sql = $"SELECT table_name FROM `social-media-hulp.{collection}.INFORMATION_SCHEMA.TABLES`;";
+
+                        var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
+
+                        return BigQuery_ExtractAsString(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        return $"BigQuery error: {ex.Message}";
+                    }
+                }
+            );
+            tools.Add(bigQueryTablesTool);
             var bigQueryTool = new DevGPTChatTool(
                 "query_bigquery",
                 "Runs a read-only SQL query on Google BigQuery and returns the results as a list of rows.",
@@ -136,36 +209,11 @@ public class AgentFactory {
 
                     try
                     {
-                        
-                        var client = new BigQueryClientBuilder
-                        {
-                            ProjectId = "social-media-hulp",
-                            //ProjectId = "wide-lattice-389014",
-                            JsonCredentials = File.ReadAllText("C:/Projects/devgpt/Windows/googleaccount.json")
-                        }.Build();
-
-
-
-                        var output = new List<string>();
+                        BigQueryClient client = BigQuery_GetClient();
 
                         var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
 
-                        foreach (var row in result)
-                        {
-                            var rowValues = new List<string>();
-
-                            foreach (var field in row.Schema.Fields)
-                            {
-                                var value = row[field.Name];
-                                rowValues.Add($"{field.Name}: {value}");
-                            }
-
-                            output.Add(string.Join(", ", rowValues));
-                        }
-
-                        return output.Count > 0
-                            ? string.Join("\n", output)  // Limit output for GPT
-                            : "Query executed, but no results found.";
+                        return BigQuery_ExtractAsString(result);
                     }
                     catch (Exception ex)
                     {
@@ -175,6 +223,38 @@ public class AgentFactory {
             );
             tools.Add(bigQueryTool);
         }
+    }
+
+    private static string BigQuery_ExtractAsString(BigQueryResults result)
+    {
+        var output = new List<string>();
+        foreach (var row in result)
+        {
+            var rowValues = new List<string>();
+
+            foreach (var field in row.Schema.Fields)
+            {
+                var value = row[field.Name];
+                rowValues.Add($"{field.Name}: {value}");
+            }
+
+            output.Add(string.Join(", ", rowValues));
+        }
+
+        return output.Count > 0
+            ? string.Join("\n", output)  // Limit output for GPT
+            : "Query executed, but no results found.";
+    }
+
+    private static BigQueryClient BigQuery_GetClient()
+    {
+        var client = new BigQueryClientBuilder
+        {
+            ProjectId = "social-media-hulp",
+            //ProjectId = "wide-lattice-389014",
+            JsonCredentials = File.ReadAllText("C:/Projects/devgpt/Windows/googleaccount.json")
+        }.Build();
+        return client;
     }
 
     private void AddReadTools(ToolsContextBase tools, IDocumentStore store)
@@ -226,6 +306,22 @@ public class AgentFactory {
                 });
                 tools.Add(callCoderAgent);
             }
+        }
+    }
+
+
+    private void AddFlowTools(ToolsContextBase tools, IEnumerable<string> flows, string caller)
+    {
+        foreach (var flow in flows)
+        {
+            var config = flowsConfig.First(x => x.Name == flow);
+            var callFlow = new DevGPTChatTool($"{flow}", $"Calls {flow} agent workflow to execute a tasks and return a message. {config.Description}", [instructionParameter], async (messages, toolCall) =>
+            {
+                if (instructionParameter.TryGetValue(toolCall, out string key))
+                    return await CallFlow(flow, key, caller);
+                return "No key given";
+            });
+            tools.Add(callFlow);
         }
     }
 }

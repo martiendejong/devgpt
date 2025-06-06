@@ -89,6 +89,22 @@ namespace DevGPT
             }
         }
 
+        public List<string> CallsFlows
+        {
+            get => _agent.CallsFlows ??= new List<string>();
+            set { _agent.CallsFlows = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CallsFlows))); PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CallsFlowsString))); }
+        }
+        public string CallsFlowsString
+        {
+            get => CallsFlows == null ? "" : string.Join(", ", CallsFlows);
+            set
+            {
+                CallsFlows = value.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToList();
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CallsFlowsString)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CallsFlows)));
+            }
+        }
+
         public bool ExplicitModify
         {
             get => _agent.ExplicitModify;

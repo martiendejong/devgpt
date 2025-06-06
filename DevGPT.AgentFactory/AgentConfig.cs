@@ -6,5 +6,6 @@ public class AgentConfig
     public List<StoreRef> Stores { get; set; } = new();
     public List<string> Functions { get; set; } = new();
     public List<string> CallsAgents { get; set; } = new();
+    public List<string> CallsFlows { get; set; } = new();
     public bool ExplicitModify { get; set; } = false;
 }
