@@ -1,12 +1,13 @@
+using System.Runtime.CompilerServices;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using OpenAI;
 using OpenAI.Chat;
 using SharpToken;
 using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Linq;
 using OpenAI.Images;
+using System.Threading;
 
 public class SimpleOpenAIClientChatInteraction
 {
@@ -54,16 +55,21 @@ public class SimpleOpenAIClientChatInteraction
         return options;
     }
 
-    public async Task<ChatCompletion> Run()
+    public async Task<ChatCompletion> Run(CancellationToken cancellationToken = default)
     {
         bool requiresAction;
         ChatCompletion completion;
         do
         {
+            cancellationToken.ThrowIfCancellationRequested();
             requiresAction = false;
             try
             {
-                completion = await Client.CompleteChatAsync(Messages, Options);
+                completion = await Client.CompleteChatAsync(Messages, Options, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -74,13 +80,13 @@ public class SimpleOpenAIClientChatInteraction
             var toolCalls = completion.ToolCalls;
             var finishReason = completion.FinishReason;
             
-            requiresAction = await HandleFinishReason(requiresAction, finishMessage, toolCalls, finishReason);
+            requiresAction = await HandleFinishReason(requiresAction, finishMessage, toolCalls, finishReason, cancellationToken);
         } while (requiresAction);
 
         return completion;
     }
 
-    public async Task<GeneratedImage> RunImage(string prompt, string size = "1024x1024", int count = 1)
+    public async Task<GeneratedImage> RunImage(string prompt, string size = "1024x1024", int count = 1, CancellationToken cancellationToken = default)
     {
         var options = new ImageGenerationOptions
         {
@@ -89,7 +95,7 @@ public class SimpleOpenAIClientChatInteraction
             Quality = GeneratedImageQuality.Standard
         };
 
-        var response = await ImageClient.GenerateImageAsync(prompt, options);
+        var response = await ImageClient.GenerateImageAsync(prompt, options, cancellationToken);
         return response;
     }
 
@@ -101,22 +107,26 @@ public class SimpleOpenAIClientChatInteraction
     }
 
 
-    public async IAsyncEnumerable<StreamingChatCompletionUpdate> Stream()
+    public async IAsyncEnumerable<StreamingChatCompletionUpdate> Stream([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         bool requiresAction;
 
         string content = "";
         do
         {
+            cancellationToken.ThrowIfCancellationRequested();
             requiresAction = false;
-
-            var completionResult = Client.CompleteChatStreaming(Messages, Options);
+            var completionResult = Client.CompleteChatStreaming(Messages, Options, cancellationToken);
 
             var toolCallData = new List<ToolCallData>();
             ChatFinishReason? finishReason = null;
             var i = 0;
-            foreach (StreamingChatCompletionUpdate completionUpdate in completionResult)
+            // BEGIN PATCH: Fix .WithCancellation usage
+            //await foreach (StreamingChatCompletionUpdate completionUpdate in completionResult.WithCancellation(cancellationToken))
+            await foreach (StreamingChatCompletionUpdate completionUpdate in completionResult)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                // END PATCH
                 if (completionUpdate.ContentUpdate.Count > 0)
                 {
                     content += completionUpdate.ContentUpdate[0].Text;
@@ -159,7 +169,7 @@ public class SimpleOpenAIClientChatInteraction
             var toolCalls = toolCallData.Select(d => ChatToolCall.CreateFunctionToolCall(d.ToolCallId, d.FunctionName, ConcatenateArguments(d.BinaryData)));
 
             var finishMessage = toolCalls.Any() ? new AssistantChatMessage(toolCalls) : null;
-            requiresAction = await HandleFinishReason(false, finishMessage, toolCalls, finishReason.Value);
+            requiresAction = await HandleFinishReason(false, finishMessage, toolCalls, finishReason.Value, cancellationToken);
         } while (requiresAction);
     }
 
@@ -176,8 +186,9 @@ public class SimpleOpenAIClientChatInteraction
         }
     }
 
-    private async Task<bool> HandleFinishReason(bool requiresAction, AssistantChatMessage finishMessage, IEnumerable<ChatToolCall> toolCalls, ChatFinishReason finishReason)
+    private async Task<bool> HandleFinishReason(bool requiresAction, AssistantChatMessage finishMessage, IEnumerable<ChatToolCall> toolCalls, ChatFinishReason finishReason, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         switch (finishReason)
         {
             case ChatFinishReason.Stop:
@@ -187,7 +198,7 @@ public class SimpleOpenAIClientChatInteraction
 
             case ChatFinishReason.ToolCalls:
                 {
-                    await HandleToolCalls(Messages, toolCalls, finishMessage);
+                    await HandleToolCalls(Messages, toolCalls, finishMessage, cancellationToken);
                     requiresAction = true;
                     break;
                 }
@@ -208,7 +219,7 @@ public class SimpleOpenAIClientChatInteraction
         return requiresAction;
     }
 
-    private async Task<List<ChatMessage>> HandleToolCalls(List<ChatMessage> messages, IEnumerable<ChatToolCall> toolCalls, AssistantChatMessage toolCallsMessage)
+    private async Task<List<ChatMessage>> HandleToolCalls(List<ChatMessage> messages, IEnumerable<ChatToolCall> toolCalls, AssistantChatMessage toolCallsMessage, CancellationToken cancellationToken = default)
     {
         var toolResults = new List<ChatMessage>() { toolCallsMessage };
         // Then, add a new tool message for each tool call that is resolved.
@@ -225,7 +236,10 @@ public class SimpleOpenAIClientChatInteraction
                         var message = $"Calling {tool.FunctionName}\n{toolCall.FunctionArguments.ToString()}";
                         ToolsContext.SendMessage(message);
                     }
+                    // BEGIN PATCH: Make Execute call signature match the delegate (no cancellationToken)
+                    // string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT(), cancellationToken);
                     string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT());
+                    // END PATCH
                     if (!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_write") || tool.FunctionName.Contains("_list") || tool.FunctionName.Contains("_relevancy") || tool.FunctionName == "build" || tool.FunctionName == "git"))
                     {
                         Console.WriteLine($"Result:\n{result}\n");
@@ -238,7 +252,7 @@ public class SimpleOpenAIClientChatInteraction
                 }
             }
         }
-        messages.AddRange(toolResults);            
+        messages.AddRange(toolResults);
         return messages;
     }
 }
