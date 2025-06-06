@@ -323,7 +323,9 @@ public class AgentFactory {
     {
         foreach (var flow in flows)
         {
-            var config = flowsConfig.First(x => x.Name == flow);
+            var config = flowsConfig.FirstOrDefault(x => x.Name == flow);
+            if (config == null)
+                throw new Exception($"Flow {flow} not found");
             var callFlow = new DevGPTChatTool($"{flow}", $"Calls {flow} agent workflow to execute a tasks and return a message. {config.Description}", [instructionParameter], async (messages, toolCall) =>
             {
                 if (instructionParameter.TryGetValue(toolCall, out string key))
