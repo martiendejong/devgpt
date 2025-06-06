@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <RootNamespace>NewWpfApp</RootNamespace>
     <Nullable>enable</Nullable>
@@ -10,6 +10,10 @@
 
   <ItemGroup>
     <PackageReference Include="System.Text.Json" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DevGPT.EmbeddingStore\DevGPT.EmbeddingStore.csproj" />
   </ItemGroup>
 
 </Project>

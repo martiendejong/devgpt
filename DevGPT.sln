@@ -28,7 +28,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Generator", "DevGPT.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.AgentFactory", "DevGPT.AgentFactory\DevGPT.AgentFactory.csproj", "{F99380A6-91DB-4335-A902-BEF55806BAF7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NewWpfApp", "NewWpfApp\NewWpfApp.csproj", "{25F7B17C-9999-4F1B-AAAA-111111111111}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EmbeddingsViewer", "EmbeddingsViewer\EmbeddingsViewer.csproj", "{25F7B17C-9999-4F1B-AAAA-111111111111}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

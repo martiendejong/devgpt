@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +12,15 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
     public override EmbeddingInfo[] Embeddings => _embeddings.ToArray();
     public List<EmbeddingInfo> _embeddings;
 
+    // Constructor for full functionality (with embedding provider)
     public EmbeddingFileStore(string embeddingsFilePath, ILLMClient embeddingProvider) : base(embeddingProvider)
+    {
+        EmbeddingsFilePath = embeddingsFilePath;
+        LoadEmbeddingsFile();
+    }
+
+    // Constructor for read-only scenarios or where embedding is not needed
+    public EmbeddingFileStore(string embeddingsFilePath) : base(null)
     {
         EmbeddingsFilePath = embeddingsFilePath;
         LoadEmbeddingsFile();
