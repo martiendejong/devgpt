@@ -1,6 +1,8 @@
+#nullable enable
+
 public class DevGPTMessageRole
 {
-    public string Role;
+    public string Role { get; }
     protected DevGPTMessageRole(string role) => Role = role;
     public static readonly DevGPTMessageRole User = new DevGPTMessageRole("user");
     public static readonly DevGPTMessageRole System = new DevGPTMessageRole("system");

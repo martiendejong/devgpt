@@ -123,7 +123,7 @@ public class SimpleOpenAIClientChatInteraction
             var i = 0;
             // BEGIN PATCH: Fix .WithCancellation usage
             //await foreach (StreamingChatCompletionUpdate completionUpdate in completionResult.WithCancellation(cancellationToken))
-            await foreach (StreamingChatCompletionUpdate completionUpdate in completionResult)
+            foreach (StreamingChatCompletionUpdate completionUpdate in completionResult)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 // END PATCH

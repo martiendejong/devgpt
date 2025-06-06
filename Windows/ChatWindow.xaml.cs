@@ -7,6 +7,8 @@ using System.Windows.Data;
 using System.Windows.Controls;
 using System.ComponentModel;
 using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 using DevGPT;
 
 namespace DevGPT
@@ -33,16 +35,53 @@ namespace DevGPT
         }
     }
 
-    public partial class ChatWindow : Window
+    public partial class ChatWindow : Window, INotifyPropertyChanged
     {
         private AgentManager _agentManager;
         private bool _isSending = false;
         private ObservableCollection<ChatDisplayMessage> _messages = new ObservableCollection<ChatDisplayMessage>();
 
+        private CancellationTokenSource _cts;
+        private bool _isAgentRunning = false;
+        public bool IsAgentRunning
+        {
+            get => _isAgentRunning;
+            set
+            {
+                if (_isAgentRunning != value)
+                {
+                    _isAgentRunning = value;
+                    OnPropertyChanged(nameof(IsAgentRunning));
+                }
+            }
+        }
+
+        public bool IsSending
+        {
+            get => _isSending;
+            set
+            {
+                if (_isSending != value)
+                {
+                    _isSending = value;
+                    OnPropertyChanged(nameof(IsSending));
+                }
+            }
+        }
+
+        public ObservableCollection<ChatDisplayMessage> Messages => _messages;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         public ChatWindow(AgentManager agentManager)
         {
             _agentManager = agentManager;
             InitializeComponent();
+            DataContext = this;
             ChatMessagesList.ItemsSource = _messages;
             MessageEditor.Focus();
 
@@ -68,35 +107,59 @@ namespace DevGPT
 
         private void SetSendingState(bool isSending)
         {
-            _isSending = isSending;
+            IsSending = isSending;
             SendButton.IsEnabled = !isSending;
             SendingProgress.Visibility = isSending ? Visibility.Visible : Visibility.Collapsed;
             MessageEditor.IsEnabled = !isSending; // (optional: block typing too)
+            if (!isSending) { IsAgentRunning = false; }
+        }
+
+        private void StopButton_Click(object sender, RoutedEventArgs e)
+        {
+            _cts?.Cancel();
+            SetSendingState(false);
+            MessageEditor.Focus();
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_isSending) return; // extra double-click guard
+            if (IsSending) return; // extra double-click guard
             SendMessage();
         }
 
         private async void SendMessage()
         {
-            if (_isSending) return;
+            if (IsSending) return;
             var text = MessageEditor.Text?.Trim();
             if (!string.IsNullOrEmpty(text))
             {
                 SetSendingState(true);
+                IsAgentRunning = true;
+                _cts = new CancellationTokenSource();
+                var token = _cts.Token;
                 _messages.Add(new ChatDisplayMessage { Author = "Gebruiker", Text = text, IsAsyncOnMessage = false });
                 MessageEditor.Text = string.Empty;
                 ScrollToEnd();
                 try
                 {
                     // Eindreply ophalen; interim berichten (onmessage) worden via SendMessage-delegate hierboven uitgezonden
-                    var response = await _agentManager.SendMessage(text);
+                    var response = await Task.Run(async () =>
+                    {
+                        return await _agentManager.SendMessage(text, token);
+                    }, token);
 
                     // Voeg het eindreply toe als gewone tekst (geen expander)
                     _messages.Add(new ChatDisplayMessage { Author = "Assistent", Text = response, IsAsyncOnMessage = false });
+                    ScrollToEnd();
+                }
+                catch (OperationCanceledException)
+                {
+                    _messages.Add(new ChatDisplayMessage { Author = "Systeem", Text = "⏹️ Versturen gestopt.", IsAsyncOnMessage = false });
+                    ScrollToEnd();
+                }
+                catch (Exception ex)
+                {
+                    _messages.Add(new ChatDisplayMessage { Author = "Systeem", Text = $"❌ Fout: {ex.Message}", IsAsyncOnMessage = false });
                     ScrollToEnd();
                 }
                 finally
@@ -120,7 +183,7 @@ namespace DevGPT
         {
             if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
             {
-                if (MessageEditor.IsFocused && !_isSending)
+                if (MessageEditor.IsFocused && !IsSending)
                 {
                     e.Handled = true;
                     SendMessage();

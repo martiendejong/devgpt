@@ -42,6 +42,13 @@ namespace DevGPT
             set { _isChatVisible = value; OnPropertyChanged(nameof(IsChatVisible)); }
         }
 
+        private bool _isOpeningChat = false;
+        public bool IsOpeningChat
+        {
+            get => _isOpeningChat;
+            set { _isOpeningChat = value; OnPropertyChanged(nameof(IsOpeningChat)); }
+        }
+
         private UserAppConfig appConfig;
         private string configFilePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appconfig.json");
 
@@ -326,13 +333,14 @@ namespace DevGPT
 
         private async void NewChatWindowButton_Click(object sender, RoutedEventArgs e)
         {
+            // Mark as opening chat window
+            IsOpeningChat = true;
             try
             {
                 const string LogFilePath = @"C:\\Projects\\devgpt\\log";
                 var googleSettings = GoogleConfig.Load();
                 var openAISettings = OpenAIConfig.Load();
                 string openAIApiKey = openAISettings.ApiKey;
-
                 var storesJson = JsonSerializer.Serialize(parsedStores, new JsonSerializerOptions { WriteIndented = true });
                 var agentsJson = JsonSerializer.Serialize(parsedAgents, new JsonSerializerOptions { WriteIndented = true });
                 var flowsJson = JsonSerializer.Serialize(parsedFlows, new JsonSerializerOptions { WriteIndented = true });
@@ -355,6 +363,10 @@ namespace DevGPT
             catch (Exception ex)
             {
                 MessageBox.Show("Failed to open chat window: " + ex.Message);
+            }
+            finally
+            {
+                IsOpeningChat = false;
             }
         }
 
