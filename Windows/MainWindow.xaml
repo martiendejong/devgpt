@@ -49,7 +49,17 @@
                 </TabItem>
             </TabControl>
             <DockPanel DockPanel.Dock="Bottom" LastChildFill="False" Margin="5">
-                <Button Name="NewChatWindowButton" Content="Open Chat Window" Margin="10,0,0,0" Click="NewChatWindowButton_Click"  Visibility="{Binding IsChatVisible, Converter={StaticResource BooleanToVisibilityConverter}}" IsEnabled="{Binding IsOpeningChat, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <Button Name="NewChatWindowButton" 
+                        Content="Open Chat Window" 
+                        Width="100" Height="30"
+                        FontSize="12"
+                        Margin="5,0,0,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        DockPanel.Dock="Right"
+                        Click="NewChatWindowButton_Click"  
+                        Visibility="{Binding IsChatVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        IsEnabled="{Binding IsOpeningChat, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             </DockPanel>
             <!-- Modal Overlay Grid -->
             <Grid x:Name="ModalOverlay" Visibility="{Binding IsOpeningChat, Converter={StaticResource BooleanToVisibilityConverter}}" Background="#80000000"

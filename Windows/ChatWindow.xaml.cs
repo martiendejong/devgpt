@@ -145,7 +145,8 @@ namespace DevGPT
                     // Eindreply ophalen; interim berichten (onmessage) worden via SendMessage-delegate hierboven uitgezonden
                     var response = await Task.Run(async () =>
                     {
-                        return await _agentManager.SendMessage(text, token);
+                        // FIX: replace passing 'token' (CancellationToken) as argument 2 with 'text' (string) which is the correct argument
+                        return await _agentManager.SendMessage(text);
                     }, token);
 
                     // Voeg het eindreply toe als gewone tekst (geen expander)

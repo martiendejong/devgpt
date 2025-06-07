@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using System.Threading.Tasks; // Added for Task.Yield
 
 namespace DevGPT
 {
@@ -333,8 +334,9 @@ namespace DevGPT
 
         private async void NewChatWindowButton_Click(object sender, RoutedEventArgs e)
         {
-            // Mark as opening chat window
-            IsOpeningChat = true;
+            // Refactored as per instruction
+            IsOpeningChat = true; // show loading indicator immediately
+            await Task.Yield();   // yield to UI to ensure loading is rendered
             try
             {
                 const string LogFilePath = @"C:\\Projects\\devgpt\\log";
@@ -359,14 +361,12 @@ namespace DevGPT
                 var newChatWindow = new ChatWindow(agentManager);
                 newChatWindow.Owner = this;
                 newChatWindow.Show();
+                IsOpeningChat = false; // hide loading indicator after chat is shown
             }
             catch (Exception ex)
             {
+                IsOpeningChat = false; // hide loading indicator in case of exception
                 MessageBox.Show("Failed to open chat window: " + ex.Message);
-            }
-            finally
-            {
-                IsOpeningChat = false;
             }
         }
 
