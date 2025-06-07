@@ -18,8 +18,19 @@
             </Style.Triggers>
         </Style>
     </Window.Resources>
-    <DockPanel Background="#f5f6f8">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="10">
+    <Grid Background="#f5f6f8" Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Knoppen bovenaan rechts uitgelijnd, altijd zichtbaar -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,16,8" Grid.Row="0">
+            <Button Content="Opslaan" Width="100" Margin="6,0" Click="OpslaanButton_Click" Background="#4198FF" Foreground="White" FontWeight="Bold"/>
+            <Button Content="Annuleer" Width="96" Margin="6,0" Click="AnnuleerButton_Click"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="10,0,10,10">
             <ItemsControl ItemsSource="{Binding Cards}" >
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -61,9 +72,5 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Bottom" Margin="0,0,8,10">
-            <Button Content="Opslaan" Width="100" Margin="6,0" Click="OpslaanButton_Click" Background="#4198FF" Foreground="White" FontWeight="Bold"/>
-            <Button Content="Annuleer" Width="96" Margin="6,0" Click="AnnuleerButton_Click"/>
-        </StackPanel>
-    </DockPanel>
+    </Grid>
 </Window>
