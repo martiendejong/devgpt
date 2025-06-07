@@ -50,6 +50,13 @@ namespace DevGPT
             set { _isOpeningChat = value; OnPropertyChanged(nameof(IsOpeningChat)); }
         }
 
+        private bool _isOpenChatButtonEnabled = true;
+        public bool IsOpenChatButtonEnabled
+        {
+            get => _isOpenChatButtonEnabled;
+            set { _isOpenChatButtonEnabled = value; OnPropertyChanged(nameof(IsOpenChatButtonEnabled)); }
+        }
+
         private UserAppConfig appConfig;
         private string configFilePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appconfig.json");
 
@@ -332,16 +339,43 @@ namespace DevGPT
             IsChatVisible = agentsLoaded && storesLoaded;
         }
 
+        private bool _openChatDebounce = false;
+        
         private async void NewChatWindowButton_Click(object sender, RoutedEventArgs e)
         {
-            // Refactored as per instruction
-            IsOpeningChat = true; // show loading indicator immediately
-            await Task.Yield();   // yield to UI to ensure loading is rendered
+            // Debounce: voorkom dat snel dubbelklikken tot een dubbele actie leidt
+            if (_openChatDebounce) return;
+            _openChatDebounce = true;
+
+            // Schakel de chat open-knop direct uit om meervoudige klikken te voorkomen; knop wordt hersteld bij sluiten van het venster of een fout.
+            IsOpenChatButtonEnabled = false;
+
+            // Toon direct de laad-animatie zodat de gebruiker direct ziet dat er iets gebeurt (en niet pas na zware disk/config-io)
+            IsOpeningChat = true;
+            await Task.Yield(); // Forceer UI render van animatie vóór langzame disk-operaties (anders zien gebruikers soms de animatie te laat!)
+
+            // Het inlezen van OpenAI/Google config kan op sommige systemen trage disk I/O veroorzaken (b.v. als netwerk-drive, USB, virusscanner, etc.)
+            // - Dit blokkeerde in eerdere versies de zichtbaarheid van de laad-animatie: de animatie kwam pas na de disk-IO!
+            // - Daarom laden we deze configs nu asynchroon, vóór de rest van de logica, ZODAT de animatie altijd zichtbaar is vóórdat prijzige disk reads starten.
+            GoogleConfig googleSettings = null;
+            OpenAIConfig openAISettings = null;
+            try
+            {
+                googleSettings = await Task.Run(() => GoogleConfig.Load());
+                openAISettings = await Task.Run(() => OpenAIConfig.Load());
+            }
+            catch (Exception ex)
+            {
+                IsOpeningChat = false;
+                IsOpenChatButtonEnabled = true;
+                _openChatDebounce = false;
+                MessageBox.Show("Failed to load configuration: " + ex.Message);
+                return;
+            }
+
             try
             {
                 const string LogFilePath = @"C:\\Projects\\devgpt\\log";
-                var googleSettings = GoogleConfig.Load();
-                var openAISettings = OpenAIConfig.Load();
                 string openAIApiKey = openAISettings.ApiKey;
                 var storesJson = JsonSerializer.Serialize(parsedStores, new JsonSerializerOptions { WriteIndented = true });
                 var agentsJson = JsonSerializer.Serialize(parsedAgents, new JsonSerializerOptions { WriteIndented = true });
@@ -361,12 +395,17 @@ namespace DevGPT
                 var newChatWindow = new ChatWindow(agentManager);
                 newChatWindow.Owner = this;
                 newChatWindow.Show();
-                IsOpeningChat = false; // hide loading indicator after chat is shown
             }
             catch (Exception ex)
             {
-                IsOpeningChat = false; // hide loading indicator in case of exception
                 MessageBox.Show("Failed to open chat window: " + ex.Message);
+            }
+            finally
+            {
+                // Zet beide indicatoren weer netjes terug zodat de gebruiker opnieuw kan klikken.
+                IsOpeningChat = false;
+                IsOpenChatButtonEnabled = true;
+                _openChatDebounce = false;
             }
         }
 
