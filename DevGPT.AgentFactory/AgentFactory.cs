@@ -1,6 +1,10 @@
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Responses;
 using Google.Cloud.BigQuery.V2;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 public class AgentFactory {
     public AgentFactory(string openAIApiKey, string logFilePath, string googleProjectId = "")
@@ -28,36 +32,63 @@ public class AgentFactory {
     public ChatToolParameter bigQueryParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call Google BigQuery with.", Type = "string", Required = true };
     public ChatToolParameter bigQueryDataSetParameter = new ChatToolParameter { Name = "datacollection", Description = "The dataset in Google BigQuery.", Type = "string", Required = true };
 
-    
-
     public Dictionary<string, DevGPTAgent> Agents = new Dictionary<string, DevGPTAgent>();
     public Dictionary<string, DevGPTFlow> Flows = new Dictionary<string, DevGPTFlow>();
 
+    // Updated: messages are stored with full meta-info and updated in-place with Response upon agent reply
     public async Task<string> CallAgent(string name, string query, string caller)
     {
+        Guid messageId = Guid.NewGuid();
+        var message = new DevGPTChatMessage
+        {
+            MessageId = messageId,
+            Role = DevGPTMessageRole.Assistant,
+            Text = $"{caller}: {query}",
+            AgentName = name,
+            FunctionName = string.Empty,
+            FlowName = string.Empty,
+            Response = string.Empty
+        };
+        Messages.Add(message);
         var agent = Agents[name];
-        Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{caller}: {query}" });
-        var response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), null, true, true, agent.Tools, null);
-        Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{name}: {response}" });
+        string response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), null, true, true, agent.Tools, null);
+        // Find the message by MessageId and update Response
+        var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
+        if(storedMsg != null) storedMsg.Response = response;
+        // Log reply as new message entry for history
+        var replyMsg = new DevGPTChatMessage
+        {
+            MessageId = Guid.NewGuid(),
+            Role = DevGPTMessageRole.Assistant,
+            Text = $"{name}: {response}",
+            AgentName = name,
+            FunctionName = string.Empty,
+            FlowName = string.Empty,
+            Response = response
+        };
+        Messages.Add(replyMsg);
         return response;
     }
 
+    // CallFlow updated to store/track agent/flow meta-data in chat history per message
     public async Task<string> CallFlow(string name, string query, string caller)
     {
         var flow = Flows[name];
+        string lastAgent = string.Empty;
         foreach(var agent in flow.CallsAgents)
         {
             Agents[agent].Tools.SendMessage($"Calling {agent}:\n{query}\n");
             if (Agents[agent].IsCoder && !WriteMode)
             {
                 WriteMode = true;
-                query = await CallCoderAgent(agent, query, caller);
+                query = await CallCoderAgent(agent, query, caller, flow.Name);
                 WriteMode = false;
             }
             else
             {
-                query = await CallAgent(agent, query, caller);
+                query = await CallAgentWithMeta(agent, query, caller, string.Empty, flow.Name);
             }
+            lastAgent = agent;
         }
         Agents[flow.CallsAgents.Last()].Tools.SendMessage($"Response from {flow.CallsAgents.Last()}:\n{query}\n");
         return query;
@@ -65,12 +96,69 @@ public class AgentFactory {
 
     const string writeModeText = "\nYou are now in write mode. You cannot call any other {agent}_write tools or write file tools in this mode. The file modifications need to be included in your response.";
 
-    public async Task<string> CallCoderAgent(string name, string query, string caller)
+    // Extended CallCoderAgent to accept flowName and store correct message meta-info
+    public async Task<string> CallCoderAgent(string name, string query, string caller, string flowName = "")
     {
+        Guid messageId = Guid.NewGuid();
+        var message = new DevGPTChatMessage
+        {
+            MessageId = messageId,
+            Role = DevGPTMessageRole.Assistant,
+            Text = $"{caller}: {query}",
+            AgentName = name,
+            FunctionName = "CodeModify",
+            FlowName = flowName,
+            Response = string.Empty
+        };
+        Messages.Add(message);
         var agent = Agents[name];
-        Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{caller}: {query}" });
-        var response = await agent.Generator.UpdateStore(query + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", null, true, true, agent.Tools, null);
-        Messages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"{name}: {response}" });
+        string response = await agent.Generator.UpdateStore(query + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", null, true, true, agent.Tools, null);
+        var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
+        if(storedMsg != null) storedMsg.Response = response;
+        var replyMsg = new DevGPTChatMessage
+        {
+            MessageId = Guid.NewGuid(),
+            Role = DevGPTMessageRole.Assistant,
+            Text = $"{name}: {response}",
+            AgentName = name,
+            FunctionName = "CodeModify",
+            FlowName = flowName,
+            Response = response
+        };
+        Messages.Add(replyMsg);
+        return response;
+    }
+
+    // Helper for agent call with custom meta-info (used in flows)
+    public async Task<string> CallAgentWithMeta(string name, string query, string caller, string functionName, string flowName)
+    {
+        Guid messageId = Guid.NewGuid();
+        var message = new DevGPTChatMessage
+        {
+            MessageId = messageId,
+            Role = DevGPTMessageRole.Assistant,
+            Text = $"{caller}: {query}",
+            AgentName = name,
+            FunctionName = functionName ?? string.Empty,
+            FlowName = flowName ?? string.Empty,
+            Response = string.Empty
+        };
+        Messages.Add(message);
+        var agent = Agents[name];
+        string response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), null, true, true, agent.Tools, null);
+        var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
+        if(storedMsg != null) storedMsg.Response = response;
+        var replyMsg = new DevGPTChatMessage
+        {
+            MessageId = Guid.NewGuid(),
+            Role = DevGPTMessageRole.Assistant,
+            Text = $"{name}: {response}",
+            AgentName = name,
+            FunctionName = functionName ?? string.Empty,
+            FlowName = flowName ?? string.Empty,
+            Response = response
+        };
+        Messages.Add(replyMsg);
         return response;
     }
 
@@ -322,7 +410,6 @@ public class AgentFactory {
             }
         }
     }
-
 
     private void AddFlowTools(ToolsContextBase tools, IEnumerable<string> flows, string caller)
     {
