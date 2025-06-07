@@ -83,6 +83,11 @@ namespace DevGPT
             InitializeComponent();
             DataContext = this;
             ChatMessagesList.ItemsSource = _messages;
+            // Explicitly set alignment for MessageEditor and SendButton to ensure proper placement
+            MessageEditor.VerticalAlignment = VerticalAlignment.Center;
+            SendButton.VerticalAlignment = VerticalAlignment.Center;
+            ChatMessagesList.VerticalAlignment = VerticalAlignment.Stretch;
+            // End alignment settings.
             MessageEditor.Focus();
 
             // VEILIGHEID: verwijdert oude SendMessage-link
@@ -174,6 +179,9 @@ namespace DevGPT
         private void ScrollToEnd()
         {
             // Forceer scroll naar laatste bericht
+            if (_messages.Count == 0)
+                return;
+            ChatMessagesList.UpdateLayout(); // Ensure latest list state
             if (ChatMessagesList.ItemContainerGenerator.ContainerFromIndex(_messages.Count - 1) is FrameworkElement lastItem)
             {
                 lastItem.BringIntoView();

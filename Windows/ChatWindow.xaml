@@ -1,44 +1,83 @@
 <Window x:Class="DevGPT.ChatWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:Windows"
-        Title="DevGPT - Chat" Height="600" Width="850">
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-        <local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
-    </Window.Resources>
-    <DockPanel>
-        <ListBox Name="ChatMessagesList"
-                 Margin="10"
-                 ItemsSource="{Binding Messages}"
-                 DisplayMemberPath="Text"
-                 DockPanel.Dock="Top"
-                 />
-        <DockPanel DockPanel.Dock="Bottom" Margin="10,0,10,10">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Name="SendButton"
-                        Content="Send"
-                        Margin="0,0,6,0"
-                        Click="SendButton_Click"
-                        IsEnabled="{Binding Path=IsSending, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                <Button Name="StopButton"
-                        Content="Stop"
-                        Margin="0,0,6,0"
-                        Visibility="{Binding IsAgentRunning, Converter={StaticResource BooleanToVisibilityConverter}}"
-                        Click="StopButton_Click"
-                        />
-                <ProgressBar Name="SendingProgress" Width="65" Height="20"
-                             IsIndeterminate="True"
-                             Visibility="{Binding Path=IsSending, Converter={StaticResource BooleanToVisibilityConverter}}"
-                             />
-            </StackPanel>
-            <TextBox Name="MessageEditor"
-                     Margin="6,0,0,0"
-                     Height="38"
-                     MinWidth="420"
+        xmlns:local="clr-namespace:DevGPT"
+        Title="Chat" Height="700" Width="600">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/> <!-- Chat messages -->
+            <RowDefinition Height="100"/> <!-- Input + send + progress -->
+        </Grid.RowDefinitions>
+
+        <!-- Chat Messages List -->
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ListBox x:Name="ChatMessagesList" 
+                     ItemsSource="{Binding Messages}"
+                     Background="White"
+                     BorderThickness="0"
+                     IsSynchronizedWithCurrentItem="True"
+                     Margin="10"
+                     HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type local:ChatDisplayMessage}">
+                        <Border Margin="0,4,0,4" Padding="6,4,6,4" Background="#F7F9FB" CornerRadius="5">
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock Text="{Binding Author}" FontWeight="Bold" FontSize="13" />
+                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="14" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </ScrollViewer>
+
+        <!-- Input, Send Button, and ProgressBar below -->
+        <Grid Grid.Row="1" Background="#f5f6f8" Margin="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/> <!-- Input controls: TextBox + Send -->
+                <RowDefinition Height="Auto"/> <!-- ProgressBar -->
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <!-- Input controls (row 0) -->
+            <TextBox x:Name="MessageEditor"
+                     Grid.Row="0"
+                     Grid.Column="0"
+                     Margin="15,15,7,10"
+                     VerticalAlignment="Center"
+                     HorizontalAlignment="Stretch"
+                     FontSize="15"
+                     TextWrapping="Wrap"
                      AcceptsReturn="True"
-                     VerticalScrollBarVisibility="Auto"
-                     />
-        </DockPanel>
-    </DockPanel>
+                     MaxLines="4"
+                     MinHeight="70"
+                     Height="70"
+                     VerticalScrollBarVisibility="Auto"/>
+            <Button x:Name="SendButton"
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Margin="7,15,15,10"
+                    Content="Send"
+                    Width="80"
+                    Height="70"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Right"
+                    FontWeight="Bold"
+                    Click="SendButton_Click"/>
+            <!-- ProgressBar onderaan (row 1) -->
+            <ProgressBar x:Name="SendingProgress"
+                         Grid.Row="1"
+                         Grid.Column="0"
+                         Grid.ColumnSpan="2"
+                         Height="8"
+                         Margin="15,0,15,12"
+                         IsIndeterminate="True"
+                         Visibility="Collapsed"
+                         VerticalAlignment="Bottom"
+                         Foreground="#4198FF"
+                         Background="#DFE6EF"/>
+        </Grid>
+    </Grid>
 </Window>
