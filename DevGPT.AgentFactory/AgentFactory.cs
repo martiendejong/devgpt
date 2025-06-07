@@ -291,7 +291,9 @@ public class AgentFactory {
     {
         foreach (var agent in agents)
         {
-            var config = agentsConfig.First(x => x.Name == agent);
+            var config = agentsConfig.FirstOrDefault(x => x.Name == agent);
+            if (config == null)
+                throw new Exception($"Agent {agent} is not defined. Request by {caller}.");
             if (config.ExplicitModify)
             {
                 var callCoderAgent = new DevGPTChatTool($"{agent}", $"Calls {agent} to modify the codebase. {config.Description} Be aware of the token limit of 8000 so only let the agents make small modifications at a time.", [instructionParameter], async (messages, toolCall) =>
