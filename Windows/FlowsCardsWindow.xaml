@@ -30,16 +30,16 @@
             <Button Content="Annuleer" Width="96" Margin="6,0" Click="AnnuleerButton_Click"/>
         </StackPanel>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="10,0,10,10">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="10,0,10,10">
             <ItemsControl ItemsSource="{Binding Cards}" >
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border Background="White" BorderBrush="#B8C6E4" BorderThickness="1" Padding="15" Margin="0,0,0,16" CornerRadius="10" >
                             <StackPanel>
                                 <TextBlock Text="Naam" FontWeight="Bold" FontSize="14"/>
-                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" FontSize="13"/>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" FontSize="13" TextWrapping="Wrap"/>
                                 <TextBlock Text="Omschrijving" FontWeight="Bold" FontSize="14"/>
-                                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" FontSize="13" AcceptsReturn="True" Height="48"/>
+                                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" FontSize="13" AcceptsReturn="True" Height="48" TextWrapping="Wrap"/>
 
                                 <TextBlock Text="Agents" FontWeight="Bold" FontSize="14"/>
                                 <!-- DragDrop handlers toegevoegd op ListView-->
@@ -57,7 +57,7 @@
                                     </ListView.ItemContainerStyle>
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding}" FontSize="13"/>
+                                            <TextBlock Text="{Binding}" FontSize="13" TextWrapping="Wrap"/>
                                         </DataTemplate>
                                     </ListView.ItemTemplate>
                                 </ListView>
