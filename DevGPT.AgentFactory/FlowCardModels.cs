@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Collections.Specialized;
 
 namespace DevGPT.AgentFactory
 {
@@ -76,7 +77,61 @@ namespace DevGPT.AgentFactory
     {
         public ObservableCollection<FlowCardModel> Cards { get; set; } = new ObservableCollection<FlowCardModel>();
         public List<string> AllAgents { get; set; } = new List<string>();
+
+        private bool _isModified;
+        public bool IsModified
+        {
+            get => _isModified;
+            set
+            {
+                if (_isModified != value)
+                {
+                    _isModified = value;
+                    OnPropertyChanged(nameof(IsModified));
+                }
+            }
+        }
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string property) { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property)); }
+
+        public FlowCardsBindingModel()
+        {
+            Cards.CollectionChanged += Cards_CollectionChanged;
+        }
+
+        private void Cards_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // Attach to PropertyChanged for new cards
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is FlowCardModel model)
+                    {
+                        model.PropertyChanged += OnCardPropertyChanged;
+                    }
+                }
+            }
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is FlowCardModel model)
+                        model.PropertyChanged -= OnCardPropertyChanged;
+                }
+            }
+            IsModified = true;
+        }
+
+        private void OnCardPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            IsModified = true;
+        }
+
+        public void HookCardPropertyChangedHandlers()
+        {
+            foreach (var card in Cards)
+                card.PropertyChanged += OnCardPropertyChanged;
+        }
     }
 }

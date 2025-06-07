@@ -129,7 +129,7 @@ namespace DevGPT
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error reading stores file: " + ex.Message);
+                System.Windows.MessageBox.Show("Error reading stores file: " + ex.Message);
                 storesLoaded = false;
             }
         }
@@ -163,7 +163,7 @@ namespace DevGPT
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error reading agents file: " + ex.Message);
+                System.Windows.MessageBox.Show("Error reading agents file: " + ex.Message);
                 agentsLoaded = false;
             }
         }
@@ -197,7 +197,7 @@ namespace DevGPT
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error reading flows file: " + ex.Message);
+                System.Windows.MessageBox.Show("Error reading flows file: " + ex.Message);
                 flowsLoaded = false;
             }
         }
@@ -224,11 +224,11 @@ namespace DevGPT
                     appConfig.StoresFile = storesFilePath;
                     SaveAppConfig();
                     parsedStores = data;
-                    MessageBox.Show($"stores configuration saved.\nPath and filename: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    System.Windows.MessageBox.Show($"stores configuration saved.\nPath and filename: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -255,11 +255,11 @@ namespace DevGPT
                     appConfig.AgentsFile = agentsFilePath;
                     SaveAppConfig();
                     parsedAgents = data;
-                    MessageBox.Show($"Agent config saved.\nPath and filename: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    System.Windows.MessageBox.Show($"Agent config saved.\nPath and filename: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -286,11 +286,11 @@ namespace DevGPT
                     appConfig.FlowsFile = flowsFilePath;
                     SaveAppConfig();
                     parsedFlows = data;
-                    MessageBox.Show($"Flow config saved.\nPath and filename: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    System.Windows.MessageBox.Show($"Flow config saved.\nPath and filename: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -348,7 +348,7 @@ namespace DevGPT
                 IsOpeningChat = false;
                 IsOpenChatButtonEnabled = true;
                 _openChatDebounce = false;
-                MessageBox.Show("Failed to load configuration: " + ex.Message);
+                System.Windows.MessageBox.Show("Failed to load configuration: " + ex.Message);
                 return;
             }
 
@@ -377,7 +377,7 @@ namespace DevGPT
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to open chat window: " + ex.Message);
+                System.Windows.MessageBox.Show("Failed to open chat window: " + ex.Message);
             }
             finally
             {
@@ -411,6 +411,7 @@ namespace DevGPT
             // Alle agent-namen ophalen (voor toevoegen vanuit ComboBox)
             var agentNames = parsedAgents?.Select(a => a.Name)?.Distinct()?.OrderBy(x => x)?.ToList() ?? new List<string>();
             var model = new FlowCardsBindingModel { Cards = cards, AllAgents = agentNames };
+            model.HookCardsCollectionChanged();
             var dlg = new FlowsCardsWindow(model) { Owner = this };
             var result = dlg.ShowDialog();
             if (result == true && dlg.ResultFlows != null)
@@ -432,4 +433,3 @@ namespace DevGPT
         public string FlowsFile { get; set; } = null;
     }
 }
-
