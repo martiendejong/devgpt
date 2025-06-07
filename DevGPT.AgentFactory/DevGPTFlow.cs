@@ -1,9 +1,10 @@
 public class DevGPTFlow
 {
     public string Name { get; set; }
-    public List<string> Agents { get; set; }
-    public DevGPTFlow(string name, List<string> agents)
+    public List<string> CallsAgents { get; set; }
+    public DevGPTFlow(string name, List<string> callsAgents)
     {
-        Agents = agents;
+        Name = name;
+        CallsAgents = callsAgents;
     }
 }

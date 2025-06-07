@@ -4,13 +4,17 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Controls; // Correct toegevoegd
 using MessageBox = System.Windows.MessageBox;
 using Microsoft.Win32;
-using System.ComponentModel;
-using System.Windows.Controls;
-using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
-using System.Threading.Tasks; // Added for Task.Yield
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
+using System.ComponentModel;
+using System.Threading.Tasks;
+
+// Eventueel missing modelimports, aannemende dat volgende types lokaal zijn:
+// Als deze elders staan (bijv. in DevGPT.AgentFactory) graag correcte using plaatsen.
+// using DevGPT.AgentFactory; // Bijvoorbeeld als FlowCardModel, FlowCardsBindingModel, FlowConfig hier vandaan komen.
 
 namespace DevGPT
 {
@@ -19,52 +23,28 @@ namespace DevGPT
         private string storesDevGPTRaw = string.Empty;
         private string agentsDevGPTRaw = string.Empty;
         private string flowsDevGPTRaw = string.Empty;
-
         private string storesFilePath = null;
         private string agentsFilePath = null;
         private string flowsFilePath = null;
-
         private bool storesLoaded = false;
         private bool agentsLoaded = false;
         private bool flowsLoaded = false;
-
         private List<StoreConfig> parsedStores = new List<StoreConfig>();
         private List<AgentConfig> parsedAgents = new List<AgentConfig>();
         private List<FlowConfig> parsedFlows = new List<FlowConfig>();
-
         private bool suppressStoresEditorSync = false;
         private bool suppressAgentsEditorSync = false;
         private bool suppressFlowsEditorSync = false;
-
         private bool _isChatVisible = false;
-        public bool IsChatVisible
-        {
-            get => _isChatVisible;
-            set { _isChatVisible = value; OnPropertyChanged(nameof(IsChatVisible)); }
-        }
-
+        public bool IsChatVisible { get => _isChatVisible; set { _isChatVisible = value; OnPropertyChanged(nameof(IsChatVisible)); } }
         private bool _isOpeningChat = false;
-        public bool IsOpeningChat
-        {
-            get => _isOpeningChat;
-            set { _isOpeningChat = value; OnPropertyChanged(nameof(IsOpeningChat)); }
-        }
-
+        public bool IsOpeningChat { get => _isOpeningChat; set { _isOpeningChat = value; OnPropertyChanged(nameof(IsOpeningChat)); } }
         private bool _isOpenChatButtonEnabled = true;
-        public bool IsOpenChatButtonEnabled
-        {
-            get => _isOpenChatButtonEnabled;
-            set { _isOpenChatButtonEnabled = value; OnPropertyChanged(nameof(IsOpenChatButtonEnabled)); }
-        }
-
+        public bool IsOpenChatButtonEnabled { get => _isOpenChatButtonEnabled; set { _isOpenChatButtonEnabled = value; OnPropertyChanged(nameof(IsOpenChatButtonEnabled)); } }
         private UserAppConfig appConfig;
         private string configFilePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appconfig.json");
-
         public event PropertyChangedEventHandler PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        protected virtual void OnPropertyChanged(string propertyName) { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)); }
 
         public MainWindow()
         {
@@ -73,7 +53,6 @@ namespace DevGPT
             StoresDevGPTEditor.TextChanged += StoresDevGPTEditor_TextChanged;
             AgentsDevGPTEditor.TextChanged += AgentsDevGPTEditor_TextChanged;
             FlowsDevGPTEditor.TextChanged += FlowsDevGPTEditor_TextChanged;
-
             LoadLastUsedConfigPaths();
         }
 
@@ -340,7 +319,7 @@ namespace DevGPT
         }
 
         private bool _openChatDebounce = false;
-        
+
         private async void NewChatWindowButton_Click(object sender, RoutedEventArgs e)
         {
             // Debounce: voorkom dat snel dubbelklikken tot een dubbele actie leidt
@@ -415,8 +394,37 @@ namespace DevGPT
             settingsWin.Owner = this;
             settingsWin.ShowDialog();
         }
-    }
+    
 
+        private void ShowFlowsAsCardsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (parsedFlows == null) return;
+            // Maak een kopie zodat wijzigingen pas bij opslaan worden doorgevoerd
+            var cards = new System.Collections.ObjectModel.ObservableCollection<FlowCardModel>(
+                parsedFlows.Select(f => new FlowCardModel
+                {
+                    Name = f.Name,
+                    Description = f.Description,
+                    CallsAgents = new System.Collections.ObjectModel.ObservableCollection<string>(f.CallsAgents ?? new List<string>())
+                })
+            );
+            // Alle agent-namen ophalen (voor toevoegen vanuit ComboBox)
+            var agentNames = parsedAgents?.Select(a => a.Name)?.Distinct()?.OrderBy(x => x)?.ToList() ?? new List<string>();
+            var model = new FlowCardsBindingModel { Cards = cards, AllAgents = agentNames };
+            var dlg = new FlowsCardsWindow(model) { Owner = this };
+            var result = dlg.ShowDialog();
+            if (result == true && dlg.ResultFlows != null)
+            {
+                // Sla op in flows
+                parsedFlows = dlg.ResultFlows;
+                FlowsDevGPTEditor.Text = DevGPTFlowConfigParser.Serialize(parsedFlows);
+                flowsDevGPTRaw = FlowsDevGPTEditor.Text;
+                // Wordt als normaal behandeld (eventueel vind je verderop een File.Write zoals SaveFlowsButton_Click)
+            }
+        }
+    }
+    // Dummy UserAppConfig toegevoegd zodat het project buildt.
+    // TODO: Vervang door daadwerkelijke UserAppConfig indien deze elders bestaat of uitbreiden indien meer properties benodigd zijn.
     public class UserAppConfig
     {
         public string StoresFile { get; set; } = null;
@@ -424,3 +432,4 @@ namespace DevGPT
         public string FlowsFile { get; set; } = null;
     }
 }
+

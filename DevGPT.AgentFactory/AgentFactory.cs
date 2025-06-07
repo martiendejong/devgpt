@@ -45,7 +45,7 @@ public class AgentFactory {
     public async Task<string> CallFlow(string name, string query, string caller)
     {
         var flow = Flows[name];
-        foreach(var agent in flow.Agents)
+        foreach(var agent in flow.CallsAgents)
         {
             Agents[agent].Tools.SendMessage($"Calling {agent}:\n{query}\n");
             if (Agents[agent].IsCoder && !WriteMode)
@@ -59,7 +59,7 @@ public class AgentFactory {
                 query = await CallAgent(agent, query, caller);
             }
         }
-        Agents[flow.Agents.Last()].Tools.SendMessage($"Response from {flow.Agents.Last()}:\n{query}\n");
+        Agents[flow.CallsAgents.Last()].Tools.SendMessage($"Response from {flow.CallsAgents.Last()}:\n{query}\n");
         return query;
     }
 
@@ -87,9 +87,9 @@ public class AgentFactory {
         return agent;
     }
 
-    public DevGPTFlow CreateFlow(string name, List<string> agents)
+    public DevGPTFlow CreateFlow(string name, List<string> callsAgents)
     {
-        var flow = new DevGPTFlow(name, agents);
+        var flow = new DevGPTFlow(name, callsAgents);
         Flows[name] = flow;
         return flow;
     }

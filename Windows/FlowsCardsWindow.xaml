@@ -1,0 +1,40 @@
+<Window x:Class="DevGPT.FlowsCardsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Flows als Cards" Height="650" Width="800">
+    <DockPanel Background="#f5f6f8">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="10">
+            <ItemsControl ItemsSource="{Binding Cards}" >
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="White" BorderBrush="#B8C6E4" BorderThickness="1" Padding="15" Margin="0,0,0,16" CornerRadius="10" >
+                            <StackPanel>
+                                <TextBlock Text="Naam" FontWeight="Bold" FontSize="14"/>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" FontSize="13"/>
+                                <TextBlock Text="Omschrijving" FontWeight="Bold" FontSize="14"/>
+                                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" FontSize="13" AcceptsReturn="True" Height="48"/>
+
+                                <TextBlock Text="Agents" FontWeight="Bold" FontSize="14"/>
+                                <ListView ItemsSource="{Binding Agents}" Height="80" AllowDrop="True" Margin="0,0,0,4">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" FontSize="13"/>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <ComboBox ItemsSource="{Binding DataContext.AllAgents, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" SelectedItem="{Binding NewAgentToAdd, Mode=TwoWay}" Width="180" Height="24" Margin="0,0,6,0"/>
+                                    <Button Content="Toevoegen" CommandParameter="{Binding}" Click="AddAgentButton_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Bottom" Margin="0,0,8,10">
+            <Button Content="Opslaan" Width="100" Margin="6,0" Click="OpslaanButton_Click" Background="#4198FF" Foreground="White" FontWeight="Bold"/>
+            <Button Content="Annuleer" Width="96" Margin="6,0" Click="AnnuleerButton_Click"/>
+        </StackPanel>
+    </DockPanel>
+</Window>
