@@ -2,10 +2,8 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
-
-namespace DevGPT
-{
-    public partial class SettingsWindow : Window
+namespace DevGPT;
+public partial class SettingsWindow : Window
     {
         private readonly string appSettingsPath = "appsettings.json";
         private dynamic originalConfig; // For cancel functionality
@@ -135,4 +133,3 @@ namespace DevGPT
             Close();
         }
     }
-}

@@ -10,14 +10,13 @@ using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using System.ComponentModel;
 using System.Threading.Tasks;
-
+using System.Collections.ObjectModel;
+namespace DevGPT;
 // Eventueel missing modelimports, aannemende dat volgende types lokaal zijn:
 // Als deze elders staan (bijv. in DevGPT.AgentFactory) graag correcte using plaatsen.
 // using DevGPT.AgentFactory; // Bijvoorbeeld als FlowCardModel, FlowCardsBindingModel, FlowConfig hier vandaan komen.
 
-namespace DevGPT
-{
-    public partial class MainWindow : Window, INotifyPropertyChanged
+public partial class MainWindow : Window, INotifyPropertyChanged
     {
         private string storesDevGPTRaw = string.Empty;
         private string agentsDevGPTRaw = string.Empty;
@@ -422,6 +421,80 @@ namespace DevGPT
                 // Wordt als normaal behandeld (eventueel vind je verderop een File.Write zoals SaveFlowsButton_Click)
             }
         }
+
+        private AgentCardModel DeepCopyAgentToCard(AgentConfig agent)
+        {
+            return new AgentCardModel
+            {
+                Name = agent.Name,
+                Description = agent.Description,
+                Prompt = agent.Prompt,
+                ExplicitModify = agent.ExplicitModify,
+                Stores = new ObservableCollection<StoreRef>(
+                    agent.Stores.Select(s => new StoreRef { Name = s.Name, Write = s.Write })),
+                Functions = new ObservableCollection<string>((agent.Functions ?? new List<string>()).ToList()),
+                CallsAgents = new ObservableCollection<string>((agent.CallsAgents ?? new List<string>()).ToList()),
+                CallsFlows = new ObservableCollection<string>((agent.CallsFlows ?? new List<string>()).ToList())
+            };
+        }
+
+        private AgentConfig ConvertCardToAgentConfig(AgentCardModel card)
+        {
+            return new AgentConfig
+            {
+                Name = card.Name,
+                Description = card.Description,
+                Prompt = card.Prompt,
+                ExplicitModify = card.ExplicitModify,
+                Stores = card.Stores?.Select(s => new StoreRef { Name = s.Name, Write = s.Write }).ToList() ?? new List<StoreRef>(),
+                Functions = card.Functions?.ToList() ?? new List<string>(),
+                CallsAgents = card.CallsAgents?.ToList() ?? new List<string>(),
+                CallsFlows = card.CallsFlows?.ToList() ?? new List<string>()
+            };
+        }
+
+        private void ShowAgentsAsCardsButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Zet parsedAgents om naar AgentCardModel
+            var cardList = new ObservableCollection<AgentCardModel>(
+                (parsedAgents ?? new List<AgentConfig>()).Select(DeepCopyAgentToCard));
+
+            var allStores = new HashSet<string>();
+            var allFunctions = new HashSet<string>();
+            var allAgents = new HashSet<string>();
+            var allFlows = new HashSet<string>();
+
+            foreach (var agent in parsedAgents)
+            {
+                foreach (var store in agent.Stores ?? Enumerable.Empty<StoreRef>())
+                    if (!string.IsNullOrEmpty(store.Name)) allStores.Add(store.Name);
+                foreach (var fn in agent.Functions ?? Enumerable.Empty<string>())
+                    if (!string.IsNullOrEmpty(fn)) allFunctions.Add(fn);
+                if (!string.IsNullOrEmpty(agent.Name)) allAgents.Add(agent.Name);
+                foreach (var flow in agent.CallsFlows ?? Enumerable.Empty<string>())
+                    if (!string.IsNullOrEmpty(flow)) allFlows.Add(flow);
+            }
+
+            var model = new AgentsCardsBindingModel
+            {
+                Cards = cardList,
+                AllStores = allStores.ToList(),
+                AllFunctions = allFunctions.ToList(),
+                AllAgents = allAgents.ToList(),
+                AllFlows = allFlows.ToList()
+            };
+
+            var dlg = new AgentsCardsWindow(model);
+            dlg.Owner = this;
+            var show = dlg.ShowDialog();
+            if (show == true && dlg.ResultAgents != null)
+            {
+                // Zet cards terug naar List<AgentConfig>
+                // (Let op: cards na evt. bewerking)
+                parsedAgents = model.Cards.Select(ConvertCardToAgentConfig).ToList();
+                // Eventueel: update editor-weergave of bindings als nodig
+            }
+        }
     }
     // Dummy UserAppConfig toegevoegd zodat het project buildt.
     // TODO: Vervang door daadwerkelijke UserAppConfig indien deze elders bestaat of uitbreiden indien meer properties benodigd zijn.
@@ -431,4 +504,3 @@ namespace DevGPT
         public string AgentsFile { get; set; } = null;
         public string FlowsFile { get; set; } = null;
     }
-}

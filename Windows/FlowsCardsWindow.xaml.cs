@@ -11,8 +11,7 @@ using System.Collections.Specialized;
 using System.Windows.Media;
 using System.Windows.Documents;
 
-namespace DevGPT
-{
+namespace DevGPT;
     public class FlowCardModel : INotifyPropertyChanged
     {
         public string Name { get => _name; set { if (_name != value) { _name = value; OnPropertyChanged(nameof(Name)); } } }
@@ -358,4 +357,3 @@ namespace DevGPT
             }
         }
     }
-}

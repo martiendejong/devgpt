@@ -9,7 +9,6 @@ using DevGPT;
 using DevGPT.LLMClient;
 using DevGPT.Classes;
 
-namespace DevGPT.HuggingFace;
 
 public class HuggingFaceClientWrapper : ILLMClient
 {

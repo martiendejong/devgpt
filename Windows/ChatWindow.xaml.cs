@@ -4,9 +4,8 @@ using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
-namespace DevGPT
-{
-    public partial class ChatWindow : Window, INotifyPropertyChanged
+namespace DevGPT;
+public partial class ChatWindow : Window, INotifyPropertyChanged
     {
         private AgentManager _agentManager;
         private bool _isSending = false;
@@ -193,4 +192,4 @@ namespace DevGPT
             base.OnPreviewKeyDown(e);
         }
     }
-}
+

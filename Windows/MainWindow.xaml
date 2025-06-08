@@ -32,14 +32,21 @@
                          FontSize="15" />
                 </TabItem>
                 <TabItem Header="Agents">
-                    <!-- Minimalistische TextBox voor AgentsDevGPTEditor -->
-                    <TextBox x:Name="AgentsDevGPTEditor"
-                         Margin="5"
-                         AcceptsReturn="True"
-                         VerticalScrollBarVisibility="Auto"
-                         HorizontalScrollBarVisibility="Auto"
-                         FontFamily="Consolas"
-                         FontSize="15" />
+                    <DockPanel LastChildFill="True">
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,5">
+                            <Button x:Name="ShowAgentsAsCardsButton"
+                                Content="Toon agents als cards"
+                                Click="ShowAgentsAsCardsButton_Click"
+                                Margin="10" />
+                        </StackPanel>
+                        <TextBox x:Name="AgentsDevGPTEditor"
+                        Margin="5"
+                        AcceptsReturn="True"
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Auto"
+                        FontFamily="Consolas"
+                        FontSize="15" />
+                    </DockPanel>
                 </TabItem>
                 <TabItem Header="Flows" x:Name="FlowsTab">
                     <DockPanel LastChildFill="True">

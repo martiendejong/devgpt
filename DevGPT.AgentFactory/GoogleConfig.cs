@@ -1,13 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
-namespace DevGPT
-{
-    public class GoogleConfig
+public class GoogleConfig
     {
         public GoogleConfig(string projectId = "")
         {
@@ -28,4 +26,3 @@ namespace DevGPT
             return settings;
         }
     }
-}
