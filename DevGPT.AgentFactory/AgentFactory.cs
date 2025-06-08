@@ -74,9 +74,6 @@ public class AgentFactory {
         var flow = Flows[name];
         foreach (var agent in flow.CallsAgents)
         {
-            var id = Guid.NewGuid().ToString();
-            Agents[agent].Tools.SendMessage(id, agent, query);
-
             if (Agents[agent].IsCoder && !WriteMode)
             {
                 WriteMode = true;
@@ -87,8 +84,6 @@ public class AgentFactory {
             {
                 query = await CallAgentWithMeta(agent, query, caller, string.Empty, flow.Name);
             }
-
-            Agents[agent].Tools.SendMessage(id, agent, query);
         }
         return query;
     }
@@ -131,6 +126,9 @@ public class AgentFactory {
     // Helper for agent call with custom meta-info (used in flows)
     public async Task<string> CallAgentWithMeta(string name, string query, string caller, string functionName, string flowName)
     {
+        var agent = Agents[name];
+        var id = Guid.NewGuid().ToString();
+        agent.Tools.SendMessage(id, name, query);
         Guid messageId = Guid.NewGuid();
         var message = new DevGPTChatMessage
         {
@@ -143,7 +141,6 @@ public class AgentFactory {
             Response = string.Empty
         };
         Messages.Add(message);
-        var agent = Agents[name];
         string response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), null, true, true, agent.Tools, null);
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
@@ -158,6 +155,7 @@ public class AgentFactory {
             Response = response
         };
         Messages.Add(replyMsg);
+        agent.Tools.SendMessage(id, name, response);
         return response;
     }
 
