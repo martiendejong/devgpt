@@ -93,6 +93,9 @@ public class AgentFactory {
     // Extended CallCoderAgent to accept flowName and store correct message meta-info
     public async Task<string> CallCoderAgent(string name, string query, string caller, string flowName = "")
     {
+        var agent = Agents[name];
+        var id = Guid.NewGuid().ToString();
+        agent.Tools.SendMessage(id, name, query);
         Guid messageId = Guid.NewGuid();
         var message = new DevGPTChatMessage
         {
@@ -105,7 +108,6 @@ public class AgentFactory {
             Response = string.Empty
         };
         Messages.Add(message);
-        var agent = Agents[name];
         string response = await agent.Generator.UpdateStore(query + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", null, true, true, agent.Tools, null);
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
@@ -120,6 +122,7 @@ public class AgentFactory {
             Response = response
         };
         Messages.Add(replyMsg);
+        agent.Tools.SendMessage(id, name, response);
         return response;
     }
 

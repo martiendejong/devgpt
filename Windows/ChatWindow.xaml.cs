@@ -3,6 +3,7 @@ using System.Windows.Input;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 
 namespace DevGPT;
 public partial class ChatWindow : Window, INotifyPropertyChanged
@@ -126,7 +127,7 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
         private async void SendMessage()
         {
             if (IsSending) return;
-            var text = MessageEditor.Text?.Trim();
+            var text = DateTime.Now.ToString("MMMM d, yyyy h:mm tt", CultureInfo.InvariantCulture) + ": " + MessageEditor.Text?.Trim();
             if (!string.IsNullOrEmpty(text))
             {
                 SetSendingState(true);
