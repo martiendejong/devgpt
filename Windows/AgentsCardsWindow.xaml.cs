@@ -9,7 +9,9 @@ namespace DevGPT;
     public partial class AgentsCardsWindow : Window
     {
         private AgentsCardsBindingModel viewModel;
-        public List<string> ResultAgents = null;
+        public List<AgentConfig> ResultAgents = null;
+
+        public Action<AgentsCardsBindingModel> OnAgentsSaved;
 
         public AgentsCardsWindow(AgentsCardsBindingModel model)
         {
@@ -167,14 +169,27 @@ namespace DevGPT;
 
         private void OpslaanButton_Click(object sender, RoutedEventArgs e)
         {
-            // Gather results and close dialog with OK
-            ResultAgents = viewModel.Cards.Select(card => card.Name).ToList();
+            var list = viewModel.Cards.Select(card => new AgentConfig
+            {
+                Name = card.Name,
+                Description = card.Description,
+                CallsAgents = card.CallsAgents.ToList(),
+                CallsFlows = card.CallsFlows.ToList(),
+                Functions = card.Functions.ToList(),
+                Prompt = card.Prompt,
+                Stores = card.Stores.ToList(),
+                ExplicitModify = card.ExplicitModify                
+            }).ToList();
+            ResultAgents = list;
             DialogResult = true;
+            OnAgentsSaved?.Invoke(viewModel);
+            Close();
         }
 
         private void AnnuleerButton_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
+            Close();
         }
 
         private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)

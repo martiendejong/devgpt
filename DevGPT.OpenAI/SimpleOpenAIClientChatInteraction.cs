@@ -59,6 +59,8 @@ public class SimpleOpenAIClientChatInteraction
     {
         bool requiresAction;
         ChatCompletion completion;
+        var i = 0;
+        var maxToolCalls = 50;
         do
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -79,9 +81,10 @@ public class SimpleOpenAIClientChatInteraction
             var finishMessage = new AssistantChatMessage(completion);
             var toolCalls = completion.ToolCalls;
             var finishReason = completion.FinishReason;
-            
+            ++i;
+
             requiresAction = await HandleFinishReason(requiresAction, finishMessage, toolCalls, finishReason, cancellationToken);
-        } while (requiresAction);
+        } while (requiresAction || i > maxToolCalls);
 
         return completion;
     }

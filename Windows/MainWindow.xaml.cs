@@ -491,8 +491,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 // Zet cards terug naar List<AgentConfig>
                 // (Let op: cards na evt. bewerking)
-                parsedAgents = model.Cards.Select(ConvertCardToAgentConfig).ToList();
+                parsedAgents = dlg.ResultAgents;
                 // Eventueel: update editor-weergave of bindings als nodig
+                AgentsDevGPTEditor.Text = DevGPTAgentConfigParser.Serialize(parsedAgents);
+                agentsDevGPTRaw = AgentsDevGPTEditor.Text;
             }
         }
     }

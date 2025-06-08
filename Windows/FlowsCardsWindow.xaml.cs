@@ -29,7 +29,7 @@ namespace DevGPT
         private string _newAgentToAdd;
 
         // Added property for showing details
-        private bool _isExpanded;
+        private bool _isExpanded = false; // Default collapsed
         public bool IsExpanded {
             get => _isExpanded;
             set{ if (_isExpanded != value) { _isExpanded = value; OnPropertyChanged(nameof(IsExpanded)); } }
@@ -61,19 +61,27 @@ namespace DevGPT
 
         public FlowCardsBindingModel()
         {
+            // ensure all start collapsed
+            CollapseAllCards();
             HookCardsCollectionChanged();
-        }
-
-        public void HookCardsCollectionChanged()
-        {
-            Cards.CollectionChanged += Cards_CollectionChanged;
         }
 
         public FlowCardsBindingModel(ObservableCollection<FlowCardModel> cards, List<string> allAgents)
         {
             Cards = cards;
             AllAgents = allAgents;
+            CollapseAllCards();
             HookCardsCollectionChanged();
+        }
+
+        private void CollapseAllCards()
+        {
+            foreach (var c in Cards) c.IsExpanded = false;
+        }
+
+        public void HookCardsCollectionChanged()
+        {
+            Cards.CollectionChanged += Cards_CollectionChanged;
         }
 
         private void Cards_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -85,6 +93,7 @@ namespace DevGPT
                     if (item is FlowCardModel model)
                     {
                         model.PropertyChanged += OnCardPropertyChanged;
+                        model.IsExpanded = false; // new cards default collapsed (unless added with AddNewFlowCard)
                     }
                 }
             }
@@ -118,6 +127,7 @@ namespace DevGPT
         public void AddNewFlowCard()
         {
             var newCard = new FlowCardModel();
+            newCard.IsExpanded = true; // New flow card opens expanded!
             Cards.Add(newCard);
         }
     }
@@ -129,6 +139,7 @@ namespace DevGPT
         {
             InitializeComponent();
             DataContext = Model = model;
+            // expand state already set in model CollapseAllCards and/or AddNewFlowCard
             Model.HookCardPropertyChangedHandlers();
             this.Closing += FlowsCardsWindow_Closing;
         }
@@ -325,6 +336,10 @@ namespace DevGPT
 
         // ------- Rest van bestaande logica -------
 
+        // SERIALIZER INTERFACE toegevoegde methodes/velden:
+        // Zet deze delegate vanuit MainWindow of de aanroeper om serialisatie/updaten editor te implementeren.
+        public Action<List<FlowConfig>> OnFlowsSaved;
+
         private void OpslaanButton_Click(object sender, RoutedEventArgs e)
         {
             var list = Model.Cards.Select(card => new FlowConfig
@@ -336,6 +351,8 @@ namespace DevGPT
             ResultFlows = list;
             Model.IsModified = false;
             DialogResult = true;
+            // Toevoeging: na OK meteen eventuele OnFlowsSaved aanroepen, zodat parent de editor/data bijwerkt.
+            OnFlowsSaved?.Invoke(ResultFlows);
             Close();
         }
         private void AnnuleerButton_Click(object sender, RoutedEventArgs e)

@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Xml.Linq;
 
 public class DocumentStore : IDocumentStore
@@ -25,8 +25,14 @@ public class DocumentStore : IDocumentStore
         foreach (var embedding in EmbeddingStore.Embeddings) await Embed(embedding.Key);
     }
 
+    public string Sanitize(string name)
+    {
+        return name.Replace("/", "\\");
+    }
+
     public async Task<bool> Embed(string name)
     {
+        name = Sanitize(name);
         List<string> partKeys = [name];
         var content = await TextStore.Get(name);
         if (content == null)
@@ -40,6 +46,7 @@ public class DocumentStore : IDocumentStore
 
     public async Task<bool> Store(string name, string content, bool split = true)
     {
+        name = Sanitize(name);
         var partKeys = new List<string>();
         if (!split)
         {
@@ -73,6 +80,7 @@ public class DocumentStore : IDocumentStore
 
     public async Task<bool> Remove(string name)
     {
+        name = Sanitize(name);
         await EmbeddingStore.RemoveEmbedding(name);
         await TextStore.Remove(name);
         var parts = await PartStore.Get(name);
@@ -103,7 +111,7 @@ public class DocumentStore : IDocumentStore
         return r;
     }
 
-    public string GetPath(string name) => TextStore.GetPath(name);
+    public string GetPath(string name) => TextStore.GetPath(Sanitize(name));
 
-    public async Task<string> Get(string name) => await TextStore.Get(name);
+    public async Task<string> Get(string name) => await TextStore.Get(Sanitize(name));
 }

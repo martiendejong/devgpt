@@ -36,6 +36,9 @@ public class AgentFactory {
     // Updated: messages are stored with full meta-info and updated in-place with Response upon agent reply
     public async Task<string> CallAgent(string name, string query, string caller)
     {
+        var agent = Agents[name];
+        var id = Guid.NewGuid().ToString();
+        agent.Tools.SendMessage(id, name, query);
         Guid messageId = Guid.NewGuid();
         var message = new DevGPTChatMessage
         {
@@ -48,7 +51,6 @@ public class AgentFactory {
             Response = string.Empty
         };
         Messages.Add(message);
-        var agent = Agents[name];
         string response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), null, true, true, agent.Tools, null);
         // Find the message by MessageId and update Response
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
@@ -65,6 +67,7 @@ public class AgentFactory {
             Response = response
         };
         Messages.Add(replyMsg);
+        agent.Tools.SendMessage(id, name, response);
         return response;
     }
 

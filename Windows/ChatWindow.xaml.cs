@@ -73,7 +73,10 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
                     {
                         if(currentMessageId == id)
                         {
-                            _messages.Last().Response = output;
+                            var message = _messages.Last();
+                            _messages.Remove(message);
+                            message.Response = output;
+                            _messages.Add(message);
                         }
                         else
                         {
