@@ -229,25 +229,29 @@ public class SimpleOpenAIClientChatInteraction
             {
                 if (toolCall.FunctionName == tool.FunctionName)
                 {
+                    var id = Guid.NewGuid().ToString();
+
                     Console.WriteLine($"Calling {tool.FunctionName}");
                     Console.WriteLine($"Arguments:\n{toolCall.FunctionArguments.ToString()}");
-                    if(ToolsContext.SendMessage != null)
-                    {
-                        var message = $"Calling {tool.FunctionName}\n{toolCall.FunctionArguments.ToString()}";
-                        ToolsContext.SendMessage(message);
-                    }
+                    //if(ToolsContext.SendMessage != null)
+                    //{
+                    //    var message = $"Calling {tool.FunctionName}\n{toolCall.FunctionArguments.ToString()}";
+                    //    ToolsContext.SendMessage(id, tool.FunctionName, toolCall.FunctionArguments.ToString());
+                    //}
                     // BEGIN PATCH: Make Execute call signature match the delegate (no cancellationToken)
                     // string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT(), cancellationToken);
                     string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT());
+                    //ToolsContext.SendMessage(id, tool.FunctionName, result);
+
                     // END PATCH
-                    if (!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_write") || tool.FunctionName.Contains("_list") || tool.FunctionName.Contains("_relevancy") || tool.FunctionName == "build" || tool.FunctionName == "git"))
-                    {
-                        Console.WriteLine($"Result:\n{result}\n");
-                        if (ToolsContext.SendMessage != null)
-                        {
-                            ToolsContext.SendMessage($"{result}\n");
-                        }
-                    }
+                    //if (!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_write") || tool.FunctionName.Contains("_list") || tool.FunctionName.Contains("_relevancy") || tool.FunctionName == "build" || tool.FunctionName == "git"))
+                    //{
+                    //    Console.WriteLine($"Result:\n{result}\n");
+                    //    if (ToolsContext.SendMessage != null)
+                    //    {
+                    //        ToolsContext.SendMessage($"{result}\n");
+                    //    }
+                    //}
                     toolResults.Add(new ToolChatMessage(toolCall.Id, result));
                 }
             }

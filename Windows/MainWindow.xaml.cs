@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls; // Correct toegevoegd
-using MessageBox = System.Windows.MessageBox;
 using Microsoft.Win32;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;

@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using Newtonsoft.Json.Serialization;
+
 /// <summary>
 /// AgentManager encapsulates all logic for agent and store initialization, configuration,
 /// and provides interfaces for agent interaction. It loads configuration from paths provided
@@ -30,7 +32,7 @@ public class AgentManager
     /// <summary>
     /// All available agents, as loaded and constructed from agents.json
     /// </summary>
-    public IReadOnlyList<DevGPTAgent> Agents => _agents;
+    public IReadOnlyList<DevGPTAgent> Agents => _agents;    
 
     /// <summary>
     /// Instantiates the AgentManager, loads configuration, and initializes all stores and agents.
@@ -122,7 +124,7 @@ public class AgentManager
         }
     }
 
-    public async Task<string> SendMessage(string input, string agentName = null)
+    public async Task<string> SendMessage(string input, string agentName = null, CancellationToken cancel = default)
     {
         DevGPTAgent agent;
         if (string.IsNullOrEmpty(agentName))
@@ -136,7 +138,7 @@ public class AgentManager
             if (agent == null) throw new InvalidOperationException($"Agent not found: {agentName}");
         }
 
-        var response = await agent.Generator.GetResponse<IsReadyResult>(input, History, true, true, agent.Tools, null);
+        var response = await agent.Generator.GetResponse<IsReadyResult>(input, History, true, true, agent.Tools, null, cancel);
         return response.Message;
     }
 }

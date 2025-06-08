@@ -3,6 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:DevGPT"
         Title="Chat" Height="700" Width="700">
+    <Window.Resources>
+        <local:EmptyToVisibilityConverter x:Key="EmptyToVisibilityConverter" />
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/> <!-- Chat messages -->
@@ -28,7 +31,8 @@
                         <Border MaxWidth="700" Width="Auto" HorizontalAlignment="Stretch" Margin="0,4,0,4" Padding="6,4,6,4" Background="#F7F9FB" CornerRadius="5">
                             <StackPanel Width="Auto" HorizontalAlignment="Stretch" Orientation="Vertical">
                                 <TextBlock Width="Auto" HorizontalAlignment="Stretch" Text="{Binding Author}" FontWeight="Bold" FontSize="13" />
-                                <TextBlock Width="Auto" HorizontalAlignment="Stretch" Text="{Binding Text}" TextWrapping="Wrap" FontSize="14" />
+                                <TextBox Visibility="{Binding Text, Converter={StaticResource EmptyToVisibilityConverter}}" Width="Auto" HorizontalAlignment="Stretch" Text="{Binding Text}" TextWrapping="Wrap" FontSize="14" Background="#EFE" />
+                                <TextBox Visibility="{Binding Response, Converter={StaticResource EmptyToVisibilityConverter}}" Width="Auto" HorizontalAlignment="Stretch" Text="{Binding Response}" TextWrapping="Wrap" FontSize="14" Background="#EEF" />
                             </StackPanel>
                         </Border>
                     </DataTemplate>

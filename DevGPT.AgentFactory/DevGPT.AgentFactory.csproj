@@ -1,37 +1,41 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <LanguageVersion>latest</LanguageVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>DevGPT</RootNamespace>
-    <!-- NuGet metadata -->
-    <PackageId>DevGPT.AgentFactory</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>Csharpdeveloper</Authors>
-    <Company>DevGPT</Company>
-    <Description>DevGPT.AgentFactory provides intelligent agent factory functionality to generate and manage AI agents with integrated tools and generators.</Description>
-    <PackageProjectUrl>https://github.com/DevGPT/DevGPT.AgentFactory</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/DevGPT/DevGPT.AgentFactory</RepositoryUrl>
-    <PackageTags>AI;Agent;Factory;LLM;DevGPT</PackageTags>
-    <Copyright>Copyright © 2024 DevGPT</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<LanguageVersion>latest</LanguageVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>DevGPT</RootNamespace>
+		<!-- NuGet metadata -->
+		<PackageId>DevGPT.AgentFactory</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Csharpdeveloper</Authors>
+		<Company>DevGPT</Company>
+		<Description>DevGPT.AgentFactory provides intelligent agent factory functionality to generate and manage AI agents with integrated tools and generators.</Description>
+		<PackageProjectUrl>https://github.com/DevGPT/DevGPT.AgentFactory</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/DevGPT/DevGPT.AgentFactory</RepositoryUrl>
+		<PackageTags>AI;Agent;Factory;LLM;DevGPT</PackageTags>
+		<Copyright>Copyright © 2024 DevGPT</Copyright>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.11.0" />
+		<PackageReference Include="xunit" Version="2.4.2" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+	</ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.11.0" />
-    <PackageReference Include="xunit" Version="2.4.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\DevGPT.Classes\DevGPT.Classes.csproj" />
     <ProjectReference Include="..\DevGPT.DocumentStore\DevGPT.DocumentStore.csproj" />
+    <ProjectReference Include="..\DevGPT.EmbeddingStore\DevGPT.EmbeddingStore.csproj" />
     <ProjectReference Include="..\DevGPT.Generator\DevGPT.Generator.csproj" />
+    <ProjectReference Include="..\DevGPT.Helpers\DevGPT.Helpers.csproj" />
     <ProjectReference Include="..\DevGPT.LLMClient\DevGPT.LLMClient.csproj" />
     <ProjectReference Include="..\DevGPT.LLMClientTools\DevGPT.LLMClientTools.csproj" />
+    <ProjectReference Include="..\DevGPT.OpenAI\DevGPT.OpenAI.csproj" />
   </ItemGroup>
 
 </Project>

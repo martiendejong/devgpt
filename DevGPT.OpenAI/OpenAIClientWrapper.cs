@@ -1,5 +1,7 @@
-﻿using System.ClientModel;
+using System.ClientModel;
 using System.Text.Json;
+using System.Threading.Channels;
+
 using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Embeddings;
@@ -20,8 +22,8 @@ public partial class OpenAIClientWrapper : ILLMClient
 
     public PartialJsonParser Parser { get; set; } = new PartialJsonParser();
 
-    public async Task<ResponseType> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext toolsContext, List<ImageData> images) where ResponseType : ChatResponse<ResponseType>, new()
-        => Parser.Parse<ResponseType>(await GetResponse(AddFormattingInstruction<ResponseType>(messages), DevGPTChatResponseFormat.Json, toolsContext, images));
+    public async Task<ResponseType> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext toolsContext, List<ImageData> images, CancellationToken cancel = default) where ResponseType : ChatResponse<ResponseType>, new()
+        => Parser.Parse<ResponseType>(await GetResponse(AddFormattingInstruction<ResponseType>(messages), DevGPTChatResponseFormat.Json, toolsContext, images, cancel));
 
     public async Task<ResponseType> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext toolsContext, List<ImageData> images) where ResponseType : ChatResponse<ResponseType>, new()
         => Parser.Parse<ResponseType>(await GetResponseStream(AddFormattingInstruction<ResponseType>(messages), onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images));
@@ -60,9 +62,9 @@ public partial class OpenAIClientWrapper : ILLMClient
     }
 
     public async Task<string> GetResponse(
-        List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext toolsContext, List<ImageData> images)
+        List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext toolsContext, List<ImageData> images, CancellationToken cancel = default)
     {
-        return GetText(await GetChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images));
+        return GetText(await GetChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel));
     }
 
     public async Task<DevGPTGeneratedImage> GetImage(
@@ -73,12 +75,12 @@ public partial class OpenAIClientWrapper : ILLMClient
 
     #region internal
 
-    protected async Task<ChatCompletion> GetChatResult(List<ChatMessage> messages, ChatResponseFormat responseFormat, IToolsContext context, List<ImageData> images)
+    protected async Task<ChatCompletion> GetChatResult(List<ChatMessage> messages, ChatResponseFormat responseFormat, IToolsContext context, List<ImageData> images, CancellationToken cancel = default)
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
         var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, client, imageClient, messages, images, responseFormat, true, true);
-        return await interaction.Run();
+        return await interaction.Run(cancel);
     }
 
     protected async Task<GeneratedImage> GetImageResult(string prompt, ChatResponseFormat responseFormat, IToolsContext context, List<ImageData> images)

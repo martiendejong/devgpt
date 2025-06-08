@@ -1,40 +1,11 @@
 using System.Windows;
 using System.Windows.Input;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Windows.Data;
-using System.Windows.Controls;
 using System.ComponentModel;
-using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
-using DevGPT;
 
 namespace DevGPT
 {
-    public class ChatDisplayMessage : INotifyPropertyChanged
-    {
-        public string Author { get; set; } // e.g. "Gebruiker" or "Assistent"
-        public string Text { get; set; }
-        public bool IsAsyncOnMessage { get; set; }
-        public event PropertyChangedEventHandler PropertyChanged; // Needed for future binding extensibility
-    }
-
-    // Converter for inverse boolean to visibility
-    public class InverseBoolToVisibilityConverter : IValueConverter
-    {
-        public object Convert(object value, System.Type targetType, object parameter, CultureInfo culture)
-        {
-            bool b = (bool)value;
-            return (!b) ? Visibility.Visible : Visibility.Collapsed;
-        }
-        public object ConvertBack(object value, System.Type targetType, object parameter, CultureInfo culture)
-        {
-            return !(bool)value;
-        }
-    }
-
     public partial class ChatWindow : Window, INotifyPropertyChanged
     {
         private AgentManager _agentManager;
@@ -77,6 +48,8 @@ namespace DevGPT
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        public string currentMessageId = "";
+
         public ChatWindow(AgentManager agentManager)
         {
             _agentManager = agentManager;
@@ -93,17 +66,36 @@ namespace DevGPT
             // VEILIGHEID: verwijdert oude SendMessage-link
             foreach (var a in _agentManager.Agents)
             {
-                a.Tools.SendMessage = (string output) =>
+                a.Tools.SendMessage = (string id, string agent, string output) =>
                 {
                     // This logic is for background interim messages:
                     Dispatcher.Invoke(() =>
                     {
-                        _messages.Add(new ChatDisplayMessage
+                        if(currentMessageId == id)
                         {
-                            Author = "Assistent",
-                            Text = output,
-                            IsAsyncOnMessage = true // Interims always as expander
-                        });
+                            _messages.Last().Response = output;
+                        }
+                        else
+                        {
+                            if(Messages.Any(m => m.Id == id))
+                            {
+                                _messages.Add(new ChatDisplayMessage
+                                {
+                                    Id = id,
+                                    Author = agent,
+                                    Response = output,
+                                    IsAsyncOnMessage = true // Interims always as expander
+                                });
+                            }
+                            _messages.Add(new ChatDisplayMessage
+                            {
+                                Id = id,
+                                Author = agent,
+                                Text = output,
+                                IsAsyncOnMessage = true // Interims always as expander
+                            });
+                            currentMessageId = id;
+                        }
                         ScrollToEnd();
                     });
                 };
@@ -153,7 +145,7 @@ namespace DevGPT
                         // FIX: replace passing 'token' (CancellationToken) as argument 2 with 'text' (string) which is the correct argument
                         return await _agentManager.SendMessage(text);
                     }, token);
-
+                    
                     // Voeg het eindreply toe als gewone tekst (geen expander)
                     _messages.Add(new ChatDisplayMessage { Author = "Assistent", Text = response, IsAsyncOnMessage = false });
                     ScrollToEnd();

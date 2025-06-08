@@ -1,10 +1,8 @@
-using Google.Apis.Auth.OAuth2;
+using System.Xml.Linq;
+
 using Google.Apis.Auth.OAuth2.Responses;
 using Google.Cloud.BigQuery.V2;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using MathNet.Numerics.RootFinding;
 
 public class AgentFactory {
     public AgentFactory(string openAIApiKey, string logFilePath, string googleProjectId = "")
@@ -13,7 +11,7 @@ public class AgentFactory {
         GoogleProjectId = googleProjectId;
         LogFilePath = logFilePath;
     }
-
+    
     public List<StoreConfig> storesConfig;
     public List<AgentConfig> agentsConfig;
     public List<FlowConfig> flowsConfig;
@@ -74,10 +72,11 @@ public class AgentFactory {
     public async Task<string> CallFlow(string name, string query, string caller)
     {
         var flow = Flows[name];
-        string lastAgent = string.Empty;
-        foreach(var agent in flow.CallsAgents)
+        foreach (var agent in flow.CallsAgents)
         {
-            Agents[agent].Tools.SendMessage($"Calling {agent}:\n{query}\n");
+            var id = Guid.NewGuid().ToString();
+            Agents[agent].Tools.SendMessage(id, agent, query);
+
             if (Agents[agent].IsCoder && !WriteMode)
             {
                 WriteMode = true;
@@ -88,9 +87,9 @@ public class AgentFactory {
             {
                 query = await CallAgentWithMeta(agent, query, caller, string.Empty, flow.Name);
             }
-            lastAgent = agent;
+
+            Agents[agent].Tools.SendMessage(id, agent, query);
         }
-        Agents[flow.CallsAgents.Last()].Tools.SendMessage($"Response from {flow.CallsAgents.Last()}:\n{query}\n");
         return query;
     }
 
@@ -421,7 +420,13 @@ public class AgentFactory {
             var callFlow = new DevGPTChatTool($"{flow}", $"Calls {flow} agent workflow to execute a tasks and return a message. {config.Description}", [instructionParameter], async (messages, toolCall) =>
             {
                 if (instructionParameter.TryGetValue(toolCall, out string key))
-                    return await CallFlow(flow, key, caller);
+                {
+                    var id = Guid.NewGuid().ToString();
+                    tools.SendMessage(id, flow, key);
+                    var response = await CallFlow(flow, key, caller);
+                    tools.SendMessage(id, flow, response);
+                    return response;
+                }
                 return "No key given";
             });
             tools.Add(callFlow);
