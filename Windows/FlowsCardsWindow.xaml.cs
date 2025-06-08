@@ -10,8 +10,14 @@ using System.Windows.Data;
 using System.Collections.Specialized;
 using System.Windows.Media;
 using System.Windows.Documents;
+// Remove Windows Forms import, and ensure no usage or ambiguity
+// using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox; // REMOVE
+using WpfButton = System.Windows.Controls.Button;
+using WpfListView = System.Windows.Controls.ListView;
+using WpfListViewItem = System.Windows.Controls.ListViewItem;
 
-namespace DevGPT;
+namespace DevGPT 
+{
     public class FlowCardModel : INotifyPropertyChanged
     {
         public string Name { get => _name; set { if (_name != value) { _name = value; OnPropertyChanged(nameof(Name)); } } }
@@ -21,6 +27,14 @@ namespace DevGPT;
         public ObservableCollection<string> CallsAgents { get; set; } = new ObservableCollection<string>();
         public string NewAgentToAdd { get => _newAgentToAdd; set { if (_newAgentToAdd != value) { _newAgentToAdd = value; OnPropertyChanged(nameof(NewAgentToAdd)); } } }
         private string _newAgentToAdd;
+
+        // Added property for showing details
+        private bool _isExpanded;
+        public bool IsExpanded {
+            get => _isExpanded;
+            set{ if (_isExpanded != value) { _isExpanded = value; OnPropertyChanged(nameof(IsExpanded)); } }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string n) { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n)); }
     }
@@ -99,7 +113,15 @@ namespace DevGPT;
                 card.PropertyChanged += OnCardPropertyChanged;
             }
         }
+
+        // Nieuw: Voeg een nieuwe lege FlowCardModel toe
+        public void AddNewFlowCard()
+        {
+            var newCard = new FlowCardModel();
+            Cards.Add(newCard);
+        }
     }
+
     public partial class FlowsCardsWindow : System.Windows.Window
     {
         public FlowCardsBindingModel Model { get; set; }
@@ -116,7 +138,7 @@ namespace DevGPT;
 
         // Houdt de drag-context vast per ListView (1 tegelijk per window)
         private System.Windows.Point? _dragStartPoint = null;
-        private System.Windows.Controls.ListView _activeDragListView = null;
+        private WpfListView _activeDragListView = null;
         private string _draggedAgent = null;
         private FlowCardModel _draggedCard = null;
 
@@ -126,7 +148,7 @@ namespace DevGPT;
         private void CallsAgentsListView_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             // Zoek het item waar op geklikt is.
-            _activeDragListView = sender as System.Windows.Controls.ListView;
+            _activeDragListView = sender as WpfListView;
             _dragStartPoint = e.GetPosition(_activeDragListView);
             _draggedAgent = null;
             _draggedCard = null;
@@ -166,7 +188,7 @@ namespace DevGPT;
         {
             e.Effects = System.Windows.DragDropEffects.None;
 
-            var listView = sender as System.Windows.Controls.ListView;
+            var listView = sender as WpfListView;
             // Check of de drag binnen dezelfde ListView is en juiste type object
             if (listView != null && e.Data.GetDataPresent("DGPT_FLOW_DRAGCALLAGENT"))
             {
@@ -187,7 +209,7 @@ namespace DevGPT;
         /// </summary>
         private void CallsAgentsListView_Drop(object sender, System.Windows.DragEventArgs e)
         {
-            var listView = sender as System.Windows.Controls.ListView;
+            var listView = sender as WpfListView;
             if (listView == null || !_dragStartPoint.HasValue) return;
             if (!e.Data.GetDataPresent("DGPT_FLOW_DRAGCALLAGENT")) return;
 
@@ -231,11 +253,11 @@ namespace DevGPT;
         /// <summary>
         /// Zet alle IsDragOverItem flags uit.
         /// </summary>
-        private void ClearDragOverHighlights(System.Windows.Controls.ListView lv)
+        private void ClearDragOverHighlights(WpfListView lv)
         {
             foreach (var item in lv.Items)
             {
-                var lvi = lv.ItemContainerGenerator.ContainerFromItem(item) as System.Windows.Controls.ListViewItem;
+                var lvi = lv.ItemContainerGenerator.ContainerFromItem(item) as WpfListViewItem;
                 if (lvi != null) SetIsDragOverItem(lvi, false);
             }
         }
@@ -243,7 +265,7 @@ namespace DevGPT;
         /// <summary>
         /// Highlight alleen het item waarover wordt gedropt (op basis van muispositie)
         /// </summary>
-        private void HighlightListViewItemOnDragOver(System.Windows.Controls.ListView lv, System.Windows.Point pt)
+        private void HighlightListViewItemOnDragOver(WpfListView lv, System.Windows.Point pt)
         {
             ClearDragOverHighlights(lv);
             var lvi = GetListViewItemAt(pt, lv);
@@ -253,24 +275,24 @@ namespace DevGPT;
         /// <summary>
         /// Vind ListViewItem bij mousepositie (helper method)
         /// </summary>
-        private System.Windows.Controls.ListViewItem GetListViewItemAt(System.Windows.Point pt, System.Windows.Controls.ListView lv)
+        private WpfListViewItem GetListViewItemAt(System.Windows.Point pt, WpfListView lv)
         {
             var hit = VisualTreeHelper.HitTest(lv, pt);
             if (hit == null) return null;
             DependencyObject obj = hit.VisualHit;
-            while (obj != null && !(obj is System.Windows.Controls.ListViewItem))
+            while (obj != null && !(obj is WpfListViewItem))
                 obj = VisualTreeHelper.GetParent(obj);
-            return obj as System.Windows.Controls.ListViewItem;
+            return obj as WpfListViewItem;
         }
 
         /// <summary>
         /// Vind index in CallsAgents waar de drop plaatsvindt.
         /// </summary>
-        private int FindIndexForDrop(System.Windows.Point pt, System.Windows.Controls.ListView lv)
+        private int FindIndexForDrop(System.Windows.Point pt, WpfListView lv)
         {
             for (int i = 0; i < lv.Items.Count; i++)
             {
-                var item = lv.ItemContainerGenerator.ContainerFromIndex(i) as System.Windows.Controls.ListViewItem;
+                var item = lv.ItemContainerGenerator.ContainerFromIndex(i) as WpfListViewItem;
                 if (item != null)
                 {
                     System.Windows.Rect bounds = VisualTreeHelper.GetDescendantBounds(item);
@@ -324,7 +346,7 @@ namespace DevGPT;
         }
         private void AddAgentButton_Click(object sender, RoutedEventArgs e)
         {
-            var b = (sender as System.Windows.Controls.Button);
+            var b = (sender as WpfButton);
             var card = b?.CommandParameter as FlowCardModel;
             if (card != null && !string.IsNullOrWhiteSpace(card.NewAgentToAdd))
             {
@@ -356,4 +378,60 @@ namespace DevGPT;
                 }
             }
         }
+
+        // Nieuw: handler voor nieuwe flow toevoegen-knop
+        private void AddNewFlowButton_Click(object sender, RoutedEventArgs e)
+        {
+            Model.AddNewFlowCard();
+        }
+
+        public void RemoveFlowCardButton_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as WpfButton;
+            var card = btn?.CommandParameter as FlowCardModel;
+            if (card != null)
+            {
+                Model.Cards.Remove(card);
+            }
+        }
+
+        // --- Handler voor per-kaart expand/collapse toggle ---
+        public void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Gebruik de CommandParameter of DataContext van de knop om het juiste FlowCardModel te krijgen
+            var btn = sender as WpfButton;
+            var card = btn?.CommandParameter as FlowCardModel;
+            if (card == null)
+                card = btn?.DataContext as FlowCardModel;
+
+            if (card != null)
+            {
+                card.IsExpanded = !card.IsExpanded;
+            }
+        }
+
+        // --- Oude broadened agent expand toggle (niet meer gebruikt, voor agentdetails per kaart, laat staan voor compatibiliteit) ---
+        public void ToggleAgentExpandButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as WpfButton;
+            if (button == null) return;
+            var listViewItem = FindParent<WpfListViewItem>(button);
+            if (listViewItem == null) return;
+            var listView = FindParent<WpfListView>(listViewItem);
+            if (listView == null) return;
+            var card = listView.DataContext as FlowCardModel;
+            if (card != null)
+            {
+                card.IsExpanded = !card.IsExpanded;
+            }
+        }
+
+        private static T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+            if (parentObject == null) return null;
+            if (parentObject is T parent) return parent;
+            else return FindParent<T>(parentObject);
+        }
     }
+}

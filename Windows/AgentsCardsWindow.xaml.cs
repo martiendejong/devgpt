@@ -19,10 +19,38 @@ namespace DevGPT;
             viewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
 
+        // Nieuw: knop event, voegt lege agent toe via bindingmodel
+        private void AddNewAgentButton_Click(object sender, RoutedEventArgs e)
+        {
+            viewModel.AddNewAgentCard();
+        }
+
+        // Nieuw: Handler voor toggelen van expand/collapse van een AgentCardModel
+        private void ToggleAgentExpandButton_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as System.Windows.Controls.Button;
+            // De DataContext van de knop is het AgentCardModel
+            if (btn?.DataContext is AgentCardModel card)
+            {
+                card.IsExpanded = !card.IsExpanded;
+            }
+        }
+
+        // (Optioneel: verwijder uit xaml dubbele '+ Nieuwe agent' indien nodig)
+        // Event om een agentcard te verwijderen
+        private void RemoveAgentCardButton_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as System.Windows.Controls.Button;
+            var card = btn?.CommandParameter as AgentCardModel;
+            if (card != null)
+            {
+                viewModel.Cards.Remove(card);
+            }
+        }
+
         private void AddStoreButton_Click(object sender, RoutedEventArgs e)
         {
-            // Fully qualified Button type
-            var btn = sender as System.Windows.Controls.Button; // replaced 'Button' with 'System.Windows.Controls.Button'
+            var btn = sender as System.Windows.Controls.Button;
             var card = btn?.CommandParameter as AgentCardModel;
             if (card != null && !string.IsNullOrWhiteSpace(card.NewStoreToAdd))
             {
@@ -41,8 +69,7 @@ namespace DevGPT;
 
         private void RemoveStoreButton_Click(object sender, RoutedEventArgs e)
         {
-            // Fully qualified Button type
-            var btn = sender as System.Windows.Controls.Button; // replaced 'Button' with 'System.Windows.Controls.Button'
+            var btn = sender as System.Windows.Controls.Button;
             var store = btn?.CommandParameter as StoreRef;
             foreach (var card in viewModel.Cards)
             {
@@ -56,7 +83,7 @@ namespace DevGPT;
 
         private void AddFunctionButton_Click(object sender, RoutedEventArgs e)
         {
-            var btn = sender as System.Windows.Controls.Button; // replaced 'Button' with 'System.Windows.Controls.Button'
+            var btn = sender as System.Windows.Controls.Button;
             var card = btn?.CommandParameter as AgentCardModel;
             if (card != null && !string.IsNullOrWhiteSpace(card.NewFunctionToAdd))
             {
@@ -70,7 +97,7 @@ namespace DevGPT;
 
         private void RemoveFunctionButton_Click(object sender, RoutedEventArgs e)
         {
-            var btn = sender as System.Windows.Controls.Button; // replaced 'Button' with 'System.Windows.Controls.Button'
+            var btn = sender as System.Windows.Controls.Button;
             var func = btn?.CommandParameter as string;
             foreach (var card in viewModel.Cards)
             {
@@ -84,7 +111,7 @@ namespace DevGPT;
 
         private void AddAgentButton_Click(object sender, RoutedEventArgs e)
         {
-            var btn = sender as System.Windows.Controls.Button; // replaced 'Button' with 'System.Windows.Controls.Button'
+            var btn = sender as System.Windows.Controls.Button;
             var card = btn?.CommandParameter as AgentCardModel;
             if (card != null && !string.IsNullOrWhiteSpace(card.NewAgentToAdd))
             {
@@ -98,7 +125,7 @@ namespace DevGPT;
 
         private void RemoveAgentButton_Click(object sender, RoutedEventArgs e)
         {
-            var btn = sender as System.Windows.Controls.Button; // replaced 'Button' with 'System.Windows.Controls.Button'
+            var btn = sender as System.Windows.Controls.Button;
             var agent = btn?.CommandParameter as string;
             foreach (var card in viewModel.Cards)
             {
@@ -112,7 +139,7 @@ namespace DevGPT;
 
         private void AddFlowButton_Click(object sender, RoutedEventArgs e)
         {
-            var btn = sender as System.Windows.Controls.Button; // replaced 'Button' with 'System.Windows.Controls.Button'
+            var btn = sender as System.Windows.Controls.Button;
             var card = btn?.CommandParameter as AgentCardModel;
             if (card != null && !string.IsNullOrWhiteSpace(card.NewFlowToAdd))
             {
@@ -126,7 +153,7 @@ namespace DevGPT;
 
         private void RemoveFlowButton_Click(object sender, RoutedEventArgs e)
         {
-            var btn = sender as System.Windows.Controls.Button; // replaced 'Button' with 'System.Windows.Controls.Button'
+            var btn = sender as System.Windows.Controls.Button;
             var flow = btn?.CommandParameter as string;
             foreach (var card in viewModel.Cards)
             {
@@ -157,7 +184,7 @@ namespace DevGPT;
 
         private void ShowError(string message)
         {
-            System.Windows.MessageBox.Show(this, message, "Fout", MessageBoxButton.OK, MessageBoxImage.Error); // replaced 'MessageBox' with 'System.Windows.MessageBox'
+            System.Windows.MessageBox.Show(this, message, "Fout", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -176,6 +203,7 @@ namespace DevGPT;
         private string newFunctionToAdd;
         private string newAgentToAdd;
         private string newFlowToAdd;
+        private bool isExpanded = false;
 
         public string Name { get => name; set { name = value; NotifyPropertyChanged(nameof(Name)); } }
         public string Description { get => description; set { description = value; NotifyPropertyChanged(nameof(Description)); } }
@@ -190,11 +218,11 @@ namespace DevGPT;
         public string NewFunctionToAdd { get => newFunctionToAdd; set { newFunctionToAdd = value; NotifyPropertyChanged(nameof(NewFunctionToAdd)); } }
         public string NewAgentToAdd { get => newAgentToAdd; set { newAgentToAdd = value; NotifyPropertyChanged(nameof(NewAgentToAdd)); } }
         public string NewFlowToAdd { get => newFlowToAdd; set { newFlowToAdd = value; NotifyPropertyChanged(nameof(NewFlowToAdd)); } }
+        public bool IsExpanded { get => isExpanded; set { isExpanded = value; NotifyPropertyChanged(nameof(IsExpanded)); } }
 
         public event PropertyChangedEventHandler PropertyChanged;
         private void NotifyPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
-
 
     public class AgentsCardsBindingModel : INotifyPropertyChanged
     {
@@ -210,4 +238,10 @@ namespace DevGPT;
         public List<string> AllFlows { get => allFlows; set { allFlows = value; NotifyPropertyChanged(nameof(AllFlows)); } }
         public event PropertyChangedEventHandler PropertyChanged;
         private void NotifyPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        // Nieuw: voegt een lege agentcard toe
+        public void AddNewAgentCard()
+        {
+            Cards.Add(new AgentCardModel());
+        }
     }
