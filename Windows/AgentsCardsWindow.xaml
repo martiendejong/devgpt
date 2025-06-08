@@ -54,18 +54,20 @@
                                 <TextBox Text="{Binding Prompt, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" FontSize="13" AcceptsReturn="True" Height="72" TextWrapping="Wrap"/>
 
                                 <!-- Stores -->
-                                <TextBlock Text="Stores" FontWeight="Bold" FontSize="14"/>
-                                <ItemsControl ItemsSource="{Binding Stores}">
+                                <StackPanel>
+                                  <TextBlock Text="Stores:" FontWeight="Bold" Margin="0,5,0,2"/>
+                                  <ItemsControl ItemsSource="{Binding Stores}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <DockPanel Margin="0,0,0,4" LastChildFill="False">
-                                                <TextBlock Text="{Binding StoreName}" FontSize="13" MinWidth="100"/>
+                                                <TextBlock Text="{Binding Name}" FontSize="13" MinWidth="100"/>
                                                 <CheckBox Content="Writable" IsChecked="{Binding Writable, Mode=TwoWay}" Margin="10,0"/>
                                                 <Button Content="Verwijder" Click="RemoveStoreButton_Click" CommandParameter="{Binding}" Margin="10,0,0,0"/>
                                             </DockPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+                                  </ItemsControl>
+                                </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <ComboBox ItemsSource="{Binding DataContext.AllStores, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                               SelectedItem="{Binding NewStoreToAdd, Mode=TwoWay}" Width="150" Margin="0,0,6,0"/>
