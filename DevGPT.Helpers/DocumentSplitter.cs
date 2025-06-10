@@ -1,4 +1,4 @@
-﻿public class DocumentSplitter
+public class DocumentSplitter
 {
     public int TokensPerPart { get; set; } = 1000;
 
@@ -35,5 +35,13 @@
         }
 
         return result;
+    }
+}
+
+public class StringSplitter
+{
+    public static string[] Split(string item)
+    {
+        return [.. item.Split(",").Select(p => p.Trim())];
     }
 }

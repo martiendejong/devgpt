@@ -497,6 +497,33 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 agentsDevGPTRaw = AgentsDevGPTEditor.Text;
             }
         }
+
+        // === Stores als kaarten knop: nieuw ===
+        private void ShowStoresAsCardsButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Maak een ObservableCollection<StoreCardModel> op basis van parsedStores
+            var cards = new ObservableCollection<StoreCardModel>(
+                (parsedStores ?? new List<StoreConfig>()).Select(s => new StoreCardModel
+                {
+                    Name = s.Name,
+                    Description = s.Description,
+                    Path = s.Path,
+                    SubDirectory = s.SubDirectory,
+                    ExcludePattern = s.ExcludePattern,
+                    FileFilters = s.FileFilters
+                }));
+
+            var model = new StoresCardsBindingModel { Cards = cards };
+            var dlg = new StoresCardsWindow(model) { Owner = this };
+            var result = dlg.ShowDialog();
+            if (result == true && dlg.ResultStores != null)
+            {
+                parsedStores = dlg.ResultStores;
+                // Update de raw editor met de nieuwe serialized stores
+                StoresDevGPTEditor.Text = DevGPTStoreConfigParser.Serialize(parsedStores);
+                storesDevGPTRaw = StoresDevGPTEditor.Text;
+            }
+        }
     }
     // Dummy UserAppConfig toegevoegd zodat het project buildt.
     // TODO: Vervang door daadwerkelijke UserAppConfig indien deze elders bestaat of uitbreiden indien meer properties benodigd zijn.

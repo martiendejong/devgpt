@@ -31,59 +31,38 @@ using System.Collections.Specialized;
     /// </summary>
     public class AgentCardModel : INotifyPropertyChanged
     {
-        private string _name;
-        private string _description;
-        private string _prompt;
-        private ObservableCollection<StoreEntry> _stores = new ObservableCollection<StoreEntry>();
-        private ObservableCollection<string> _functions = new ObservableCollection<string>();
-        private ObservableCollection<string> _callsAgents = new ObservableCollection<string>();
-        private ObservableCollection<string> _callsFlows = new ObservableCollection<string>();
-        private bool _explicitModify;
-        
-        // Properties with INotifyPropertyChanged
-        public string Name
-        {
-            get => _name;
-            set { if (_name != value) { _name = value; OnPropertyChanged(nameof(Name)); } }
-        }
-        public string Description
-        {
-            get => _description;
-            set { if (_description != value) { _description = value; OnPropertyChanged(nameof(Description)); } }
-        }
-        public string Prompt
-        {
-            get => _prompt;
-            set { if (_prompt != value) { _prompt = value; OnPropertyChanged(nameof(Prompt)); } }
-        }
-        public ObservableCollection<StoreEntry> Stores
-        {
-            get => _stores;
-            set { if (_stores != value) { _stores = value; OnPropertyChanged(nameof(Stores)); } }
-        }
-        public ObservableCollection<string> Functions
-        {
-            get => _functions;
-            set { if (_functions != value) { _functions = value; OnPropertyChanged(nameof(Functions)); } }
-        }
-        public ObservableCollection<string> CallsAgents
-        {
-            get => _callsAgents;
-            set { if (_callsAgents != value) { _callsAgents = value; OnPropertyChanged(nameof(CallsAgents)); } }
-        }
-        public ObservableCollection<string> CallsFlows
-        {
-            get => _callsFlows;
-            set { if (_callsFlows != value) { _callsFlows = value; OnPropertyChanged(nameof(CallsFlows)); } }
-        }
-        public bool ExplicitModify
-        {
-            get => _explicitModify;
-            set { if (_explicitModify != value) { _explicitModify = value; OnPropertyChanged(nameof(ExplicitModify)); } }
-        }
+    private string name;
+    private string description;
+    private string prompt;
+    private ObservableCollection<StoreRef> stores = new ObservableCollection<StoreRef>();
+    private ObservableCollection<string> functions = new ObservableCollection<string>();
+    private ObservableCollection<string> callsAgents = new ObservableCollection<string>();
+    private ObservableCollection<string> callsFlows = new ObservableCollection<string>();
+    private bool explicitModify;
+    private string newStoreToAdd;
+    private bool newStoreWritable = false;
+    private string newFunctionToAdd;
+    private string newAgentToAdd;
+    private string newFlowToAdd;
+    private bool isExpanded = false;
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string property) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+    public string Name { get => name; set { name = value; NotifyPropertyChanged(nameof(Name)); } }
+    public string Description { get => description; set { description = value; NotifyPropertyChanged(nameof(Description)); } }
+    public string Prompt { get => prompt; set { prompt = value; NotifyPropertyChanged(nameof(Prompt)); } }
+    public ObservableCollection<StoreRef> Stores { get => stores; set { stores = value; NotifyPropertyChanged(nameof(Stores)); } }
+    public ObservableCollection<string> Functions { get => functions; set { functions = value; NotifyPropertyChanged(nameof(Functions)); } }
+    public ObservableCollection<string> CallsAgents { get => callsAgents; set { callsAgents = value; NotifyPropertyChanged(nameof(CallsAgents)); } }
+    public ObservableCollection<string> CallsFlows { get => callsFlows; set { callsFlows = value; NotifyPropertyChanged(nameof(CallsFlows)); } }
+    public bool ExplicitModify { get => explicitModify; set { explicitModify = value; NotifyPropertyChanged(nameof(ExplicitModify)); } }
+    public string NewStoreToAdd { get => newStoreToAdd; set { newStoreToAdd = value; NotifyPropertyChanged(nameof(NewStoreToAdd)); } }
+    public bool NewStoreWritable { get => newStoreWritable; set { newStoreWritable = value; NotifyPropertyChanged(nameof(NewStoreWritable)); } }
+    public string NewFunctionToAdd { get => newFunctionToAdd; set { newFunctionToAdd = value; NotifyPropertyChanged(nameof(NewFunctionToAdd)); } }
+    public string NewAgentToAdd { get => newAgentToAdd; set { newAgentToAdd = value; NotifyPropertyChanged(nameof(NewAgentToAdd)); } }
+    public string NewFlowToAdd { get => newFlowToAdd; set { newFlowToAdd = value; NotifyPropertyChanged(nameof(NewFlowToAdd)); } }
+    public bool IsExpanded { get => isExpanded; set { isExpanded = value; NotifyPropertyChanged(nameof(IsExpanded)); } }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+    private void NotifyPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         // Scaffold: Add events/commands for adding/removing stores, functions, calls
         // TODO: Implement add/remove logic and helper methods, following FlowCardModel patterns
