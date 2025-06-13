@@ -39,6 +39,8 @@ public class FlowCardModel : INotifyPropertyChanged
         set { if (_newAgentToAdd != value) { _newAgentToAdd = value; OnPropertyChanged(nameof(NewAgentToAdd)); } }
     }
 
+    public bool IsExpanded { get; set; }
+
     public FlowCardModel()
     {
         _callsAgents = new ObservableCollection<string>();
@@ -130,5 +132,10 @@ public class FlowCardsBindingModel : INotifyPropertyChanged
     {
         foreach (var card in Cards)
             card.PropertyChanged += OnCardPropertyChanged;
+    }
+    public void AddNewFlowCard()
+    {
+        var newCard = new FlowCardModel();
+        Cards.Add(newCard);
     }
 }

@@ -22,14 +22,21 @@
         <Grid>
             <TabControl x:Name="MainTab" Margin="5">
                 <TabItem Header="Stores">
-                    <!-- Minimalistische TextBox voor StoresDevGPTEditor -->
-                    <TextBox x:Name="StoresDevGPTEditor"
+                    <DockPanel LastChildFill="True">
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="0,0,0,5">
+                            <Button x:Name="ShowStoresAsCardsButton"
+                                Content="Toon stores als cards"
+                                Click="ShowStoresAsCardsButton_Click"
+                                Margin="10" />
+                        </StackPanel>
+                        <TextBox x:Name="StoresDevGPTEditor"
                          Margin="5"
                          AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto"
                          HorizontalScrollBarVisibility="Auto"
                          FontFamily="Consolas"
                          FontSize="15" />
+                    </DockPanel>
                 </TabItem>
                 <TabItem Header="Agents">
                     <DockPanel LastChildFill="True">
