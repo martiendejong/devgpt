@@ -139,8 +139,19 @@ public class AgentManager
         }
 
         // todo save history to the history store and generate embeddings
+        await AddHistory(input);
 
         var response = await agent.Generator.GetResponse<IsReadyResult>(input, History, true, true, agent.Tools, null, cancel);
         return response.Message;
+    }
+
+    private async Task AddHistory(string input)
+    {
+        var historyStore = Stores.FirstOrDefault(s => s.Name.ToLower() == "history");
+        if (historyStore != null)
+        {
+            var key = $"{DateTime.Now.ToString("yy_MM_dd_HH_mm")}_input";
+            await historyStore.Store(key, input);
+        }
     }
 }

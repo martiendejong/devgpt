@@ -48,30 +48,21 @@ public class DocumentStore : IDocumentStore
     {
         name = Sanitize(name);
         var partKeys = new List<string>();
-        if (!split)
+        var parts = split ? DocumentSplitter.SplitDocument(content) : [EmbeddingMatcher.CutOffQuery(content)];
+        if (parts.Count == 1)
         {
-            var embed = EmbeddingMatcher.CutOffQuery(content);
-            await EmbeddingStore.StoreEmbedding(name, embed);
+            await EmbeddingStore.StoreEmbedding(name, content);
             await TextStore.Store(name, content);
             partKeys.Add(name);
         }
         else
         {
-            var parts = DocumentSplitter.SplitDocument(content);
-            if (parts.Count == 1)
+            for (var i = 0; i < parts.Count; ++i)
             {
-                await EmbeddingStore.StoreEmbedding(name, content);
-                partKeys.Add(name);
-            }
-            else
-            {
-                for (var i = 0; i < parts.Count; ++i)
-                {
-                    var partKey = $"{name} part {i}";
-                    await EmbeddingStore.StoreEmbedding(partKey, parts[i]);
-                    await TextStore.Store(partKey, content);
-                    partKeys.Add(partKey);
-                }
+                var partKey = $"{name} part {i}";
+                await EmbeddingStore.StoreEmbedding(partKey, parts[i]);
+                await TextStore.Store(partKey, content);
+                partKeys.Add(partKey);
             }
         }
         await PartStore.Store(name, partKeys);
