@@ -1,4 +1,4 @@
-﻿public class Retry
+public class Retry
 {
     public static T Run<T>(Func<T> func, int retries = 3, int initialWait = 200, int waitMultiplier = 5)
     {
@@ -9,7 +9,7 @@
             {
                 return func();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 attempt++;
                 if (attempt > retries)

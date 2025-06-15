@@ -138,6 +138,8 @@ public class AgentManager
             if (agent == null) throw new InvalidOperationException($"Agent not found: {agentName}");
         }
 
+        // todo save history to the history store and generate embeddings
+
         var response = await agent.Generator.GetResponse<IsReadyResult>(input, History, true, true, agent.Tools, null, cancel);
         return response.Message;
     }

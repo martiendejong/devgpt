@@ -9,36 +9,49 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
 {
     public string EmbeddingsFilePath { get; set; }
 
-    public override EmbeddingInfo[] Embeddings => _embeddings.ToArray();
+    public override EmbeddingInfo[] Embeddings
+    {
+        get
+        {
+            return _embeddings.ToArray();
+        }
+    }
+
     public List<EmbeddingInfo> _embeddings;
 
     // Constructor for full functionality (with embedding provider)
     public EmbeddingFileStore(string embeddingsFilePath, ILLMClient embeddingProvider) : base(embeddingProvider)
     {
         EmbeddingsFilePath = embeddingsFilePath;
-        LoadEmbeddingsFile();
+        _embeddings = ReadEmbeddingsFile();
     }
 
     // Constructor for read-only scenarios or where embedding is not needed
     public EmbeddingFileStore(string embeddingsFilePath) : base(null)
     {
         EmbeddingsFilePath = embeddingsFilePath;
-        LoadEmbeddingsFile();
+        _embeddings = ReadEmbeddingsFile();
     }
 
-    public void LoadEmbeddingsFile()
+    public List<EmbeddingInfo> ReadEmbeddingsFile()
     {
         if (File.Exists(EmbeddingsFilePath))
         {
             try
             {
                 var data = File.ReadAllText(EmbeddingsFilePath);
-                _embeddings = JsonSerializer.Deserialize<List<EmbeddingInfo>>(data);
-                return;
+                var e = JsonSerializer.Deserialize<List<EmbeddingInfo>>(data);
+                if (e != null)
+                    return e;
             }
             catch { }
-        }            
-        _embeddings = new List<EmbeddingInfo>();
+        }
+        return new List<EmbeddingInfo>();
+    }
+
+    public void LoadEmbeddingsFile()
+    {
+        _embeddings = ReadEmbeddingsFile();
     }
 
     public async Task StoreEmbeddingsFile()
@@ -46,7 +59,10 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
         await File.WriteAllTextAsync(EmbeddingsFilePath, JsonSerializer.Serialize(Embeddings));
     }
 
-    public override async Task<EmbeddingInfo> GetEmbedding(string key) => _embeddings.FirstOrDefault(e => e.Key == key);
+    public override async Task<EmbeddingInfo?> GetEmbedding(string key)
+    {
+        return _embeddings.FirstOrDefault(e => e.Key == key);
+    }
 
     public override async Task<bool> RemoveEmbedding(string key)
     {

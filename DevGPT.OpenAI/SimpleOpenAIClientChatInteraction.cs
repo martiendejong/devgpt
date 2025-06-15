@@ -9,18 +9,18 @@ using System.Linq;
 using OpenAI.Images;
 using System.Threading;
 
-public class SimpleOpenAIClientChatInteraction
+public partial class SimpleOpenAIClientChatInteraction
 {
     public OpenAIClient API { get; set; }
     public ChatClient Client { get; set; }
     public ImageClient ImageClient { get; set; }
     public ChatCompletionOptions Options { get; set; }
     public List<ChatMessage> Messages { get; set; }
-    public List<ImageData> Images { get; set; } // Store binary files
+    public List<ImageData>? Images { get; set; } = new List<ImageData>();
 
-    public IToolsContext ToolsContext { get; set; }
+    public IToolsContext? ToolsContext { get; set; }
 
-    public SimpleOpenAIClientChatInteraction(IToolsContext context, OpenAIClient api, string apiKey, string model, ChatClient chatClient, ImageClient imageClient, List<ChatMessage> messages, List<ImageData> images, ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
+    public SimpleOpenAIClientChatInteraction(IToolsContext? context, OpenAIClient api, string apiKey, string model, ChatClient chatClient, ImageClient imageClient, List<ChatMessage> messages, List<ImageData>? images, ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
     {
         ToolsContext = context;
         API = api;
@@ -73,7 +73,7 @@ public class SimpleOpenAIClientChatInteraction
             {
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -100,13 +100,6 @@ public class SimpleOpenAIClientChatInteraction
 
         var response = await ImageClient.GenerateImageAsync(prompt, options, cancellationToken);
         return response;
-    }
-
-    class ToolCallData
-    {
-        public string FunctionName = "";
-        public string ToolCallId = "";
-        public List<BinaryData> BinaryData;
     }
 
 
@@ -172,7 +165,7 @@ public class SimpleOpenAIClientChatInteraction
             var toolCalls = toolCallData.Select(d => ChatToolCall.CreateFunctionToolCall(d.ToolCallId, d.FunctionName, ConcatenateArguments(d.BinaryData)));
 
             var finishMessage = toolCalls.Any() ? new AssistantChatMessage(toolCalls) : null;
-            requiresAction = await HandleFinishReason(false, finishMessage, toolCalls, finishReason.Value, cancellationToken);
+            requiresAction = await HandleFinishReason(false, finishMessage, toolCalls, finishReason, cancellationToken);
         } while (requiresAction);
     }
 
@@ -189,7 +182,7 @@ public class SimpleOpenAIClientChatInteraction
         }
     }
 
-    private async Task<bool> HandleFinishReason(bool requiresAction, AssistantChatMessage finishMessage, IEnumerable<ChatToolCall> toolCalls, ChatFinishReason finishReason, CancellationToken cancellationToken = default)
+    private async Task<bool> HandleFinishReason(bool requiresAction, AssistantChatMessage? finishMessage, IEnumerable<ChatToolCall> toolCalls, ChatFinishReason? finishReason, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         switch (finishReason)
@@ -222,9 +215,13 @@ public class SimpleOpenAIClientChatInteraction
         return requiresAction;
     }
 
-    private async Task<List<ChatMessage>> HandleToolCalls(List<ChatMessage> messages, IEnumerable<ChatToolCall> toolCalls, AssistantChatMessage toolCallsMessage, CancellationToken cancellationToken = default)
+    private async Task<List<ChatMessage>> HandleToolCalls(List<ChatMessage> messages, IEnumerable<ChatToolCall> toolCalls, AssistantChatMessage? toolCallsMessage, CancellationToken cancellationToken = default)
     {
-        var toolResults = new List<ChatMessage>() { toolCallsMessage };
+        if (ToolsContext == null) throw new Exception("Tools Context not defined");
+
+        var toolResults = new List<ChatMessage>() { };
+        if(toolCallsMessage != null)
+            toolResults.Add(toolCallsMessage);
         // Then, add a new tool message for each tool call that is resolved.
         foreach (ChatToolCall toolCall in toolCalls)
         {

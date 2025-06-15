@@ -1,10 +1,13 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using OpenAI.Chat;
 using OpenAI.Images;
 
 public static class DevGPTOpenAIExtensions
 {
-    public static DevGPTGeneratedImage DevGPT(this GeneratedImage image) => new DevGPTGeneratedImage(image.ImageUri.OriginalString, image.ImageBytes);
+    public static DevGPTGeneratedImage DevGPT(this GeneratedImage image)
+    {
+        return new(image.ImageUri.OriginalString, image.ImageBytes);
+    }
 
     public static DevGPTChatToolCall DevGPT(this ChatToolCall chatTool)
     {
@@ -23,7 +26,7 @@ public static class DevGPTOpenAIExtensions
         if (message.Role == DevGPTMessageRole.System) return new SystemChatMessage(message.Text);
         throw new Exception("DevGPTMessageRole not recognized");
     }
-    public static DevGPTChatMessage DevGPT(this ChatMessage message)
+    public static DevGPTChatMessage? DevGPT(this ChatMessage message)
     {
         if (message is UserChatMessage) return new DevGPTChatMessage() { Role = DevGPTMessageRole.User, Text = message.Content.First().Text };
         if (message is AssistantChatMessage)
@@ -38,9 +41,15 @@ public static class DevGPTOpenAIExtensions
         throw new Exception("DevGPTMessageRole not recognized");
     }
 
-    public static List<ChatMessage> OpenAI(this List<DevGPTChatMessage> messages) => messages.Select(m => m.OpenAI()).ToList();
-    public static List<DevGPTChatMessage> DevGPT(this List<ChatMessage> messages) => messages.Select(m => m.DevGPT()).Where(m => m != null).ToList();
+    public static List<ChatMessage> OpenAI(this List<DevGPTChatMessage> messages)
+    {
+        return messages.Select(m => m.OpenAI()).ToList();
+    }
 
+    public static List<DevGPTChatMessage> DevGPT(this List<ChatMessage> messages)
+    {
+        return messages.Select(m => m.DevGPT()).Where(m => m != null).Select(m => m ?? new DevGPTChatMessage()).ToList();
+    }
 
     public static ChatTool OpenAI(this DevGPTChatTool chatTool)
     {

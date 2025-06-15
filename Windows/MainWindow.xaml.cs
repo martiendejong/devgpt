@@ -525,34 +525,4 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             }
         }
 
-        // --- Begin patch for Task 2 (CS0029 safe File.ReadAllLines use) ---
-        // Helper for safe string assignment from lines
-        private string GetFileContentAsString(string path)
-        {
-            // Ensures file content is concatenated as a single string, each line separated by NewLine
-            return string.Join(Environment.NewLine, File.ReadAllLines(path));
-        }
-
-        // Example usage corrections for CS0029:
-        private void ExampleUsage1(string path)
-        {
-            // Previously CS0029 incorrect: string content = File.ReadAllLines(path);
-            string content = string.Join(Environment.NewLine, File.ReadAllLines(path));
-            // ...use content
-        }
-        private void ExampleUsage2(string path)
-        {
-            // Possible similar assignment
-            string myContent = string.Join(Environment.NewLine, File.ReadAllLines(path));
-            // ...use myContent
-        }
-        // --- End patch for Task 2 ---
-    }
-    // Dummy UserAppConfig toegevoegd zodat het project buildt.
-    // TODO: Vervang door daadwerkelijke UserAppConfig indien deze elders bestaat of uitbreiden indien meer properties benodigd zijn.
-    public class UserAppConfig
-    {
-        public string StoresFile { get; set; } = null;
-        public string AgentsFile { get; set; } = null;
-        public string FlowsFile { get; set; } = null;
     }

@@ -1,10 +1,10 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 public class ChatToolParameter
 {
-    public string Name { get; set; }
-    public string Description { get; set; }
-    public string Type { get; set; }
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string Type { get; set; } = "";
     public bool Required { get; set; }
     
     public bool TryGetValue(DevGPTChatToolCall call, out string value)
@@ -15,7 +15,7 @@ public class ChatToolParameter
             value = element.ToString();
             return true;
         }
-        value = null;
+        value = "";
         return false;
     }
 }

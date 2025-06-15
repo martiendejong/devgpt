@@ -92,8 +92,16 @@ public class DocumentStore : IDocumentStore
         return true;
     }
 
-    public async Task<List<TreeNode<string>>> Tree() => TreeMaker.GetTree(EmbeddingStore.Embeddings.Select(e => e.Key).ToList());
-    public async Task<List<string>> List() => EmbeddingStore.Embeddings.Select(e => e.Key).ToList();
+    public async Task<List<TreeNode<string>>> Tree()
+    {
+        return TreeMaker.GetTree(EmbeddingStore.Embeddings.Select(e => e.Key).ToList());
+    }
+
+    public async Task<List<string>> List()
+    {
+        return EmbeddingStore.Embeddings.Select(e => e.Key).ToList();
+    }
+
     public async Task<List<string>> RelevantItems(string query)
     {
         var embed = await LLMClient.GenerateEmbedding(EmbeddingMatcher.CutOffQuery(query));
@@ -111,7 +119,13 @@ public class DocumentStore : IDocumentStore
         return r;
     }
 
-    public string GetPath(string name) => TextStore.GetPath(Sanitize(name));
+    public string GetPath(string name)
+    {
+        return TextStore.GetPath(Sanitize(name));
+    }
 
-    public async Task<string> Get(string name) => await TextStore.Get(Sanitize(name));
+    public async Task<string> Get(string name)
+    {
+        return await TextStore.Get(Sanitize(name));
+    }
 }

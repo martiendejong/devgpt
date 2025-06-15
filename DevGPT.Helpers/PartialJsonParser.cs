@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 public class PartialJsonParser
@@ -21,7 +21,7 @@ public class PartialJsonParser
         return Regex.Replace(json, "(?<=:\\s*\"(?:[^\"\\\\]|\\\\.)*)\"(?=(?:[^\"\\\\]|\\\\.)*\\n)", "\\\\\"");
     }
 
-    public TResponse Parse<TResponse>(string partialJson)
+    public TResponse? Parse<TResponse>(string partialJson)
     {
         try
         {
