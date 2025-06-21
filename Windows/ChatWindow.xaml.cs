@@ -62,6 +62,7 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
             ChatMessagesList.VerticalAlignment = VerticalAlignment.Stretch;
             // End alignment settings.
             MessageEditor.Focus();
+            Closed += ChatWindow_Closed;
 
             // VEILIGHEID: verwijdert oude SendMessage-link
             foreach (var a in _agentManager.Agents)
@@ -105,7 +106,12 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
             }
         }
 
-        private void SetSendingState(bool isSending)
+    private void ChatWindow_Closed(object? sender, EventArgs e)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void SetSendingState(bool isSending)
         {
             IsSending = isSending;
             SendButton.IsEnabled = !isSending;
@@ -119,6 +125,7 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
             _cts?.Cancel();
             SetSendingState(false);
             MessageEditor.Focus();
+            SendButton.Visibility = Visibility.Visible;
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
@@ -130,6 +137,9 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
         private async void SendMessage()
         {
             if (IsSending) return;
+            StopButton.Visibility = Visibility.Visible;
+            SendButton.Visibility = Visibility.Hidden;
+
             var text = DateTime.Now.ToString("MMMM d, yyyy h:mm tt", CultureInfo.InvariantCulture) + ": " + MessageEditor.Text?.Trim();
             if (!string.IsNullOrEmpty(text))
             {
@@ -146,9 +156,9 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
                     var response = await Task.Run(async () =>
                     {
                         // FIX: replace passing 'token' (CancellationToken) as argument 2 with 'text' (string) which is the correct argument
-                        return await _agentManager.SendMessage(text);
+                        return await _agentManager.SendMessage(text, null, token);
                     }, token);
-                    
+
                     // Voeg het eindreply toe als gewone tekst (geen expander)
                     _messages.Add(new ChatDisplayMessage { Author = "Assistent", Text = response, IsAsyncOnMessage = false });
                     ScrollToEnd();
@@ -167,6 +177,7 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
                 {
                     SetSendingState(false);
                     MessageEditor.Focus();
+                    SendButton.Visibility = Visibility.Visible;
                 }
             }
         }
