@@ -249,6 +249,32 @@ public class AgentFactory {
             var build = new DevGPTChatTool($"build", $"Builds the solution and returns the output.", [], async (messages, toolCall) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build.bat", "build_errors.log"));
             tools.Add(build);
         }
+        if (functions.Contains("npm"))
+        {
+            var git = new DevGPTChatTool($"npm", $"Runs the npm command.", [argumentsParameter], async (messages, toolCall) =>
+            {
+                if (argumentsParameter.TryGetValue(toolCall, out string args))
+                {
+                    var output = NpmOutput.GetNpmOutput(store.TextStore.RootFolder + "\\frontend", args);
+                    return output.Item1 + "\n" + output.Item2;
+                }
+                return "arguments not provided";
+            });
+            tools.Add(git);
+        }
+        if (functions.Contains("dotnet"))
+        {
+            var git = new DevGPTChatTool($"dotnet", $"Runs the dotnet command.", [argumentsParameter], async (messages, toolCall) =>
+            {
+                if (argumentsParameter.TryGetValue(toolCall, out string args))
+                {
+                    var output = DotNetOutput.GetDotNetOutput(store.TextStore.RootFolder, args);
+                    return output.Item1 + "\n" + output.Item2;
+                }
+                return "arguments not provided";
+            });
+            tools.Add(git);
+        }
         if (functions.Contains("bigquery"))
         {
             var bigQueryCollectionsTool = new DevGPTChatTool(
