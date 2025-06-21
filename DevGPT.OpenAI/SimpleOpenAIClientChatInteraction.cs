@@ -240,7 +240,7 @@ public partial class SimpleOpenAIClientChatInteraction
                     //}
                     // BEGIN PATCH: Make Execute call signature match the delegate (no cancellationToken)
                     // string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT(), cancellationToken);
-                    string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT());
+                    string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT(), cancellationToken);
                     //ToolsContext.SendMessage(id, tool.FunctionName, result);
 
                     // END PATCH

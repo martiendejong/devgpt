@@ -155,7 +155,6 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
                     // Eindreply ophalen; interim berichten (onmessage) worden via SendMessage-delegate hierboven uitgezonden
                     var response = await Task.Run(async () =>
                     {
-                        // FIX: replace passing 'token' (CancellationToken) as argument 2 with 'text' (string) which is the correct argument
                         return await _agentManager.SendMessage(text, null, token);
                     }, token);
 

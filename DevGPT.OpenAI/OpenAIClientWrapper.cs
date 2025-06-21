@@ -29,9 +29,9 @@ public partial class OpenAIClientWrapper : ILLMClient
         return Parser.Parse<ResponseType>(await GetResponse(AddFormattingInstruction<ResponseType>(messages), DevGPTChatResponseFormat.Json, toolsContext, images, cancel));
     }
 
-    public async Task<ResponseType?> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<ResponseType?> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        return Parser.Parse<ResponseType>(await GetResponseStream(AddFormattingInstruction<ResponseType>(messages), onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images));
+        return Parser.Parse<ResponseType>(await GetResponseStream(AddFormattingInstruction<ResponseType>(messages), onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel));
     }
 }
 
@@ -62,9 +62,9 @@ public partial class OpenAIClientWrapper : ILLMClient
 
     public async Task<string> GetResponseStream(
         List<DevGPTChatMessage> messages,
-        Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images)
+        Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default)
     {
-        return await StreamHandler.HandleStream(onChunkReceived, StreamChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images));
+        return await StreamHandler.HandleStream(onChunkReceived, StreamChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel));
     }
 
     public async Task<string> GetResponse(
@@ -74,7 +74,7 @@ public partial class OpenAIClientWrapper : ILLMClient
     }
 
     public async Task<DevGPTGeneratedImage> GetImage(
-        string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images)
+        string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default)
     {
         return (await GetImageResult(prompt, responseFormat.OpenAI(), toolsContext, images)).DevGPT();
     }
@@ -89,7 +89,7 @@ public partial class OpenAIClientWrapper : ILLMClient
         return await interaction.Run(cancel);
     }
 
-    protected async Task<GeneratedImage> GetImageResult(string prompt, ChatResponseFormat responseFormat, IToolsContext? context, List<ImageData>? images)
+    protected async Task<GeneratedImage> GetImageResult(string prompt, ChatResponseFormat responseFormat, IToolsContext? context, List<ImageData>? images, CancellationToken cancel = default)
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.ImageModel);
@@ -97,7 +97,7 @@ public partial class OpenAIClientWrapper : ILLMClient
         return await interaction.RunImage(prompt);
     }
 
-    private IAsyncEnumerable<StreamingChatCompletionUpdate> StreamChatResult(List<ChatMessage> messages, ChatResponseFormat responseFormat, IToolsContext? context, List<ImageData>? images)
+    private IAsyncEnumerable<StreamingChatCompletionUpdate> StreamChatResult(List<ChatMessage> messages, ChatResponseFormat responseFormat, IToolsContext? context, List<ImageData>? images, CancellationToken cancel = default)
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);

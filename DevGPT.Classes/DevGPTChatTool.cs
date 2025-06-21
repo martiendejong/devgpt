@@ -1,6 +1,6 @@
-﻿public class DevGPTChatTool
+public class DevGPTChatTool
 {
-    public DevGPTChatTool(string name, string description, List<ChatToolParameter> parameters, Func<List<DevGPTChatMessage>, DevGPTChatToolCall, Task<string>> execute)
+    public DevGPTChatTool(string name, string description, List<ChatToolParameter> parameters, Func<List<DevGPTChatMessage>, DevGPTChatToolCall, CancellationToken, Task<string>> execute)
     {
         FunctionName = name;
         Description = description;
@@ -10,5 +10,5 @@
     public string FunctionName {  get; set; }
     public string Description { get; set; }
     public List<ChatToolParameter> Parameters { get; set; }
-    public Func<List<DevGPTChatMessage>, DevGPTChatToolCall, Task<string>> Execute { get; set; }
+    public Func<List<DevGPTChatMessage>, DevGPTChatToolCall, CancellationToken, Task<string>> Execute { get; set; }
 }
