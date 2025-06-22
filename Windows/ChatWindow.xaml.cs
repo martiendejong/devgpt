@@ -106,12 +106,12 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
             }
         }
 
-    private void ChatWindow_Closed(object? sender, EventArgs e)
-    {
-        throw new NotImplementedException();
-    }
+        private void ChatWindow_Closed(object? sender, EventArgs e)
+        {
+            StopButton_Click(sender, e);
+        }
 
-    private void SetSendingState(bool isSending)
+        private void SetSendingState(bool isSending)
         {
             IsSending = isSending;
             SendButton.IsEnabled = !isSending;
