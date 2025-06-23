@@ -33,6 +33,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         private bool suppressStoresEditorSync = false;
         private bool suppressAgentsEditorSync = false;
         private bool suppressFlowsEditorSync = false;
+        private List<string> _agentsAndFlows = [];
+        public List<string> AgentsAndFlows { get => _agentsAndFlows; set { _agentsAndFlows = value; OnPropertyChanged(nameof(AgentsAndFlows)); } }
+        private string _selectedAgentOrFlow = "";
+        public string SelectedAgentOrFlow { get => _selectedAgentOrFlow; set { _selectedAgentOrFlow = value; OnPropertyChanged(nameof(_selectedAgentOrFlow)); } }
         private bool _isChatVisible = false;
         public bool IsChatVisible { get => _isChatVisible; set { _isChatVisible = value; OnPropertyChanged(nameof(IsChatVisible)); } }
         private bool _isOpeningChat = false;
@@ -157,6 +161,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 AgentsDevGPTEditor.Text = rawTxt;
                 parsedAgents = DevGPTAgentConfigParser.Parse(rawTxt);
                 agentsDevGPTRaw = rawTxt;
+
+                FillAgentsAndFlows();
+
                 agentsLoaded = true;
             }
             catch (Exception ex)
@@ -166,7 +173,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             }
         }
 
-        private void LoadFlowsButton_Click(object sender, RoutedEventArgs e)
+    private void FillAgentsAndFlows()
+    {
+        List<string> agents = parsedAgents.Select(a => $"AGENT: {a.Name}").ToList();
+        List<string> flows = parsedFlows.Select(f => $"FLOW: {f.Name}").ToList();
+        AgentsAndFlows = agents.Concat(flows).ToList();
+    }
+
+    private void LoadFlowsButton_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new OpenFileDialog
             {
@@ -191,6 +205,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 FlowsDevGPTEditor.Text = rawTxt;
                 parsedFlows = DevGPTFlowConfigParser.Parse(rawTxt);
                 flowsDevGPTRaw = rawTxt;
+                FillAgentsAndFlows();
                 flowsLoaded = true;
             }
             catch (Exception ex)
@@ -370,6 +385,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 await agentManager.LoadStoresAndAgents();
 
                 var newChatWindow = new ChatWindow(agentManager);
+                newChatWindow.AgentOrFlow = SelectedAgentOrFlow;
                 newChatWindow.Owner = this;
                 newChatWindow.Show();
             }

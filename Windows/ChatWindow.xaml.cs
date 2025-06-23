@@ -50,6 +50,7 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
 
         public string currentMessageId = "";
 
+        public string AgentOrFlow = "";
         public ChatWindow(AgentManager agentManager)
         {
             _agentManager = agentManager;
@@ -108,7 +109,7 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
 
         private void ChatWindow_Closed(object? sender, EventArgs e)
         {
-            StopButton_Click(sender, e);
+            StopButton_Click(sender, null);
         }
 
         private void SetSendingState(bool isSending)
@@ -155,7 +156,17 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
                     // Eindreply ophalen; interim berichten (onmessage) worden via SendMessage-delegate hierboven uitgezonden
                     var response = await Task.Run(async () =>
                     {
-                        return await _agentManager.SendMessage(text, null, token);
+                        if (AgentOrFlow == "")
+                        {
+                            return await _agentManager.SendMessage(text, null, token);
+                        }
+                        if(AgentOrFlow.ToLower().StartsWith("agent"))
+                        {
+                            var agent = AgentOrFlow.Substring(7);
+                            return await _agentManager.SendMessage(text, agent, token);
+                        }
+                        var flow = AgentOrFlow.Substring(6);
+                        return await _agentManager.SendMessage_Flow(text, flow, token);
                     }, token);
 
                     // Voeg het eindreply toe als gewone tekst (geen expander)

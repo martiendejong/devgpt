@@ -2,6 +2,8 @@ using System.Text.Json;
 
 using Newtonsoft.Json.Serialization;
 
+using static Google.Apis.Requests.BatchRequest;
+
 /// <summary>
 /// AgentManager encapsulates all logic for agent and store initialization, configuration,
 /// and provides interfaces for agent interaction. It loads configuration from paths provided
@@ -83,12 +85,13 @@ public class AgentManager
         _flows = loader._flows;
     }
 
-    /// <summary>
-    /// Get an agent by name.
-    /// </summary>
     public DevGPTAgent GetAgent(string name)
     {
         return _agents.FirstOrDefault(a => a.Name == name);
+    }
+    public DevGPTFlow GetFlow(string name)
+    {
+        return _flows.FirstOrDefault(a => a.Name == name);
     }
 
     /// <summary>
@@ -138,11 +141,21 @@ public class AgentManager
             if (agent == null) throw new InvalidOperationException($"Agent not found: {agentName}");
         }
 
-        // todo save history to the history store and generate embeddings
         await AddHistory(input);
 
         var response = await agent.Generator.GetResponse<IsReadyResult>(input, History, true, true, agent.Tools, null, cancel);
+
+        await AddHistory(response.Message);
+
         return response.Message;
+    }
+
+    public async Task<string> SendMessage_Flow(string input, string flowName = null, CancellationToken cancel = default)
+    {
+        await AddHistory(input);
+
+        var response = await _quickAgentCreator.AgentFactory.CallFlow(flowName, input, "User", cancel);
+        return response;
     }
 
     private async Task AddHistory(string input)
@@ -153,5 +166,6 @@ public class AgentManager
             var key = $"{DateTime.Now.ToString("yy_MM_dd_HH_mm")}_input";
             await historyStore.Store(key, input);
         }
+        History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = input });
     }
 }

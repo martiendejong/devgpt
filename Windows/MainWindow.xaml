@@ -82,6 +82,13 @@
             Click="NewChatWindowButton_Click"  
             Visibility="{Binding IsChatVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
             IsEnabled="{Binding IsOpeningChat, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <ComboBox HorizontalAlignment="Right" 
+                          DockPanel.Dock="Right"
+                          VerticalAlignment="Top"
+                          Width="200"  Height="30"
+                        ItemsSource="{Binding DataContext.AgentsAndFlows, RelativeSource={RelativeSource AncestorType=Window}}"
+                        SelectedItem="{Binding SelectedAgentOrFlow, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
             </DockPanel>
             <!-- Modal Overlay Grid -->
             <Grid x:Name="ModalOverlay" Visibility="{Binding IsOpeningChat, Converter={StaticResource BooleanToVisibilityConverter}}" Background="#80000000"
