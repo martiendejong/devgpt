@@ -199,10 +199,10 @@ public class AgentFactory {
             if (storeItem.Write)
             {
                 AddWriteTools(tools, store);
-                if (i == 0)
-                {
-                    AddBuildTools(tools, functions, store);
-                }
+            }
+            if (i == 0)
+            {
+                AddBuildTools(tools, functions, store);
             }
             ++i;
         }
@@ -253,9 +253,24 @@ public class AgentFactory {
             var build = new DevGPTChatTool($"build", $"Builds the solution and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build.bat", "build_errors.log"));
             tools.Add(build);
         }
+        if (functions.Contains("build_dotnet"))
+        {
+            var build = new DevGPTChatTool($"build_dotnet", $"Builds the .NET backend solution and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build_dotnet.bat", "build_errors.log"));
+            tools.Add(build);
+        }
+        if (functions.Contains("build_quasar"))
+        {
+            var build = new DevGPTChatTool($"build_quasar", $"Builds the Quasar frontend project and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build_quasar.bat", "build_errors.log"));
+            tools.Add(build);
+        }
+        if (functions.Contains("test_quasar"))
+        {
+            var build = new DevGPTChatTool($"test_quasar", $"Tests the Quasar frontend project and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "test_quasar.bat", "build_errors.log"));
+            tools.Add(build);
+        }
         if (functions.Contains("npm"))
         {
-            var git = new DevGPTChatTool($"npm", $"Runs the npm command.", [argumentsParameter], async (messages, toolCall, cancellationToken) =>
+            var npm = new DevGPTChatTool($"npm", $"Runs the npm command.", [argumentsParameter], async (messages, toolCall, cancellationToken) =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (argumentsParameter.TryGetValue(toolCall, out string args))
@@ -265,7 +280,7 @@ public class AgentFactory {
                 }
                 return "arguments not provided";
             });
-            tools.Add(git);
+            tools.Add(npm);
         }
         if (functions.Contains("dotnet"))
         {
