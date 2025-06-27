@@ -84,7 +84,7 @@ public partial class SimpleOpenAIClientChatInteraction
             ++i;
 
             requiresAction = await HandleFinishReason(requiresAction, finishMessage, toolCalls, finishReason, cancellationToken);
-        } while (requiresAction || i > maxToolCalls);
+        } while (requiresAction && i < maxToolCalls);
 
         return completion;
     }

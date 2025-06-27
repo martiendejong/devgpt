@@ -35,7 +35,7 @@ public static class NpmOutput
     {
         ProcessStartInfo psi = new ProcessStartInfo
         {
-            FileName = "npm",
+            FileName = "C:\\Program Files\\nodejs\\npm.cmd",
             Arguments = arguments,
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
