@@ -64,18 +64,21 @@ public partial class OpenAIClientWrapper : ILLMClient
         List<DevGPTChatMessage> messages,
         Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default)
     {
+        Log(messages.Last()?.Text);
         return await StreamHandler.HandleStream(onChunkReceived, StreamChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel));
     }
 
     public async Task<string> GetResponse(
         List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default)
     {
+        Log(messages.Last()?.Text);
         return GetText(await GetChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel));
     }
 
     public async Task<DevGPTGeneratedImage> GetImage(
         string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default)
     {
+        Log(prompt);
         return (await GetImageResult(prompt, responseFormat.OpenAI(), toolsContext, images)).DevGPT();
     }
 
@@ -85,7 +88,7 @@ public partial class OpenAIClientWrapper : ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, client, imageClient, messages, images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, messages, images, responseFormat, true, true);
         return await interaction.Run(cancel);
     }
 
@@ -93,7 +96,7 @@ public partial class OpenAIClientWrapper : ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.ImageModel);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, client, imageClient, [prompt], images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, [prompt], images, responseFormat, true, true);
         return await interaction.RunImage(prompt);
     }
 
@@ -101,7 +104,7 @@ public partial class OpenAIClientWrapper : ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, client, imageClient, messages, images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, messages, images, responseFormat, true, true);
         return interaction.Stream();
     }
 
@@ -111,4 +114,31 @@ public partial class OpenAIClientWrapper : ILLMClient
     }
 
     #endregion
+
+    public void Log(string? data)
+    {
+        const int maxRetries = 10;
+        const int delayMs = 100;
+        string message = $"{DateTime.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
+
+        for (int i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                using (FileStream stream = new FileStream(Config.LogPath, FileMode.Append, FileAccess.Write, FileShare.None))
+                using (StreamWriter writer = new StreamWriter(stream))
+                {
+                    writer.WriteLine(message);
+                    return;
+                }
+            }
+            catch (IOException)
+            {
+                // File is likely locked by another writer
+                Thread.Sleep(delayMs);
+            }
+        }
+
+        throw new IOException("Could not write to log file after multiple attempts due to it being locked.");
+    }
 }

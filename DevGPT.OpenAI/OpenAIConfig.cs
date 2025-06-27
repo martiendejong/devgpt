@@ -1,19 +1,21 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 
 public class OpenAIConfig
 {
-    public OpenAIConfig(string apiKey = "", string embeddingModel = "text-embedding-ada-002", string model = "gpt-4.1", string imageModel = "gpt-image-1")
+    public OpenAIConfig(string apiKey = "", string embeddingModel = "text-embedding-ada-002", string model = "gpt-4.1", string imageModel = "gpt-image-1", string logPath = "c:\\devgptlogs.txt")
     {
         ApiKey = apiKey;
         Model = model;
         ImageModel = imageModel;
         EmbeddingModel = embeddingModel;
+        LogPath = logPath;
     }
 
     public string ApiKey { get; set; }
     public string Model { get; set; }
     public string ImageModel { get; set; }
     public string EmbeddingModel { get; set; }
+    public string LogPath { get; set; }
 
     public static OpenAIConfig Load()
     {

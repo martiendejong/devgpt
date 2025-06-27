@@ -20,7 +20,9 @@ public partial class SimpleOpenAIClientChatInteraction
 
     public IToolsContext? ToolsContext { get; set; }
 
-    public SimpleOpenAIClientChatInteraction(IToolsContext? context, OpenAIClient api, string apiKey, string model, ChatClient chatClient, ImageClient imageClient, List<ChatMessage> messages, List<ImageData>? images, ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
+    public string LogPath { get; set; }
+
+    public SimpleOpenAIClientChatInteraction(IToolsContext? context, OpenAIClient api, string apiKey, string model, string logPath, ChatClient chatClient, ImageClient imageClient, List<ChatMessage> messages, List<ImageData>? images, ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
     {
         ToolsContext = context;
         API = api;
@@ -29,12 +31,40 @@ public partial class SimpleOpenAIClientChatInteraction
         Options = GetOptions(responseFormat, useWebSerach, useReasoning);
         Messages = messages;
         Images = images;
-        if(Images != null)
+        LogPath = logPath;
+        if (Images != null)
             Messages.AddRange(Images.Select(image =>
             {
                 var contentPart = ChatMessageContentPart.CreateImagePart(image.BinaryData, image.MimeType);
                 return new UserChatMessage($"Image file attached: {image.Name}", contentPart);
             }));
+    }
+
+    public void Log(string? data)
+    {
+        const int maxRetries = 10;
+        const int delayMs = 100;
+        string message = $"{DateTime.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
+
+        for (int i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                using (FileStream stream = new FileStream(LogPath, FileMode.Append, FileAccess.Write, FileShare.None))
+                using (StreamWriter writer = new StreamWriter(stream))
+                {
+                    writer.WriteLine(message);
+                    return;
+                }
+            }
+            catch (IOException)
+            {
+                // File is likely locked by another writer
+                Thread.Sleep(delayMs);
+            }
+        }
+
+        throw new IOException("Could not write to log file after multiple attempts due to it being locked.");
     }
 
     private ChatCompletionOptions GetOptions(ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
@@ -67,6 +97,7 @@ public partial class SimpleOpenAIClientChatInteraction
             requiresAction = false;
             try
             {
+                Log(Messages?.Last()?.Content?.First()?.ToString());
                 completion = await Client.CompleteChatAsync(Messages, Options, cancellationToken);
             }
             catch (OperationCanceledException)
@@ -112,6 +143,8 @@ public partial class SimpleOpenAIClientChatInteraction
         {
             cancellationToken.ThrowIfCancellationRequested();
             requiresAction = false;
+
+            Log(Messages?.Last()?.Content?.First()?.ToString());
             var completionResult = Client.CompleteChatStreaming(Messages, Options, cancellationToken);
 
             var toolCallData = new List<ToolCallData>();
@@ -184,6 +217,8 @@ public partial class SimpleOpenAIClientChatInteraction
 
     private async Task<bool> HandleFinishReason(bool requiresAction, AssistantChatMessage? finishMessage, IEnumerable<ChatToolCall> toolCalls, ChatFinishReason? finishReason, CancellationToken cancellationToken = default)
     {
+        Log(finishMessage?.Content?.First()?.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
         switch (finishReason)
         {
