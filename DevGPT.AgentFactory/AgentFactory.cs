@@ -36,7 +36,7 @@ public class AgentFactory {
     public Dictionary<string, DevGPTFlow> Flows = new Dictionary<string, DevGPTFlow>();
 
     // Updated: messages are stored with full meta-info and updated in-place with Response upon agent reply
-    public async Task<string> CallAgent(string name, string query, string caller)
+    public async Task<string> CallAgent(string name, string query, string caller, CancellationToken cancel)
     {
         var agent = Agents[name];
         var id = Guid.NewGuid().ToString();
@@ -53,7 +53,7 @@ public class AgentFactory {
             Response = string.Empty
         };
         Messages.Add(message);
-        string response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), null, true, true, agent.Tools, null);
+        string response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), cancel, null, true, true, agent.Tools, null);
         // Find the message by MessageId and update Response
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
@@ -82,7 +82,7 @@ public class AgentFactory {
             if (Agents[agent].IsCoder && !WriteMode)
             {
                 WriteMode = true;
-                query = await CallCoderAgent(agent, query, caller, flow.Name, cancel);
+                query = await CallCoderAgent(agent, query, caller, cancel, flow.Name);
                 WriteMode = false;
             }
             else
@@ -96,7 +96,7 @@ public class AgentFactory {
     const string writeModeText = "\nYou are now in write mode. You cannot call any other {agent}_write tools or write file tools in this mode. The file modifications need to be included in your response.";
 
     // Extended CallCoderAgent to accept flowName and store correct message meta-info
-    public async Task<string> CallCoderAgent(string name, string query, string caller, string flowName = "", CancellationToken cancel = default)
+    public async Task<string> CallCoderAgent(string name, string query, string caller, CancellationToken cancel, string flowName = "")
     {
         var agent = Agents[name];
         var id = Guid.NewGuid().ToString();
@@ -113,7 +113,7 @@ public class AgentFactory {
             Response = string.Empty
         };
         Messages.Add(message);
-        string response = await agent.Generator.UpdateStore(query + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", null, true, true, agent.Tools, null, cancel);
+        string response = await agent.Generator.UpdateStore(query + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", cancel, null, true, true, agent.Tools, null);
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
         var replyMsg = new DevGPTChatMessage
@@ -149,7 +149,7 @@ public class AgentFactory {
             Response = string.Empty
         };
         Messages.Add(message);
-        string response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), null, true, true, agent.Tools, null, cancel);
+        string response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), cancel, null, true, true, agent.Tools, null);
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
         var replyMsg = new DevGPTChatMessage
@@ -450,7 +450,7 @@ public class AgentFactory {
                     if (instructionParameter.TryGetValue(toolCall, out string key))
                     {
                         WriteMode = true;
-                        var result = await CallCoderAgent(agent, key, caller);
+                        var result = await CallCoderAgent(agent, key, caller, cancel);
                         WriteMode = false;
                         return result;
                     }
@@ -464,7 +464,7 @@ public class AgentFactory {
                 {
                     cancel.ThrowIfCancellationRequested();
                     if (instructionParameter.TryGetValue(toolCall, out string key))
-                        return await CallAgent(agent, key, caller);
+                        return await CallAgent(agent, key, caller, cancel);
                     return "No key given";
                 });
                 tools.Add(callAgent);

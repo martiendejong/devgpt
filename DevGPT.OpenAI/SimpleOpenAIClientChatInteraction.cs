@@ -85,7 +85,7 @@ public partial class SimpleOpenAIClientChatInteraction
         return options;
     }
 
-    public async Task<ChatCompletion> Run(CancellationToken cancellationToken = default)
+    public async Task<ChatCompletion> Run(CancellationToken cancellationToken)
     {
         bool requiresAction;
         ChatCompletion completion;
@@ -120,7 +120,7 @@ public partial class SimpleOpenAIClientChatInteraction
         return completion;
     }
 
-    public async Task<GeneratedImage> RunImage(string prompt, string size = "1024x1024", int count = 1, CancellationToken cancellationToken = default)
+    public async Task<GeneratedImage> RunImage(string prompt, CancellationToken cancellationToken, string size = "1024x1024", int count = 1)
     {
         var options = new ImageGenerationOptions
         {
@@ -134,7 +134,7 @@ public partial class SimpleOpenAIClientChatInteraction
     }
 
 
-    public async IAsyncEnumerable<StreamingChatCompletionUpdate> Stream([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<StreamingChatCompletionUpdate> Stream([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         bool requiresAction;
 
@@ -220,7 +220,7 @@ public partial class SimpleOpenAIClientChatInteraction
         }
     }
 
-    private async Task<bool> HandleFinishReason(bool requiresAction, AssistantChatMessage? finishMessage, IEnumerable<ChatToolCall> toolCalls, ChatFinishReason? finishReason, CancellationToken cancellationToken = default)
+    private async Task<bool> HandleFinishReason(bool requiresAction, AssistantChatMessage? finishMessage, IEnumerable<ChatToolCall> toolCalls, ChatFinishReason? finishReason, CancellationToken cancellationToken)
     {
         Log(finishMessage?.Content?.FirstOrDefault()?.ToString());
 
@@ -255,7 +255,7 @@ public partial class SimpleOpenAIClientChatInteraction
         return requiresAction;
     }
 
-    private async Task<List<ChatMessage>> HandleToolCalls(List<ChatMessage> messages, IEnumerable<ChatToolCall> toolCalls, AssistantChatMessage? toolCallsMessage, CancellationToken cancellationToken = default)
+    private async Task<List<ChatMessage>> HandleToolCalls(List<ChatMessage> messages, IEnumerable<ChatToolCall> toolCalls, AssistantChatMessage? toolCallsMessage, CancellationToken cancellationToken)
     {
         if (ToolsContext == null) throw new Exception("Tools Context not defined");
 

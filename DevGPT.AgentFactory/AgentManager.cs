@@ -117,17 +117,18 @@ public class AgentManager
             var input = Console.ReadLine();
             if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
                 break;
-            var response = await agent.Generator.GetResponse<IsReadyResult>(input, History, true, true, agent.Tools, null);
+            var cancel = new CancellationToken();
+            var response = await agent.Generator.GetResponse<IsReadyResult>(input, cancel, History, true, true, agent.Tools, null);
             while (!response.IsTheUserRequestProperlyHandledAndFinished)
             {
-                response = await agent.Generator.GetResponse<IsReadyResult>("Continue handling the user request: " + input, History, true, true, agent.Tools, null);
+                response = await agent.Generator.GetResponse<IsReadyResult>("Continue handling the user request: " + input, cancel, History, true, true, agent.Tools, null);
                 Console.WriteLine(response.Message);
             }
             History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response.Message });
         }
     }
 
-    public async Task<string> SendMessage(string input, string agentName = null, CancellationToken cancel = default)
+    public async Task<string> SendMessage(string input, CancellationToken cancel, string agentName = null)
     {
         DevGPTAgent agent;
         if (string.IsNullOrEmpty(agentName))
@@ -143,14 +144,14 @@ public class AgentManager
 
         await AddHistory(input);
 
-        var response = await agent.Generator.GetResponse<IsReadyResult>(input, History, true, true, agent.Tools, null, cancel);
+        var response = await agent.Generator.GetResponse<IsReadyResult>(input, cancel, History, true, true, agent.Tools, null);
 
         await AddHistory(response.Message);
 
         return response.Message;
     }
 
-    public async Task<string> SendMessage_Flow(string input, string flowName = null, CancellationToken cancel = default)
+    public async Task<string> SendMessage_Flow(string input, CancellationToken cancel, string flowName = null)
     {
         await AddHistory(input);
 

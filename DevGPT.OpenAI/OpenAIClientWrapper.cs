@@ -62,29 +62,29 @@ public partial class OpenAIClientWrapper : ILLMClient
 
     public async Task<string> GetResponseStream(
         List<DevGPTChatMessage> messages,
-        Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default)
+        Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         Log(messages.Last()?.Text);
         return await StreamHandler.HandleStream(onChunkReceived, StreamChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel));
     }
 
     public async Task<string> GetResponse(
-        List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default)
+        List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         Log(messages.Last()?.Text);
         return GetText(await GetChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel));
     }
 
     public async Task<DevGPTGeneratedImage> GetImage(
-        string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default)
+        string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         Log(prompt);
-        return (await GetImageResult(prompt, responseFormat.OpenAI(), toolsContext, images)).DevGPT();
+        return (await GetImageResult(prompt, responseFormat.OpenAI(), toolsContext, images, cancel)).DevGPT();
     }
 
     #region internal
 
-    protected async Task<ChatCompletion> GetChatResult(List<ChatMessage> messages, ChatResponseFormat responseFormat, IToolsContext? context, List<ImageData>? images, CancellationToken cancel = default)
+    protected async Task<ChatCompletion> GetChatResult(List<ChatMessage> messages, ChatResponseFormat responseFormat, IToolsContext? context, List<ImageData>? images, CancellationToken cancel)
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
@@ -92,20 +92,20 @@ public partial class OpenAIClientWrapper : ILLMClient
         return await interaction.Run(cancel);
     }
 
-    protected async Task<GeneratedImage> GetImageResult(string prompt, ChatResponseFormat responseFormat, IToolsContext? context, List<ImageData>? images, CancellationToken cancel = default)
+    protected async Task<GeneratedImage> GetImageResult(string prompt, ChatResponseFormat responseFormat, IToolsContext? context, List<ImageData>? images, CancellationToken cancel)
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.ImageModel);
         var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, [prompt], images, responseFormat, true, true);
-        return await interaction.RunImage(prompt);
+        return await interaction.RunImage(prompt, cancel);
     }
 
-    private IAsyncEnumerable<StreamingChatCompletionUpdate> StreamChatResult(List<ChatMessage> messages, ChatResponseFormat responseFormat, IToolsContext? context, List<ImageData>? images, CancellationToken cancel = default)
+    private IAsyncEnumerable<StreamingChatCompletionUpdate> StreamChatResult(List<ChatMessage> messages, ChatResponseFormat responseFormat, IToolsContext? context, List<ImageData>? images, CancellationToken cancel)
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
         var interaction = new SimpleOpenAIClientChatInteraction(context, API, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, messages, images, responseFormat, true, true);
-        return interaction.Stream();
+        return interaction.Stream(cancel);
     }
 
     protected string GetText(ChatCompletion result)

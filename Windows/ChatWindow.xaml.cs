@@ -158,15 +158,15 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
                     {
                         if (AgentOrFlow == "")
                         {
-                            return await _agentManager.SendMessage(text, null, token);
+                            return await _agentManager.SendMessage(text, token);
                         }
                         if(AgentOrFlow.ToLower().StartsWith("agent"))
                         {
                             var agent = AgentOrFlow.Substring(7);
-                            return await _agentManager.SendMessage(text, agent, token);
+                            return await _agentManager.SendMessage(text, token, agent);
                         }
                         var flow = AgentOrFlow.Substring(6);
-                        return await _agentManager.SendMessage_Flow(text, flow, token);
+                        return await _agentManager.SendMessage_Flow(text, token, flow);
                     }, token);
 
                     // Voeg het eindreply toe als gewone tekst (geen expander)
