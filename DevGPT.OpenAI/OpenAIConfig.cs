@@ -2,7 +2,7 @@ using Microsoft.Extensions.Configuration;
 
 public class OpenAIConfig
 {
-    public OpenAIConfig(string apiKey = "", string embeddingModel = "text-embedding-ada-002", string model = "gpt-4.1", string imageModel = "gpt-image-1", string logPath = "c:\\devgptlogs.txt")
+    public OpenAIConfig(string apiKey = "", string embeddingModel = "text-embedding-ada-002", string model = "gpt-4.1", string imageModel = "gpt-image-1", string logPath = "c:\\projects\\devgptlogs.txt")
     {
         ApiKey = apiKey;
         Model = model;

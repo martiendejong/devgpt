@@ -40,9 +40,24 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
             try
             {
                 var data = File.ReadAllText(EmbeddingsFilePath);
-                var e = JsonSerializer.Deserialize<List<EmbeddingInfo>>(data);
-                if (e != null)
-                    return e;
+                try
+                {
+                    var e = JsonSerializer.Deserialize<List<EmbeddingInfo>>(data);
+                    if (e != null)
+                        return e;
+                }
+                catch
+                {
+                    var q = new List<EmbeddingInfo>();
+                    var lines = data.Split('\n');
+                    foreach (var line in lines)
+                    {
+                        var parts = line.Split(",");
+                        var b = new EmbeddingInfo(parts[0], parts[2], [.. parts.Skip(3).Select(p => double.Parse(p)).ToList()]);
+                        q.Add(b);
+                    }
+                    return q;
+                }
             }
             catch { }
         }

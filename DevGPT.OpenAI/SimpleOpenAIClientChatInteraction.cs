@@ -97,7 +97,7 @@ public partial class SimpleOpenAIClientChatInteraction
             requiresAction = false;
             try
             {
-                Log(Messages?.Last()?.Content?.First()?.ToString());
+                Log(Messages?.LastOrDefault()?.Content?.FirstOrDefault()?.ToString());
                 completion = await Client.CompleteChatAsync(Messages, Options, cancellationToken);
             }
             catch (OperationCanceledException)
@@ -138,18 +138,21 @@ public partial class SimpleOpenAIClientChatInteraction
     {
         bool requiresAction;
 
+        var i = 0;
+        var maxToolCalls = 50;
+
         string content = "";
         do
         {
             cancellationToken.ThrowIfCancellationRequested();
             requiresAction = false;
 
-            Log(Messages?.Last()?.Content?.First()?.ToString());
+            Log(Messages?.LastOrDefault()?.Content?.FirstOrDefault()?.ToString());
             var completionResult = Client.CompleteChatStreaming(Messages, Options, cancellationToken);
 
             var toolCallData = new List<ToolCallData>();
             ChatFinishReason? finishReason = null;
-            var i = 0;
+            var toolupdates = 0;
             // BEGIN PATCH: Fix .WithCancellation usage
             //await foreach (StreamingChatCompletionUpdate completionUpdate in completionResult.WithCancellation(cancellationToken))
             foreach (StreamingChatCompletionUpdate completionUpdate in completionResult)
@@ -173,19 +176,19 @@ public partial class SimpleOpenAIClientChatInteraction
                         var id = completionUpdate.ToolCallUpdates[0].ToolCallId;
                         if (id != null)
                         {
-                            if(toolCallData[i].BinaryData.Any())
+                            if(toolCallData[toolupdates].BinaryData.Any())
                             {
                                 toolCallData.Add(new ToolCallData { BinaryData = new List<BinaryData>() });
-                                ++i;
+                                ++toolupdates;
                             }
-                            toolCallData[i].ToolCallId += id;
+                            toolCallData[toolupdates].ToolCallId += id;
                         }
                         var fn = completionUpdate.ToolCallUpdates[0].FunctionName;
                         if (fn != null)
-                            toolCallData[i].FunctionName += fn;
+                            toolCallData[toolupdates].FunctionName += fn;
                         var binary = completionUpdate.ToolCallUpdates[0].FunctionArgumentsUpdate;
                         if(binary != null)
-                            toolCallData[i].BinaryData.Add(binary);
+                            toolCallData[toolupdates].BinaryData.Add(binary);
                     }
                 }
 
@@ -198,8 +201,10 @@ public partial class SimpleOpenAIClientChatInteraction
             var toolCalls = toolCallData.Select(d => ChatToolCall.CreateFunctionToolCall(d.ToolCallId, d.FunctionName, ConcatenateArguments(d.BinaryData)));
 
             var finishMessage = toolCalls.Any() ? new AssistantChatMessage(toolCalls) : null;
+
+            ++i;
             requiresAction = await HandleFinishReason(false, finishMessage, toolCalls, finishReason, cancellationToken);
-        } while (requiresAction);
+        } while (requiresAction && i < maxToolCalls);
     }
 
     private static BinaryData ConcatenateArguments(List<BinaryData> arguments)
@@ -217,7 +222,7 @@ public partial class SimpleOpenAIClientChatInteraction
 
     private async Task<bool> HandleFinishReason(bool requiresAction, AssistantChatMessage? finishMessage, IEnumerable<ChatToolCall> toolCalls, ChatFinishReason? finishReason, CancellationToken cancellationToken = default)
     {
-        Log(finishMessage?.Content?.First()?.ToString());
+        Log(finishMessage?.Content?.FirstOrDefault()?.ToString());
 
         cancellationToken.ThrowIfCancellationRequested();
         switch (finishReason)
