@@ -50,7 +50,11 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
 
         public string currentMessageId = "";
 
-        public string AgentOrFlow = "";
+        public string AgentOrFlow { get => _agentOrFlow; set { _agentOrFlow = value; OnPropertyChanged(nameof(AgentOrFlow)); } }
+        private string _agentOrFlow = "";
+
+        public ObservableCollection<string> AgentsAndFlows { get; set; } = new ObservableCollection<string>();
+
         public ChatWindow(AgentManager agentManager)
         {
             _agentManager = agentManager;
@@ -105,6 +109,18 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
                     });
                 };
             }
+            // Vul AgentsAndFlows direct uit _agentManager
+            AgentsAndFlows.Clear();
+            foreach (var agent in _agentManager.Agents)
+            {
+                AgentsAndFlows.Add("AGENT: " + agent.Name);
+            }
+            foreach (var flow in _agentManager.Flows)
+            {
+                AgentsAndFlows.Add("FLOW: " + flow.Name);
+            }
+            if (AgentsAndFlows.Count > 0 && string.IsNullOrEmpty(AgentOrFlow))
+                AgentOrFlow = AgentsAndFlows.First();
         }
 
         private void ChatWindow_Closed(object? sender, EventArgs e)
@@ -156,17 +172,21 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
                     // Eindreply ophalen; interim berichten (onmessage) worden via SendMessage-delegate hierboven uitgezonden
                     var response = await Task.Run(async () =>
                     {
-                        if (AgentOrFlow == "")
+                        if (string.IsNullOrEmpty(AgentOrFlow))
                         {
                             return await _agentManager.SendMessage(text, token);
                         }
-                        if(AgentOrFlow.ToLower().StartsWith("agent"))
+                        if (AgentOrFlow.ToLower().StartsWith("agent"))
                         {
                             var agent = AgentOrFlow.Substring(7);
                             return await _agentManager.SendMessage(text, token, agent);
                         }
-                        var flow = AgentOrFlow.Substring(6);
-                        return await _agentManager.SendMessage_Flow(text, token, flow);
+                        if (AgentOrFlow.ToLower().StartsWith("flow"))
+                        {
+                            var flow = AgentOrFlow.Substring(6);
+                            return await _agentManager.SendMessage_Flow(text, token, flow);
+                        }
+                        return await _agentManager.SendMessage(text, token);
                     }, token);
 
                     // Voeg het eindreply toe als gewone tekst (geen expander)
@@ -217,4 +237,3 @@ public partial class ChatWindow : Window, INotifyPropertyChanged
             base.OnPreviewKeyDown(e);
         }
     }
-

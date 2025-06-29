@@ -9,7 +9,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/> <!-- Chat messages -->
-            <RowDefinition Height="100"/> <!-- Input + send + progress -->
+            <RowDefinition Height="110"/> <!-- Input + agent switch + send + progress -->
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -40,60 +40,73 @@
             </ListBox>
         </ScrollViewer>
 
-        <!-- Input, Send Button, and ProgressBar below -->
+        <!-- Input, Agent Switch, Send Button, and ProgressBar below -->
         <Grid Grid.Row="1" Background="#f5f6f8" Margin="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"/> <!-- Input controls: TextBox + Send -->
-                <RowDefinition Height="Auto"/> <!-- ProgressBar -->
+                <RowDefinition Height="38"/><!-- Select agent/flow -->
+                <RowDefinition Height="*"/><!-- Input controls: TextBox + Send -->
+                <RowDefinition Height="Auto"/><!-- ProgressBar -->
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <!-- Input controls (row 0) -->
+
+            <ComboBox x:Name="AgentFlowSelector"
+                      Grid.Row="0"
+                      Grid.Column="0"
+                      Margin="15,7,7,2"
+                      Height="26"
+                      FontSize="14"
+                      ItemsSource="{Binding AgentsAndFlows}"
+                      SelectedItem="{Binding AgentOrFlow, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      VerticalAlignment="Center" />
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="Kies agent of flow" Margin="2,10,15,0" FontSize="13" VerticalAlignment="Center" />
+
+            <!-- Input controls (row 1) -->
             <TextBox x:Name="MessageEditor"
-                     Grid.Row="0"
+                     Grid.Row="1"
                      Grid.Column="0"
-                     Margin="15,15,7,10"
+                     Margin="15,2,7,5"
                      VerticalAlignment="Center"
                      HorizontalAlignment="Stretch"
                      FontSize="15"
                      TextWrapping="Wrap"
                      AcceptsReturn="True"
                      MaxLines="4"
-                     MinHeight="70"
-                     Height="70"
+                     MinHeight="54"
+                     Height="54"
                      VerticalScrollBarVisibility="Auto"/>
             <Button x:Name="StopButton"
-                    Grid.Row="0"
+                    Grid.Row="1"
                     Grid.Column="1"
-                    Margin="7,15,15,10"
+                    Margin="7,2,15,5"
                     Content="Stop"
                     Visibility="Hidden"
                     Width="80"
-                    Height="70"
+                    Height="54"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Right"
                     FontWeight="Bold"
                     Click="StopButton_Click"/>
             <Button x:Name="SendButton"
-                    Grid.Row="0"
+                    Grid.Row="1"
                     Grid.Column="1"
-                    Margin="7,15,15,10"
+                    Margin="7,2,15,5"
                     Content="Send"
                     Width="80"
-                    Height="70"
+                    Height="54"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Right"
                     FontWeight="Bold"
                     Click="SendButton_Click"/>
-            <!-- ProgressBar onderaan (row 1) -->
+            <!-- ProgressBar onderaan (row 2) -->
             <ProgressBar x:Name="SendingProgress"
-                         Grid.Row="1"
+                         Grid.Row="2"
                          Grid.Column="0"
                          Grid.ColumnSpan="2"
                          Height="8"
-                         Margin="15,0,15,12"
+                         Margin="15,0,15,8"
                          IsIndeterminate="True"
                          Visibility="Collapsed"
                          VerticalAlignment="Bottom"

@@ -34,7 +34,9 @@ public class AgentManager
     /// <summary>
     /// All available agents, as loaded and constructed from agents.json
     /// </summary>
-    public IReadOnlyList<DevGPTAgent> Agents => _agents;    
+    public IReadOnlyList<DevGPTAgent> Agents => _agents;
+
+    public IReadOnlyList<DevGPTFlow> Flows => _flows;
 
     /// <summary>
     /// Instantiates the AgentManager, loads configuration, and initializes all stores and agents.
