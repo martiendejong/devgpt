@@ -29,6 +29,7 @@ public class AgentFactory {
     public ChatToolParameter relevancyParameter = new ChatToolParameter { Name = "query", Description = "The relevancy search query.", Type = "string", Required = true };
     public ChatToolParameter instructionParameter = new ChatToolParameter { Name = "instruction", Description = "The instruction to send to the agent.", Type = "string", Required = true };
     public ChatToolParameter argumentsParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call git with.", Type = "string", Required = true };
+    public ChatToolParameter timeOutSecondsParameter = new ChatToolParameter { Name = "timeout", Description = "The maximum number of seconds this process is allowed to run.", Type = "int", Required = true };
     public ChatToolParameter bigQueryParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call Google BigQuery with.", Type = "string", Required = true };
     public ChatToolParameter bigQueryDataSetParameter = new ChatToolParameter { Name = "datacollection", Description = "The dataset in Google BigQuery.", Type = "string", Required = true };
 
@@ -270,12 +271,12 @@ public class AgentFactory {
         }
         if (functions.Contains("npm"))
         {
-            var npm = new DevGPTChatTool($"npm", $"Runs the npm command.", [argumentsParameter], async (messages, toolCall, cancellationToken) =>
+            var npm = new DevGPTChatTool($"npm", $"Runs the npm command.", [argumentsParameter, timeOutSecondsParameter], async (messages, toolCall, cancellationToken) =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (argumentsParameter.TryGetValue(toolCall, out string args))
+                if (argumentsParameter.TryGetValue(toolCall, out string args) && argumentsParameter.TryGetValue(toolCall, out string timeout))
                 {
-                    var output = NpmOutput.GetNpmOutput(store.TextStore.RootFolder + "\\frontend", args);
+                    var output = await NpmOutput.GetNpmOutputAsync(store.TextStore.RootFolder + "\\frontend", args, TimeSpan.FromSeconds(int.Parse(timeout)));
                     return output.Item1 + "\n" + output.Item2;
                 }
                 return "arguments not provided";
