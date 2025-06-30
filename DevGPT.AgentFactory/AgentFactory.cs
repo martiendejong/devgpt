@@ -236,13 +236,13 @@ public class AgentFactory {
     {
         if (functions.Contains("git"))
         {
-            var git = new DevGPTChatTool($"git", $"Calls git and returns the output.", [argumentsParameter], async (messages, toolCall, cancel) =>
+            var git = new DevGPTChatTool($"git", $"Calls git and returns the output.", [argumentsParameter, timeOutSecondsParameter], async (messages, toolCall, cancel) =>
             {
                 cancel.ThrowIfCancellationRequested();
 
-                if (argumentsParameter.TryGetValue(toolCall, out string args))
+                if (argumentsParameter.TryGetValue(toolCall, out string args) && timeOutSecondsParameter.TryGetValue(toolCall, out string timeout))
                 {
-                    var output = GitOutput.GetGitOutput(store.TextStore.RootFolder, args);
+                    var output = await GitOutput.GetGitOutput(store.TextStore.RootFolder, args, TimeSpan.FromSeconds(int.Parse(timeout)));
                     return output.Item1 + "\n" + output.Item2;
                 }
                 return "arguments not provided";
@@ -285,12 +285,12 @@ public class AgentFactory {
         }
         if (functions.Contains("dotnet"))
         {
-            var git = new DevGPTChatTool($"dotnet", $"Runs the dotnet command.", [argumentsParameter], async (messages, toolCall, cancellationToken) =>
+            var git = new DevGPTChatTool($"dotnet", $"Runs the dotnet command.", [argumentsParameter, timeOutSecondsParameter], async (messages, toolCall, cancellationToken) =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (argumentsParameter.TryGetValue(toolCall, out string args))
+                if (argumentsParameter.TryGetValue(toolCall, out string args) && timeOutSecondsParameter.TryGetValue(toolCall, out string timeout))
                 {
-                    var output = DotNetOutput.GetDotNetOutput(store.TextStore.RootFolder, args);
+                    var output = await DotNetOutput.GetDotNetOutput(store.TextStore.RootFolder, args, TimeSpan.FromSeconds(int.Parse(timeout)));
                     return output.Item1 + "\n" + output.Item2;
                 }
                 return "arguments not provided";
