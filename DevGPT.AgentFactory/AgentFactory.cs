@@ -29,9 +29,10 @@ public class AgentFactory {
     public ChatToolParameter relevancyParameter = new ChatToolParameter { Name = "query", Description = "The relevancy search query.", Type = "string", Required = true };
     public ChatToolParameter instructionParameter = new ChatToolParameter { Name = "instruction", Description = "The instruction to send to the agent.", Type = "string", Required = true };
     public ChatToolParameter argumentsParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call git with.", Type = "string", Required = true };
-    public ChatToolParameter timeOutSecondsParameter = new ChatToolParameter { Name = "timeout", Description = "The maximum number of seconds this process is allowed to run.", Type = "int", Required = true };
+    public ChatToolParameter timeOutSecondsParameter = new ChatToolParameter { Name = "timeout", Description = "The maximum number of seconds this process is allowed to run.", Type = "number", Required = true };
     public ChatToolParameter bigQueryParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call Google BigQuery with.", Type = "string", Required = true };
     public ChatToolParameter bigQueryDataSetParameter = new ChatToolParameter { Name = "datacollection", Description = "The dataset in Google BigQuery.", Type = "string", Required = true };
+    public ChatToolParameter bigQueryTableNameParameter = new ChatToolParameter { Name = "tablename", Description = "The table name in Google BigQuery.", Type = "string", Required = true };
 
     public Dictionary<string, DevGPTAgent> Agents = new Dictionary<string, DevGPTAgent>();
     public Dictionary<string, DevGPTFlow> Flows = new Dictionary<string, DevGPTFlow>();
@@ -274,9 +275,9 @@ public class AgentFactory {
             var npm = new DevGPTChatTool($"npm", $"Runs the npm command.", [argumentsParameter, timeOutSecondsParameter], async (messages, toolCall, cancellationToken) =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (argumentsParameter.TryGetValue(toolCall, out string args) && argumentsParameter.TryGetValue(toolCall, out string timeout))
+                if (argumentsParameter.TryGetValue(toolCall, out string args) && timeOutSecondsParameter.TryGetValue(toolCall, out string timeout))
                 {
-                    var output = await NpmOutput.GetNpmOutputAsync(store.TextStore.RootFolder + "\\frontend", args, TimeSpan.FromSeconds(int.Parse(timeout)));
+                    var output = await NpmOutput.GetNpmOutputAsync(store.TextStore.RootFolder + "\\wreckingball-ai", args, TimeSpan.FromSeconds(int.Parse(timeout)));
                     return output.Item1 + "\n" + output.Item2;
                 }
                 return "arguments not provided";
@@ -299,55 +300,87 @@ public class AgentFactory {
         }
         if (functions.Contains("bigquery"))
         {
+            //var bigQueryProject = "social-media-hulp";
+            var bigQueryProject = "wide-lattice-389014";
+
+            //string schema = "wide-lattice-389014.marketing_data";
+            //string newSchema = "social-media-hulp.{collection}";
+
+
             var bigQueryCollectionsTool = new DevGPTChatTool(
                 "bigquery_datasets",
                 "Retrieves the available datasets in Google BigQuery.",
                 [],
-                async (messages, toolCall, cancel) =>
+                async (messages, toolCall, cancel) => await DevGPTChatTool.CallTool(async () =>
                 {
-                    cancel.ThrowIfCancellationRequested();
-                    try
-                    {
-                        var sql = "SELECT schema_name FROM `region-eu`.INFORMATION_SCHEMA.SCHEMATA;";
-                        BigQueryClient client = BigQuery_GetClient();
+                    var sql = "SELECT schema_name FROM `region-eu`.INFORMATION_SCHEMA.SCHEMATA;";
+                    BigQueryClient client = BigQuery_GetClient();
 
-                        var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
+                    var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
 
-                        return BigQuery_ExtractAsString(result);
-                    }
-                    catch (Exception ex)
-                    {
-                        return $"BigQuery error: {ex.Message}";
-                    }
-                }
+                    return BigQuery_ExtractAsString(result);
+                }, cancel)                
             );            
             tools.Add(bigQueryCollectionsTool);
             var bigQueryTablesTool = new DevGPTChatTool(
                 "query_tables",
                 "Returns the tables in a Google BigQuery dataset.",
                 [bigQueryDataSetParameter],
-                async (messages, toolCall, cancel) =>
+                async (messages, toolCall, cancel) => await DevGPTChatTool.CallTool(async () =>
+                {
+                    if (!bigQueryDataSetParameter.TryGetValue(toolCall, out string collection))
+                        return "No dataset provided.";
+
+                    BigQueryClient client = BigQuery_GetClient();
+                    var sql = $"SELECT table_name FROM `{bigQueryProject}.{collection}.INFORMATION_SCHEMA.TABLES`;";
+
+                    var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
+
+                    return BigQuery_ExtractAsString(result);
+                }, cancel)                
+            );
+            tools.Add(bigQueryTablesTool);
+            var bigQueryTableFieldsTool = new DevGPTChatTool(
+                "query_tablefields",
+                "Returns the fields of the tables in a Google BigQuery dataset.",
+                [bigQueryDataSetParameter, bigQueryTableNameParameter],
+                async (messages, toolCall, cancel) => await DevGPTChatTool.CallTool(async () =>
                 {
                     cancel.ThrowIfCancellationRequested();
                     if (!bigQueryDataSetParameter.TryGetValue(toolCall, out string collection))
-                        return "No query provided.";
+                        return "No dataset provided.";
+                    if (!bigQueryTableNameParameter.TryGetValue(toolCall, out string table))
+                        return "No table provided.";
 
-                    try
-                    {
-                        BigQueryClient client = BigQuery_GetClient();
-                        var sql = $"SELECT table_name FROM `social-media-hulp.{collection}.INFORMATION_SCHEMA.TABLES`;";
+                    BigQueryClient client = BigQuery_GetClient();
+                    var sql = $"SELECT table_name, STRING_AGG(CONCAT('- ', column_name, ' (', data_type, ')'), '\\n') AS fields_list FROM `{bigQueryProject}.{collection}.INFORMATION_SCHEMA.COLUMNS` WHERE table_name='{table}' GROUP BY table_name;";
 
-                        var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
+                    var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
 
-                        return BigQuery_ExtractAsString(result);
-                    }
-                    catch (Exception ex)
-                    {
-                        return $"BigQuery error: {ex.Message}";
-                    }
-                }
+                    return BigQuery_ExtractAsString(result);
+                }, cancel)
             );
-            tools.Add(bigQueryTablesTool);
+            tools.Add(bigQueryTableFieldsTool);
+
+
+            //        public string GetTablesQuery = @"
+            //SELECT 
+            //  table_name,
+            //  STRING_AGG(CONCAT('- ', column_name, ' (', data_type, ')'), '\n') AS fields_list
+            //FROM 
+            //  `wide-lattice-389014.marketing_data.INFORMATION_SCHEMA.COLUMNS`
+            //GROUP BY 
+            //  table_name
+            //ORDER BY 
+            //  table_name;";
+
+            //    public string GetColumnsQuery = @"
+            //SELECT DISTINCT table_name
+            //FROM `wide-lattice-389014.marketing_data.INFORMATION_SCHEMA.COLUMNS`
+            //WHERE table_name='{table}'
+            //ORDER BY table_name;";
+
+
             var bigQueryTool = new DevGPTChatTool(
                 "query_bigquery",
                 "Runs a read-only SQL query on Google BigQuery and returns the results as a list of rows.",
@@ -401,8 +434,8 @@ public class AgentFactory {
     {
         var client = new BigQueryClientBuilder
         {
-            ProjectId = "social-media-hulp",
-            //ProjectId = "wide-lattice-389014",
+            //ProjectId = "social-media-hulp",
+            ProjectId = "wide-lattice-389014",
             JsonCredentials = File.ReadAllText("C:/Projects/devgpt/Windows/googleaccount.json")
         }.Build();
         return client;

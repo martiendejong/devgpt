@@ -169,7 +169,13 @@ public class DocumentGenerator : IDocumentGenerator
 
     private async Task<List<DevGPTChatMessage>> PrepareMessages(IEnumerable<DevGPTChatMessage> chatMessages, IEnumerable<DevGPTChatMessage>? history, bool addRelevantDocuments, bool addFilesList)
     {
-        var sendMessages = history == null ? new List<DevGPTChatMessage>() : history.ToList();
+        var numMessages = 20;
+        if(history !=  null)
+            if (history.Count() > 20)
+                history = history.Reverse().Take(20).Reverse();
+            else
+                numMessages = history.Count();
+        var sendMessages = history == null ? new List<DevGPTChatMessage>() : history.Take(numMessages - 3).ToList();
         if (addRelevantDocuments)
         {
             var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Concat(chatMessages).Select(m => m.Role + ": " + m.Text));
@@ -192,6 +198,8 @@ public class DocumentGenerator : IDocumentGenerator
             sendMessages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"A list of all files in the document store:\n{filesList}" });
         }
         sendMessages.AddRange(BaseMessages);
+        if(history != null) 
+            sendMessages.AddRange(history.Skip(numMessages - 3).Take(3).ToList());
         if (chatMessages.Any())
         {
             sendMessages.AddRange(chatMessages);
