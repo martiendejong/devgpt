@@ -12,8 +12,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="googleaccount.json" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Content Include="appsettings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="googleaccount.json">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>
 

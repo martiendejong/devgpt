@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using System.Threading;
 using System.Xml.Linq;
 
@@ -12,8 +13,23 @@ public class AgentFactory {
         OpenAiApiKey = openAIApiKey;
         GoogleProjectId = googleProjectId;
         LogFilePath = logFilePath;
+
+        var basePath = AppDomain.CurrentDomain.BaseDirectory;
+        var credentialsPath = Path.Combine(basePath, "googleaccount.json");
+
+        try
+        {
+            googleAccountJson = File.ReadAllText(credentialsPath);
+            using var doc = JsonDocument.Parse(googleAccountJson);
+            googleAccountProjectId = doc.RootElement.GetProperty("project_id").GetString();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Could not load google account fle");
+            Console.WriteLine(ex.Message);
+        }
     }
-    
+
     public List<StoreConfig> storesConfig;
     public List<AgentConfig> agentsConfig;
     public List<FlowConfig> flowsConfig;
@@ -36,6 +52,9 @@ public class AgentFactory {
 
     public Dictionary<string, DevGPTAgent> Agents = new Dictionary<string, DevGPTAgent>();
     public Dictionary<string, DevGPTFlow> Flows = new Dictionary<string, DevGPTFlow>();
+
+    public string googleAccountJson { get; set; }
+    public string googleAccountProjectId { get; set; }
 
     // Updated: messages are stored with full meta-info and updated in-place with Response upon agent reply
     public async Task<string> CallAgent(string name, string query, string caller, CancellationToken cancel)
@@ -277,7 +296,7 @@ public class AgentFactory {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (argumentsParameter.TryGetValue(toolCall, out string args) && timeOutSecondsParameter.TryGetValue(toolCall, out string timeout))
                 {
-                    var output = await NpmOutput.GetNpmOutputAsync(store.TextStore.RootFolder + "\\wreckingball-ai", args, TimeSpan.FromSeconds(int.Parse(timeout)));
+                    var output = await NpmOutput.GetNpmOutputAsync(store.TextStore.RootFolder + "\\frontend", args, TimeSpan.FromSeconds(int.Parse(timeout)));
                     return output.Item1 + "\n" + output.Item2;
                 }
                 return "arguments not provided";
@@ -301,7 +320,7 @@ public class AgentFactory {
         if (functions.Contains("bigquery"))
         {
             //var bigQueryProject = "social-media-hulp";
-            var bigQueryProject = "wide-lattice-389014";
+            var bigQueryProject = googleAccountProjectId;// "wide-lattice-389014";
 
             //string schema = "wide-lattice-389014.marketing_data";
             //string newSchema = "social-media-hulp.{collection}";
@@ -313,12 +332,17 @@ public class AgentFactory {
                 [],
                 async (messages, toolCall, cancel) => await DevGPTChatTool.CallTool(async () =>
                 {
-                    var sql = "SELECT schema_name FROM `region-eu`.INFORMATION_SCHEMA.SCHEMATA;";
                     BigQueryClient client = BigQuery_GetClient();
 
+                    var sql = "SELECT schema_name FROM `region-eu`.INFORMATION_SCHEMA.SCHEMATA;";
                     var result = await client.ExecuteQueryAsync(sql, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
 
-                    return BigQuery_ExtractAsString(result);
+                    var sql2 = "SELECT schema_name FROM `region-us`.INFORMATION_SCHEMA.SCHEMATA;";
+                    var result2 = await client.ExecuteQueryAsync(sql2, parameters: null, null, new GetQueryResultsOptions { PageSize = 10000 });
+
+                    var r = result.Union(result2).ToList();
+
+                    return BigQuery_ExtractAsString(r);
                 }, cancel)                
             );            
             tools.Add(bigQueryCollectionsTool);
@@ -409,7 +433,7 @@ public class AgentFactory {
         }
     }
 
-    private static string BigQuery_ExtractAsString(BigQueryResults result)
+    private static string BigQuery_ExtractAsString(IEnumerable<BigQueryRow> result)
     {
         var output = new List<string>();
         foreach (var row in result)
@@ -430,14 +454,14 @@ public class AgentFactory {
             : "Query executed, but no results found.";
     }
 
-    private static BigQueryClient BigQuery_GetClient()
+    private BigQueryClient BigQuery_GetClient()
     {
         var client = new BigQueryClientBuilder
         {
-            //ProjectId = "social-media-hulp",
-            ProjectId = "wide-lattice-389014",
-            JsonCredentials = File.ReadAllText("C:/Projects/devgpt/Windows/googleaccount.json")
+            ProjectId = googleAccountProjectId,
+            JsonCredentials = googleAccountJson
         }.Build();
+
         return client;
     }
 
