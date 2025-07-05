@@ -42,6 +42,8 @@ public class AgentFactory {
 
     public ChatToolParameter keyParameter = new ChatToolParameter { Name = "key", Description = "The key/path of the file.", Type = "string", Required = true };
     public ChatToolParameter contentParameter = new ChatToolParameter { Name = "content", Description = "The content of the file.", Type = "string", Required = true };
+    public ChatToolParameter folderParameter = new ChatToolParameter { Name = "path", Description = "The partial path, the folder to query.", Type = "string", Required = false };
+    public ChatToolParameter filesRecursiveParameter = new ChatToolParameter { Name = "recursive", Description = "Returns the files in subfolders as well.", Type = "string", Required = false };
     public ChatToolParameter relevancyParameter = new ChatToolParameter { Name = "query", Description = "The relevancy search query.", Type = "string", Required = true };
     public ChatToolParameter instructionParameter = new ChatToolParameter { Name = "instruction", Description = "The instruction to send to the agent.", Type = "string", Required = true };
     public ChatToolParameter argumentsParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call git with.", Type = "string", Required = true };
@@ -468,10 +470,13 @@ public class AgentFactory {
     private void AddReadTools(ToolsContextBase tools, IDocumentStore store)
     {
         var config = storesConfig.First(x => x.Name == store.Name);
-        var getFiles = new DevGPTChatTool($"{store.Name}_list", $"Retrieve a list of the files in store {store.Name}. {config.Description}", [], async (messages, toolCall, cancel) =>
+        var getFiles = new DevGPTChatTool($"{store.Name}_list", $"Retrieve a list of the files in store {store.Name}. {config.Description}", [folderParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
-            return string.Join("\n", await store.List());
+            filesRecursiveParameter.TryGetValue(toolCall, out bool recursive);
+            if (folderParameter.TryGetValue(toolCall, out string folder))
+                return string.Join("\n", await store.List(folder, recursive));
+            return string.Join("\n", await store.List("", recursive));
         });
         tools.Add(getFiles);
         var getRelevancy = new DevGPTChatTool($"{store.Name}_relevancy", $"Retrieve a list of relevant files in store {store.Name}. {config.Description}", [relevancyParameter], async (messages, toolCall, cancel) =>

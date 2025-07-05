@@ -83,14 +83,26 @@ public class DocumentStore : IDocumentStore
         return true;
     }
 
+    public async Task<bool> Move(string name, string newName, bool split = true)
+    {
+        var content = await TextStore.Get(name);
+        if (content == null) return false;
+        await Store(newName, content, split);
+        await Remove(name);
+        return true;
+    }
+
     public async Task<List<TreeNode<string>>> Tree()
     {
         return TreeMaker.GetTree(EmbeddingStore.Embeddings.Select(e => e.Key).ToList());
     }
 
-    public async Task<List<string>> List()
+    public async Task<List<string>> List(string folder = "", bool recursive = false)
     {
-        return EmbeddingStore.Embeddings.Select(e => e.Key).ToList();
+        folder = folder.ToLower();
+        if (string.IsNullOrWhiteSpace(folder))
+            return EmbeddingStore.Embeddings.Select(e => e.Key.ToLower()).Where(p => recursive || !p.Contains("\\")).ToList();
+        return EmbeddingStore.Embeddings.Select(e => e.Key.ToLower()).Where(p => p.StartsWith(folder) && (recursive || !p.Substring(folder.Length + 1).Contains("\\"))).ToList();
     }
 
     public async Task<List<string>> RelevantItems(string query)

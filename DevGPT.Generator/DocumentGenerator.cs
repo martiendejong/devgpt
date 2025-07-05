@@ -159,6 +159,11 @@ public class DocumentGenerator : IDocumentGenerator
             {
                 await Store.Remove(deletion.Path);
             }
+        if (response.Moves != null)
+            foreach (var move in response.Moves)
+            {
+                await Store.Move(move.Path, move.NewPath, false);
+            }
     }
 
 

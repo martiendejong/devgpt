@@ -18,4 +18,16 @@ public class ChatToolParameter
         value = "";
         return false;
     }
+
+    public bool TryGetValue(DevGPTChatToolCall call, out bool value)
+    {
+        using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
+        if (argumentsJson.RootElement.TryGetProperty(Name, out JsonElement element))
+        {
+            value = element.GetBoolean();
+            return true;
+        }
+        value = false;
+        return false;
+    }
 }

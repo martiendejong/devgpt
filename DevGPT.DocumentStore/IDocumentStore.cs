@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,8 +15,9 @@ public interface IDocumentStore
     public Task<bool> Store(string name, string content, bool split = true);
     public Task<bool> Embed(string name);
     public Task<bool> Remove(string name);
+    public Task<bool> Move(string name, string newName, bool split = true);
     public Task<List<TreeNode<string>>> Tree();
-    public Task<List<string>> List();
+    public Task<List<string>> List(string folder = "", bool recursive = false);
     Task UpdateEmbeddings();
     Task<List<string>> RelevantItems(string query);
     Task<List<RelevantEmbedding>> Embeddings(string relevancyQuery);
