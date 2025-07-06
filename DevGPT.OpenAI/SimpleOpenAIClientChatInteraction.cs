@@ -18,14 +18,17 @@ public partial class SimpleOpenAIClientChatInteraction
     public List<ChatMessage> Messages { get; set; }
     public List<ImageData>? Images { get; set; } = new List<ImageData>();
 
+    public OpenAIClientWrapper OpenAIClientWrapper { get; set; }
+
     public IToolsContext? ToolsContext { get; set; }
 
     public string LogPath { get; set; }
 
-    public SimpleOpenAIClientChatInteraction(IToolsContext? context, OpenAIClient api, string apiKey, string model, string logPath, ChatClient chatClient, ImageClient imageClient, List<ChatMessage> messages, List<ImageData>? images, ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
+    public SimpleOpenAIClientChatInteraction(IToolsContext? context, OpenAIClient api, OpenAIClientWrapper wrapper, string apiKey, string model, string logPath, ChatClient chatClient, ImageClient imageClient, List<ChatMessage> messages, List<ImageData>? images, ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
     {
         ToolsContext = context;
         API = api;
+        OpenAIClientWrapper = wrapper;
         Client = chatClient;
         ImageClient = imageClient;
         Options = GetOptions(responseFormat, useWebSerach, useReasoning);
