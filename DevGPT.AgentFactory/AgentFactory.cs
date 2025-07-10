@@ -190,7 +190,7 @@ public class AgentFactory {
         return response;
     }
 
-    public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, IEnumerable<string> flows, bool isCoder = false)
+    public async Task<DevGPTAgent> CreateUnregisteredAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, IEnumerable<string> flows, bool isCoder = false)
     {
         var config = new OpenAIConfig(OpenAiApiKey);
         var llmClient = new OpenAIClientWrapper(config);
@@ -199,6 +199,12 @@ public class AgentFactory {
         var tempStores = stores.Skip(1).Select(s => s.Store as IDocumentStore).ToList();
         var generator = new DocumentGenerator(stores.First().Store, new List<DevGPTChatMessage>() { new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = systemPrompt } }, llmClient, OpenAiApiKey, LogFilePath, tempStores);
         var agent = new DevGPTAgent(name, generator, tools, isCoder);
+        return agent;
+    }
+
+    public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, IEnumerable<string> flows, bool isCoder = false)
+    {       
+        var agent = await CreateUnregisteredAgent(name, systemPrompt, stores, function, agents, flows, isCoder);
         Agents[name] = agent;
         return agent;
     }

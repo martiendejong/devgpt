@@ -54,7 +54,7 @@ class Program
                 messages, 
                 DevGPTChatResponseFormat.Text, 
                 null, 
-                new List<ImageData>());
+                new List<ImageData>(), default);
 
             // Analyse the match
             var analysisMessages = new List<DevGPTChatMessage>
@@ -68,7 +68,7 @@ class Program
                 analysisMessages, 
                 DevGPTChatResponseFormat.Text, 
                 null, 
-                new List<ImageData>());
+                new List<ImageData>(), default);
 
             string report = $@"Er is een match gevonden met een CV en een vacature.\n\nDe CV:\n{candidateCV}\n\nDe vacature:\n{vacature}\n\nOp basis van de match van CV en vacature wordt het volgende gesprek gesimuleerd:\n{simulatedInterview}\n\nHier volgt de analyse van de match tot zover.\n{analysis}\n";
 
