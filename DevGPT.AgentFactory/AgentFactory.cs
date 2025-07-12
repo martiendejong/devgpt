@@ -46,11 +46,13 @@ public class AgentFactory {
     public ChatToolParameter filesRecursiveParameter = new ChatToolParameter { Name = "recursive", Description = "Returns the files in subfolders as well.", Type = "string", Required = false };
     public ChatToolParameter relevancyParameter = new ChatToolParameter { Name = "query", Description = "The relevancy search query.", Type = "string", Required = true };
     public ChatToolParameter instructionParameter = new ChatToolParameter { Name = "instruction", Description = "The instruction to send to the agent.", Type = "string", Required = true };
+    public ChatToolParameter systemPromptParameter = new ChatToolParameter { Name = "system_prompt", Description = "The system prompt for the agent.", Type = "string", Required = true };
     public ChatToolParameter argumentsParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call git with.", Type = "string", Required = true };
     public ChatToolParameter timeOutSecondsParameter = new ChatToolParameter { Name = "timeout", Description = "The maximum number of seconds this process is allowed to run.", Type = "number", Required = true };
     public ChatToolParameter bigQueryParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call Google BigQuery with.", Type = "string", Required = true };
     public ChatToolParameter bigQueryDataSetParameter = new ChatToolParameter { Name = "datacollection", Description = "The dataset in Google BigQuery.", Type = "string", Required = true };
     public ChatToolParameter bigQueryTableNameParameter = new ChatToolParameter { Name = "tablename", Description = "The table name in Google BigQuery.", Type = "string", Required = true };
+    public ChatToolParameter storeParameter = new ChatToolParameter { Name = "store", Description = "The store that the agent has access to.", Type = "string", Required = true };
 
     public Dictionary<string, DevGPTAgent> Agents = new Dictionary<string, DevGPTAgent>();
     public Dictionary<string, DevGPTFlow> Flows = new Dictionary<string, DevGPTFlow>();
@@ -154,6 +156,42 @@ public class AgentFactory {
         return response;
     }
 
+    private async Task<string> CallCustomAgent(string systemPrompt, string store, string instruction, string caller, bool isCoder, CancellationToken cancel)
+    {
+        var storeConfig = storesConfig.FirstOrDefault(s => s.Name.ToLower() == store.ToLower());
+        if (storeConfig == null) return "Store not found";
+
+        var openAIConfig = new OpenAIConfig(OpenAiApiKey);
+        var llmClient = new OpenAIClientWrapper(openAIConfig);
+        var creator = new QuickAgentCreator(this, llmClient);
+        var loader = new StoresAndAgentsAndFlowLoader(creator);
+
+        var dstore = creator.CreateStore(new StorePaths(storeConfig.Path), storeConfig.Name) as IDocumentStore;
+        await loader.AddFiles(dstore, storeConfig.Path, storeConfig.FileFilters, storeConfig.SubDirectory, storeConfig.ExcludePattern);
+        
+        var agent = await CreateUnregisteredAgent("unregistered", systemPrompt, [( dstore, true )], ["custom"], [], [], isCoder);
+
+        instruction = "de functies custom_agent_getstores, custom_agent_run en custom_agent_write kunnen gebruikt worden om de stores in te zien, custom agents aan te roepen voor een response, of om wijzigingen te maken. " + instruction;
+
+        string response;
+        if (isCoder)
+        {
+            WriteMode = true;
+            try
+            {
+                response = await agent.Generator.UpdateStore(instruction + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", cancel, null, true, true, agent.Tools, null);
+            }
+            finally {
+                WriteMode = false;
+            }
+        }
+        else
+        {
+            response = await agent.Generator.GetResponse(instruction, cancel, Messages);
+        }
+        return response;
+    }
+
     // Helper for agent call with custom meta-info (used in flows)
     public async Task<string> CallAgentWithMeta(string name, string query, string caller, string functionName, string flowName, CancellationToken cancel)
     {
@@ -234,6 +272,10 @@ public class AgentFactory {
                 AddBuildTools(tools, functions, store);
             }
             ++i;
+        }
+        if(functions.Contains("custom"))
+        {
+            AddAdvancedAgentTools(tools, agents, caller);
         }
     }
 
@@ -501,6 +543,44 @@ public class AgentFactory {
             return "No key given";
         });
         tools.Add(getFile);
+    }
+
+    private void AddAdvancedAgentTools(ToolsContextBase tools, IEnumerable<string> agents, string caller)
+    {
+        var callAgent = new DevGPTChatTool($"custom_agent_getstores", $"Gets a list of stores that a custom agent can use", [], async (messages, toolCall, cancel) =>
+        {
+            cancel.ThrowIfCancellationRequested();
+            return string.Join(",", storesConfig.Select(s => s.Name).ToList());
+        });
+        tools.Add(callAgent);
+
+        var callAgent2 = new DevGPTChatTool($"custom_agent_run", $"Runs a custom agent", [instructionParameter, systemPromptParameter, storeParameter], async (messages, toolCall, cancel) =>
+        {
+            cancel.ThrowIfCancellationRequested();
+            if (!instructionParameter.TryGetValue(toolCall, out string instruction))
+                return "No instruction given";
+            if (!systemPromptParameter.TryGetValue(toolCall, out string systemPrompt))
+                return "No system prompt given";
+            if (!storeParameter.TryGetValue(toolCall, out string store))
+                return "No store given";
+            return await CallCustomAgent(systemPrompt, store, instruction, caller, false, cancel);
+        });
+        tools.Add(callAgent2);
+
+        var callAgent3 = new DevGPTChatTool($"custom_agent_write", $"Runs a custom agent that writes documents", [instructionParameter, systemPromptParameter, storeParameter], async (messages, toolCall, cancel) =>
+        {
+            cancel.ThrowIfCancellationRequested();
+            if (!instructionParameter.TryGetValue(toolCall, out string instruction))
+                return "No instruction given";
+            if (!systemPromptParameter.TryGetValue(toolCall, out string systemPrompt))
+                return "No system prompt given";
+            if (!storeParameter.TryGetValue(toolCall, out string store))
+                return "No store given";
+            if (WriteMode)
+                return "Already in writemode";
+            return await CallCustomAgent(systemPrompt, store, instruction, caller, true, cancel);
+        });
+        tools.Add(callAgent3);
     }
 
     private void AddAgentTools(ToolsContextBase tools, IEnumerable<string> agents, string caller)
