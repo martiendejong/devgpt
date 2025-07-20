@@ -88,6 +88,48 @@ public partial class SimpleOpenAIClientChatInteraction
         return options;
     }
 
+    public async Task<ChatCompletion> Run_SurrogateTools(CancellationToken cancellationToken)
+    {
+        bool requiresAction;
+        ChatCompletion completion;
+        var i = 0;
+        var maxToolCalls = 50;
+
+        var noToolsOptions = new ChatCompletionOptions
+        {
+            ResponseFormat = Options.ResponseFormat,
+        };
+
+        do
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            requiresAction = false;
+            try
+            {
+                Log(Messages?.LastOrDefault()?.Content?.FirstOrDefault()?.ToString());
+                // todo add code to demand json in a format that shows the function calls
+                completion = await Client.CompleteChatAsync(Messages, noToolsOptions, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            var finishMessage = new AssistantChatMessage(completion);
+            var toolCalls = completion.ToolCalls;
+            var finishReason = completion.FinishReason;
+            ++i;
+
+            requiresAction = await HandleFinishReason(requiresAction, finishMessage, toolCalls, finishReason, cancellationToken);
+        } while (requiresAction && i < maxToolCalls);
+
+        return completion;
+    }
+
     public async Task<ChatCompletion> Run(CancellationToken cancellationToken)
     {
         bool requiresAction;

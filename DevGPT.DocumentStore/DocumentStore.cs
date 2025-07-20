@@ -102,7 +102,7 @@ public class DocumentStore : IDocumentStore
         folder = folder.ToLower();
         if (string.IsNullOrWhiteSpace(folder))
             return EmbeddingStore.Embeddings.Select(e => e.Key.ToLower()).Where(p => recursive || !p.Contains("\\")).ToList();
-        return EmbeddingStore.Embeddings.Select(e => e.Key.ToLower()).Where(p => p.StartsWith(folder) && (recursive || !p.Substring(folder.Length + 1).Contains("\\"))).ToList();
+        return EmbeddingStore.Embeddings.Select(e => e.Key.ToLower()).Where(p => p.StartsWith(folder) && (recursive || (p.Length > folder.Length + 1 && !p.Substring(folder.Length + 1).Contains("\\")))).ToList();
     }
 
     public async Task<List<string>> RelevantItems(string query)

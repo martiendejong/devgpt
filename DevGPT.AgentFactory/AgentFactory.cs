@@ -1,11 +1,28 @@
 using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection.Metadata;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
+using System.Xml;
 using System.Xml.Linq;
 
 using Google.Apis.Auth.OAuth2.Responses;
 using Google.Cloud.BigQuery.V2;
+
+using MailKit;
+using MailKit.Net.Imap;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+
 using MathNet.Numerics.RootFinding;
+
+using MimeKit;
+
+using OpenAI.Images;
+
+using UniqueId = MailKit.UniqueId;
 
 public class AgentFactory {
     public AgentFactory(string openAIApiKey, string logFilePath, string googleProjectId = "")
@@ -48,11 +65,23 @@ public class AgentFactory {
     public ChatToolParameter instructionParameter = new ChatToolParameter { Name = "instruction", Description = "The instruction to send to the agent.", Type = "string", Required = true };
     public ChatToolParameter systemPromptParameter = new ChatToolParameter { Name = "system_prompt", Description = "The system prompt for the agent.", Type = "string", Required = true };
     public ChatToolParameter argumentsParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call git with.", Type = "string", Required = true };
+    public ChatToolParameter wpcommandParameter = new ChatToolParameter { Name = "command", Description = "The wp cli command to call.", Type = "string", Required = true };
+    public ChatToolParameter wpargumentsParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call the wordpress cli command with.", Type = "string", Required = false };
     public ChatToolParameter timeOutSecondsParameter = new ChatToolParameter { Name = "timeout", Description = "The maximum number of seconds this process is allowed to run.", Type = "number", Required = true };
     public ChatToolParameter bigQueryParameter = new ChatToolParameter { Name = "arguments", Description = "The arguments to call Google BigQuery with.", Type = "string", Required = true };
     public ChatToolParameter bigQueryDataSetParameter = new ChatToolParameter { Name = "datacollection", Description = "The dataset in Google BigQuery.", Type = "string", Required = true };
     public ChatToolParameter bigQueryTableNameParameter = new ChatToolParameter { Name = "tablename", Description = "The table name in Google BigQuery.", Type = "string", Required = true };
     public ChatToolParameter storeParameter = new ChatToolParameter { Name = "store", Description = "The store that the agent has access to.", Type = "string", Required = true };
+
+    // email
+    public ChatToolParameter recipientParameter = new ChatToolParameter { Name = "recipient", Description = "The email address that receives the email.", Type = "string", Required = true };
+    public ChatToolParameter subjectParameter = new ChatToolParameter { Name = "subject", Description = "The subject of the email.", Type = "string", Required = true };
+    public ChatToolParameter bodyParameter = new ChatToolParameter { Name = "body", Description = "The body content of the email.", Type = "string", Required = true };
+    public ChatToolParameter emailIdParameter = new ChatToolParameter { Name = "emailId", Description = "The ID or index of the email.", Type = "string", Required = true };
+    public ChatToolParameter folderNameParameter = new ChatToolParameter { Name = "folder", Description = "The email folder.", Type = "string", Required = true };
+    public ChatToolParameter destinationFolderParameter = new ChatToolParameter { Name = "destinationFolder", Description = "The destination folder for the email.", Type = "string", Required = true };
+    public ChatToolParameter emailAmountParameter = new ChatToolParameter { Name = "amount", Description = "The number of emails to read.", Type = "number", Required = true };
+    public ChatToolParameter emailOldestFirstParameter = new ChatToolParameter { Name = "oldestFirst", Description = "If we should return the oldest emails first.", Type = "boolean", Required = true };
 
     public Dictionary<string, DevGPTAgent> Agents = new Dictionary<string, DevGPTAgent>();
     public Dictionary<string, DevGPTFlow> Flows = new Dictionary<string, DevGPTFlow>();
@@ -276,6 +305,14 @@ public class AgentFactory {
         if(functions.Contains("custom"))
         {
             AddAdvancedAgentTools(tools, agents, caller);
+        }
+        if (functions.Contains("wordpress"))
+        {
+            AddWordpressTools(tools, agents, caller);
+        }
+        if (functions.Contains("email"))
+        {
+            AddEmailFunctions(tools);
         }
     }
 
@@ -522,9 +559,16 @@ public class AgentFactory {
         {
             cancel.ThrowIfCancellationRequested();
             filesRecursiveParameter.TryGetValue(toolCall, out bool recursive);
-            if (folderParameter.TryGetValue(toolCall, out string folder))
-                return string.Join("\n", await store.List(folder, recursive));
-            return string.Join("\n", await store.List("", recursive));
+            try
+            {
+                if (folderParameter.TryGetValue(toolCall, out string folder))
+                    return string.Join("\n", await store.List(folder, recursive));
+                return string.Join("\n", await store.List("", recursive));
+            }
+            catch(Exception e)
+            {
+                return "Error: " + e.Message;
+            }
         });
         tools.Add(getFiles);
         var getRelevancy = new DevGPTChatTool($"{store.Name}_relevancy", $"Retrieve a list of relevant files in store {store.Name}. {config.Description}", [relevancyParameter], async (messages, toolCall, cancel) =>
@@ -544,6 +588,161 @@ public class AgentFactory {
         });
         tools.Add(getFile);
     }
+
+    private void AddWordpressTools(ToolsContextBase tools, IEnumerable<string> agents, string caller)
+    {
+        var wordpressAgent = new DevGPTChatTool($"wordpress_cli", $"Call the wordpress cli", [wpcommandParameter, wpargumentsParameter], async (messages, toolCall, cancel) =>
+        {
+            cancel.ThrowIfCancellationRequested();
+            if (!wpcommandParameter.TryGetValue(toolCall, out string command))
+                return "No arguments given";
+            wpargumentsParameter.TryGetValue(toolCall, out string wparguments);
+
+            // todo call wordpress cli
+            var username = "martiendejong2008@gmail.com";
+            var password = "qEWK IwaU JzyL ufe9 Ecro tkKB";
+            var siteurl = "http://localhost";
+            var method = HttpMethod.Post;
+
+            //var httpClient = new HttpClient();
+            var handler = new HttpClientHandler();
+            handler.ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            var httpClient = new HttpClient(handler);
+
+
+            try
+            {
+                var url = $"{siteurl}/wp-json/wp-cli-api-bridge/v1/command";
+
+                var request = new HttpRequestMessage(method, url);
+
+                var jsonContent = JsonSerializer.Serialize(wparguments);
+                using var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                if (content != null)
+                    request.Content = content;
+
+                string basicAuth = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", basicAuth);
+
+
+                using var response = await httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                var data = await response.Content.ReadAsStringAsync();
+                return data;
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        });
+        tools.Add(wordpressAgent);
+    }
+
+    private void AddEmailFunctions(ToolsContextBase tools)
+    {
+        var sendEmailTool = new DevGPTChatTool("email_send", "Sends an email", [recipientParameter, subjectParameter, bodyParameter], async (messages, toolCall, cancel) =>
+        {
+            cancel.ThrowIfCancellationRequested();
+
+            if (!recipientParameter.TryGetValue(toolCall, out string to))
+                return "Recipient not specified";
+            if (!subjectParameter.TryGetValue(toolCall, out string subject))
+                return "Subject not specified";
+            if (!bodyParameter.TryGetValue(toolCall, out string body))
+                return "Body not specified";
+
+            try {
+                var result = await SendEmailAsync(to, subject, body, cancel);
+                return result ? "Email sent successfully." : "Failed to send email.";
+            }
+            catch (Exception ex) { return ex.Message; }
+        });
+        tools.Add(sendEmailTool);
+
+        var listInboxTool = new DevGPTChatTool("email_list_inbox", "Lists latest emails in the inbox", [emailAmountParameter, emailOldestFirstParameter], async (messages, toolCall, cancel) =>
+        {
+            cancel.ThrowIfCancellationRequested();
+
+            try
+            {
+                if (!emailAmountParameter.TryGetValue(toolCall, out string amount))
+                    return "Recipient not specified";
+                if (!emailOldestFirstParameter.TryGetValue(toolCall, out string oldestFirst))
+                    return "Subject not specified";
+
+                var emails = await ListInboxEmailsAsync(int.Parse(amount), bool.Parse(oldestFirst), cancel);
+                return string.Join("\n\n", emails.Select(e => $"ID:{e.Id} {e.Sender} - {e.Subject} - {e.Date}"));
+            }
+            catch (Exception ex) { return ex.Message; }
+        });
+        tools.Add(listInboxTool);
+
+        var readEmailTool = new DevGPTChatTool("email_read", "Reads an email by ID or index", [emailIdParameter], async (messages, toolCall, cancel) =>
+        {
+            cancel.ThrowIfCancellationRequested();
+
+            if (!emailIdParameter.TryGetValue(toolCall, out string id))
+                return "Email ID not specified";
+
+            try
+            { 
+                var email = await ReadEmailAsync(id, cancel);
+                return email != null ? $"From: {email.Sender}\nSubject: {email.Subject}\n\n{email.Body}" : "Email not found.";
+            }
+            catch (Exception ex) { return ex.Message; }
+        });
+        tools.Add(readEmailTool);
+
+        var createFolderTool = new DevGPTChatTool("email_create_folder", "Creates a folder in the mailbox", [folderNameParameter], async (messages, toolCall, cancel) =>
+        {
+            cancel.ThrowIfCancellationRequested();
+
+            if (!folderNameParameter.TryGetValue(toolCall, out string folderName))
+                return "Folder name not specified";
+
+            try
+            { 
+                var result = await CreateMailboxFolderAsync(folderName, cancel);
+                return result;
+            }
+            catch (Exception ex) { return ex.Message; }
+        });
+        tools.Add(createFolderTool);
+
+        var moveEmailTool = new DevGPTChatTool("email_move", "Moves an email to a folder", [emailIdParameter, destinationFolderParameter], async (messages, toolCall, cancel) =>
+        {
+            cancel.ThrowIfCancellationRequested();
+
+            if (!emailIdParameter.TryGetValue(toolCall, out string emailId))
+                return "Email ID not specified";
+            if (!destinationFolderParameter.TryGetValue(toolCall, out string folderName))
+                return "Destination folder not specified";
+
+            try
+            {
+                var result = await MoveEmailToFolderAsync(emailId, folderName, cancel);
+                return result;
+            }
+            catch (Exception ex) { return ex.Message; }
+        });
+        tools.Add(moveEmailTool);
+
+        var listFoldersTool = new DevGPTChatTool("email_list_folders", "Lists all folders in the mailbox", [], async (messages, toolCall, cancel) =>
+        {
+            cancel.ThrowIfCancellationRequested();
+
+            try
+            {
+                var folders = await ListMailboxFoldersAsync(cancel);
+                return string.Join("\n", folders);
+            }
+            catch (Exception ex) { return ex.Message; }
+        });
+        tools.Add(listFoldersTool);
+    }
+
 
     private void AddAdvancedAgentTools(ToolsContextBase tools, IEnumerable<string> agents, string caller)
     {
@@ -644,4 +843,207 @@ public class AgentFactory {
             tools.Add(callFlow);
         }
     }
+
+    public async Task<bool> SendEmailAsync(string to, string subject, string body, CancellationToken cancel)
+    {
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress("Agent", EmailSettings.SmtpUser));
+        message.To.Add(MailboxAddress.Parse(to));
+        message.Subject = subject;
+        message.Body = new TextPart("plain") { Text = body };
+
+        using var client = new SmtpClient();
+        await client.ConnectAsync(EmailSettings.SmtpHost, EmailSettings.SmtpPort, EmailSettings.UseSsl, cancel);
+        await client.AuthenticateAsync(EmailSettings.SmtpUser, EmailSettings.SmtpPassword, cancel);
+        await client.SendAsync(message, cancel);
+        await client.DisconnectAsync(true, cancel);
+
+        // also add to sent folder
+        using var imap = new ImapClient();
+        await client.ConnectAsync(EmailSettings.SmtpHost, EmailSettings.SmtpPort, EmailSettings.UseSsl, cancel);
+        await client.AuthenticateAsync(EmailSettings.SmtpUser, EmailSettings.SmtpPassword, cancel);
+
+        var sent = imap.GetFolder(SpecialFolder.Sent) ?? imap.GetFolder("Sent");
+        await sent.OpenAsync(FolderAccess.ReadWrite);
+        await sent.AppendAsync(message);
+
+        await client.DisconnectAsync(true, cancel);
+        
+        return true;
+    }
+    public async Task<List<EmailSummary>> ListInboxEmailsAsync(int amount, bool oldestFirst, CancellationToken cancel)
+    {
+        using var client = new MailKit.Net.Imap.ImapClient();
+        await client.ConnectAsync(EmailSettings.ImapHost, EmailSettings.ImapPort, EmailSettings.UseSsl, cancel);
+        await client.AuthenticateAsync(EmailSettings.ImapUser, EmailSettings.ImapPassword, cancel);
+
+        var inbox = client.Inbox;
+        await inbox.OpenAsync(FolderAccess.ReadOnly, cancel);
+
+        // Haal de laatste 10 UniqueIds op
+        var uids = await inbox.SearchAsync(MailKit.Search.SearchQuery.All, cancel);
+        uids = oldestFirst ? uids.Reverse().ToList() : uids;
+        var lastUids = uids.Reverse().Take(amount).ToList();
+
+        // Haal Envelope-gegevens (header info)
+        var summaries = await inbox.FetchAsync(lastUids, MailKit.MessageSummaryItems.Envelope, cancel);
+
+        var result = summaries
+            .Select(summary => new EmailSummary
+            {
+                Id = summary.UniqueId.ToString(),
+                Sender = summary.Envelope?.From?.Mailboxes?.FirstOrDefault()?.Address ?? "Unknown",
+                Subject = summary.Envelope?.Subject ?? "(no subject)",
+                Date = summary.Envelope?.Date?.DateTime ?? DateTime.MinValue
+            })
+            .OrderByDescending(e => e.Date)
+            .ToList();
+
+        await client.DisconnectAsync(true, cancel);
+        return result;
+    }
+    public async Task<EmailDetail> ReadEmailAsync(string id, CancellationToken cancel)
+    {
+        using var client = new ImapClient();
+        await client.ConnectAsync(EmailSettings.ImapHost, EmailSettings.ImapPort, EmailSettings.UseSsl, cancel);
+        await client.AuthenticateAsync(EmailSettings.ImapUser, EmailSettings.ImapPassword, cancel);
+
+        var inbox = client.Inbox;
+        await inbox.OpenAsync(FolderAccess.ReadOnly, cancel);
+
+        if (!UniqueId.TryParse(id, out var uid))
+            return null;
+
+        var message = await inbox.GetMessageAsync(uid, cancel);
+        var body = message.TextBody ?? message.HtmlBody ?? "<no content>";
+
+        await client.DisconnectAsync(true, cancel);
+
+        return new EmailDetail
+        {
+            Sender = message.From.Mailboxes.FirstOrDefault()?.Address ?? "Unknown",
+            Subject = message.Subject,
+            Body = body
+        };
+    }
+
+    public async Task<string> CreateMailboxFolderAsync(string folderName, CancellationToken cancel)
+    {
+        using var client = new ImapClient();
+        await client.ConnectAsync(EmailSettings.ImapHost, EmailSettings.ImapPort, EmailSettings.UseSsl, cancel);
+        await client.AuthenticateAsync(EmailSettings.ImapUser, EmailSettings.ImapPassword, cancel);
+
+        var personal = client.GetFolder(client.PersonalNamespaces[0]);
+
+        try
+        {
+            if (await personal.GetSubfolderAsync(folderName, cancel) != null)
+                return $"Folder '{folderName}' already exists.";
+        }
+        catch (MailKit.FolderNotFoundException)
+        {
+            // Expected: folder does not exist, so we can create it.
+        }
+
+        await personal.CreateAsync(folderName, true, cancel);
+
+        await client.DisconnectAsync(true, cancel);
+        return $"Folder '{folderName}' created successfully.";
+    }
+
+    public async Task<string> MoveEmailToFolderAsync(string emailUid, string targetFolderName, CancellationToken cancel)
+    {
+        using var client = new ImapClient();
+        await client.ConnectAsync(EmailSettings.ImapHost, EmailSettings.ImapPort, EmailSettings.UseSsl, cancel);
+        await client.AuthenticateAsync(EmailSettings.ImapUser, EmailSettings.ImapPassword, cancel);
+
+        var inbox = client.Inbox;
+        await inbox.OpenAsync(FolderAccess.ReadWrite, cancel);
+
+        if (!UniqueId.TryParse(emailUid, out var uid))
+            return "Invalid email UID.";
+
+        var root = client.GetFolder(client.PersonalNamespaces[0]);
+        var folders = await root.GetSubfoldersAsync(false, cancel);
+
+        var dest = folders.FirstOrDefault(f => string.Equals(f.Name, targetFolderName, StringComparison.OrdinalIgnoreCase));
+        if (dest == null)
+            return $"Target folder '{targetFolderName}' does not exist.";
+
+        //await dest.OpenAsync(FolderAccess.ReadWrite, cancel);
+        await inbox.MoveToAsync(uid, dest, cancel);
+
+        await client.DisconnectAsync(true, cancel);
+        return $"Email moved to '{targetFolderName}'.";
+    }
+
+    public async Task<List<string>> ListMailboxFoldersAsync(CancellationToken cancel)
+    {
+        using var client = new ImapClient();
+        await client.ConnectAsync(EmailSettings.ImapHost, EmailSettings.ImapPort, EmailSettings.UseSsl, cancel);
+        await client.AuthenticateAsync(EmailSettings.ImapUser, EmailSettings.ImapPassword, cancel);
+
+        var root = await client.GetFolderAsync(client.PersonalNamespaces[0].Path, cancel);
+
+        var all = new List<IMailFolder>();
+        await EnumerateFoldersAsync(root, all, cancel, isRoot: true);
+
+        await client.DisconnectAsync(true, cancel);
+
+        return all.Select(f => f.FullName).ToList();
+    }
+
+    private async Task EnumerateFoldersAsync(IMailFolder folder, List<IMailFolder> list, CancellationToken cancel, bool isRoot = false)
+    {
+        // Voeg de folder toe aan de lijst, ook als je 'm niet opent
+        list.Add(folder);
+
+        // Alleen openen als de folder daadwerkelijk berichten kan bevatten
+        if (!folder.Attributes.HasFlag(FolderAttributes.NoSelect))
+        {
+            try
+            {
+                await folder.OpenAsync(FolderAccess.ReadOnly, cancel);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Kon folder '{folder.FullName}' niet openen: {ex.Message}");
+            }
+        }
+
+        // Recursief alle subfolders ophalen
+        foreach (var sub in await folder.GetSubfoldersAsync(false, cancel))
+        {
+            await EnumerateFoldersAsync(sub, list, cancel, false);
+        }
+    }
+
+    public EmailSettings EmailSettings = new EmailSettings();
 }
+public class EmailSettings
+{
+    public string SmtpHost = "mail.zxcs.nl";
+    public int SmtpPort = 587;
+    public string SmtpUser = "info@martiendejong.nl";
+    public string SmtpPassword = "hLPFy6MdUnfEDbYTwXps";
+    public string ImapHost = "mail.zxcs.nl";
+    public int ImapPort = 993;
+    public string ImapUser = "info@martiendejong.nl";
+    public string ImapPassword = "hLPFy6MdUnfEDbYTwXps";
+    public bool UseSsl = true;
+}
+public class EmailSummary
+{
+    public string Id { get; set; }
+    public string Sender { get; set; }
+    public string Subject { get; set; }
+    public DateTime Date { get; set; }
+}
+
+public class EmailDetail
+{
+    public string Sender { get; set; }
+    public string Subject { get; set; }
+    public string Body { get; set; }
+}
+
