@@ -18,26 +18,29 @@
         overflow: hidden;
     }
     .chat-panel {
-        width: 350px;
-        min-width: 250px;
-        max-width: 400px;
+        width: 100%;
+        max-width: 300px;
+        min-width: 200px;
         border-right: 1px solid #ccc;
         background: #fff;
         padding: 0;
         display: flex;
         flex-direction: column;
         height: 100%;
+        align-items: flex-start;
     }
     .chat-history {
         flex: 1;
         overflow-y: auto;
         padding: 1rem;
         margin-bottom: 0.5rem;
+        width: 100%;
     }
     .chat-input {
         display: flex;
         padding: 0.5rem 1rem 1rem 1rem;
         background: #fff;
+        width: 100%;
     }
     .chat-input textarea {
         flex: 1;
@@ -63,14 +66,20 @@
     }
     .html-panel {
         flex: 1;
-        padding: 2rem;
-        background: #f9f9f9;
-        overflow: auto;
         height: 100%;
         min-width: 0;
+        padding: 0;
+        background: #f9f9f9;
+        display: flex;
+    }
+    .html-iframe {
+        border: none;
+        width: 100%;
+        height: 100%;
+        background: #fff;
     }
     @@media (max-width: 900px) {
-        .chat-panel { width: 200px; }
+        .chat-panel { max-width: 200px; }
     }
     @@media (max-width: 700px) {
         .main-content {
@@ -86,7 +95,6 @@
             max-height: 50vh;
         }
         .html-panel {
-            padding: 1rem;
             min-height: 50vh;
         }
     }
@@ -107,7 +115,7 @@
         .html-panel {
             min-height: 0;
             height: 100%;
-            padding: 0.5rem;
+            padding: 0;
         }
     }
 </style>
@@ -120,20 +128,27 @@
         </form>
     </div>
     <div class="html-panel">
-        <div id="htmlOutput">Voer een bericht in om HTML te genereren.</div>
+        <iframe id="htmlOutputFrame" class="html-iframe" title="Gegenereerde HTML"></iframe>
     </div>
 </div>
 <script>
     // Chat/HTML logic
     const chatHistory = [];
     const chatHistoryDiv = document.getElementById('chatHistory');
-    const htmlOutputDiv = document.getElementById('htmlOutput');
+    const htmlOutputFrame = document.getElementById('htmlOutputFrame');
     const chatForm = document.getElementById('chatForm');
     const chatMessage = document.getElementById('chatMessage');
 
     function renderChat() {
         chatHistoryDiv.innerHTML = chatHistory.map(m => `<div><b>${m.role === 'user' ? 'Jij' : 'AI'}:</b> ${m.text}</div>`).join('');
         chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+    }
+
+    function setIframeHtml(html) {
+        const doc = htmlOutputFrame.contentDocument || htmlOutputFrame.contentWindow.document;
+        doc.open();
+        doc.write(html);
+        doc.close();
     }
 
     chatForm.addEventListener('submit', async function(e) {
@@ -143,7 +158,7 @@
         chatHistory.push({ role: 'user', text });
         renderChat();
         chatMessage.value = '';
-        htmlOutputDiv.innerHTML = '<em>HTML genereren...</em>';
+        setIframeHtml('<em>HTML genereren...</em>');
         // Bouw DevGPTChatMessage lijst
         const messages = chatHistory.map(m => ({
             MessageId: crypto.randomUUID(),
@@ -165,12 +180,12 @@
         });
 
         if (!response.ok) {
-            htmlOutputDiv.innerHTML = `<div style='color:red'>Fout: ${response.status} ${response.statusText}</div>`;
+            setIframeHtml(`<div style='color:red'>Fout: ${response.status} ${response.statusText}</div>`);
             return;
         }
 
         const data = await response.json();
-        htmlOutputDiv.innerHTML = data.html;
+        setIframeHtml(data.html);
         chatHistory.push({ role: 'assistant', text: '[HTML gegenereerd]' });
         renderChat();
     });
