@@ -21,9 +21,9 @@ public static class DevGPTOpenAIExtensions
     }
     public static ChatMessage OpenAI(this DevGPTChatMessage message) 
     {
-        if (message.Role == DevGPTMessageRole.User) return new UserChatMessage(message.Text);
-        if (message.Role == DevGPTMessageRole.Assistant) return new AssistantChatMessage(message.Text);
-        if (message.Role == DevGPTMessageRole.System) return new SystemChatMessage(message.Text);
+        if (message.Role == DevGPTMessageRole.User || message.Role.Role == DevGPTMessageRole.User.Role) return new UserChatMessage(message.Text);
+        if (message.Role == DevGPTMessageRole.Assistant || message.Role.Role == DevGPTMessageRole.Assistant.Role) return new AssistantChatMessage(message.Text);
+        if (message.Role == DevGPTMessageRole.System || message.Role.Role == DevGPTMessageRole.System.Role) return new SystemChatMessage(message.Text);
         throw new Exception("DevGPTMessageRole not recognized");
     }
     public static DevGPTChatMessage? DevGPT(this ChatMessage message)
