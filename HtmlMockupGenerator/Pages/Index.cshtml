@@ -1,0 +1,67 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "HTML Mockup Generator";
+}
+<style>
+    .container { display: flex; height: 90vh; }
+    .chat-panel { width: 350px; border-right: 1px solid #ccc; padding: 1rem; display: flex; flex-direction: column; }
+    .chat-history { flex: 1; overflow-y: auto; margin-bottom: 1rem; }
+    .chat-input { display: flex; }
+    .chat-input textarea { flex: 1; resize: none; }
+    .chat-input button { margin-left: 0.5rem; }
+    .html-panel { flex: 1; padding: 1rem; background: #f9f9f9; overflow: auto; }
+</style>
+<div class="container">
+    <div class="chat-panel">
+        <div class="chat-history" id="chatHistory"></div>
+        <form class="chat-input" id="chatForm" autocomplete="off">
+            <textarea id="chatMessage" rows="2" placeholder="Typ een bericht..."></textarea>
+            <button type="submit">Verstuur</button>
+        </form>
+    </div>
+    <div class="html-panel">
+        <div id="htmlOutput">Voer een bericht in om HTML te genereren.</div>
+    </div>
+</div>
+<script>
+    const chatHistory = [];
+    const chatHistoryDiv = document.getElementById('chatHistory');
+    const htmlOutputDiv = document.getElementById('htmlOutput');
+    const chatForm = document.getElementById('chatForm');
+    const chatMessage = document.getElementById('chatMessage');
+
+    function renderChat() {
+        chatHistoryDiv.innerHTML = chatHistory.map(m => `<div><b>${m.role === 'user' ? 'Jij' : 'AI'}:</b> ${m.text}</div>`).join('');
+        chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+    }
+
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const text = chatMessage.value.trim();
+        if (!text) return;
+        chatHistory.push({ role: 'user', text });
+        renderChat();
+        chatMessage.value = '';
+        htmlOutputDiv.innerHTML = '<em>HTML genereren...</em>';
+        // Bouw DevGPTChatMessage lijst
+        const messages = chatHistory.map(m => ({
+            MessageId: crypto.randomUUID(),
+            Role: { Role: m.role },
+            Text: m.text,
+            AgentName: '',
+            FunctionName: '',
+            FlowName: '',
+            Response: ''
+        }));
+        const response = await fetch('/Index?handler=GenerateHtml', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ChatHistoryJson: JSON.stringify(messages) })
+        });
+        const data = await response.json();
+        htmlOutputDiv.innerHTML = data.html;
+        chatHistory.push({ role: 'assistant', text: '[HTML gegenereerd]' });
+        renderChat();
+    });
+</script>
