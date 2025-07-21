@@ -1019,30 +1019,30 @@ public class AgentFactory {
 
     public EmailSettings EmailSettings = new EmailSettings();
 }
-public class EmailSettings
-{
-    public string SmtpHost = "mail.zxcs.nl";
-    public int SmtpPort = 587;
-    public string SmtpUser = "formsubmissions@martiendejong.nl";
-    public string SmtpPassword = "ysZU9TarE5qNZRvEBntY";
-    public string ImapHost = "mail.zxcs.nl";
-    public int ImapPort = 993;
-    public string ImapUser = "formsubmissions@martiendejong.nl";
-    public string ImapPassword = "ysZU9TarE5qNZRvEBntY";
-    public bool UseSsl = true;
-}
 //public class EmailSettings
 //{
 //    public string SmtpHost = "mail.zxcs.nl";
 //    public int SmtpPort = 587;
-//    public string SmtpUser = "info@martiendejong.nl";
-//    public string SmtpPassword = "hLPFy6MdUnfEDbYTwXps";
+//    public string SmtpUser = "formsubmissions@martiendejong.nl";
+//    public string SmtpPassword = "ysZU9TarE5qNZRvEBntY";
 //    public string ImapHost = "mail.zxcs.nl";
 //    public int ImapPort = 993;
-//    public string ImapUser = "info@martiendejong.nl";
-//    public string ImapPassword = "hLPFy6MdUnfEDbYTwXps";
+//    public string ImapUser = "formsubmissions@martiendejong.nl";
+//    public string ImapPassword = "ysZU9TarE5qNZRvEBntY";
 //    public bool UseSsl = true;
 //}
+public class EmailSettings
+{
+    public string SmtpHost = "mail.zxcs.nl";
+    public int SmtpPort = 587;
+    public string SmtpUser = "info@martiendejong.nl";
+    public string SmtpPassword = "hLPFy6MdUnfEDbYTwXps";
+    public string ImapHost = "mail.zxcs.nl";
+    public int ImapPort = 993;
+    public string ImapUser = "info@martiendejong.nl";
+    public string ImapPassword = "hLPFy6MdUnfEDbYTwXps";
+    public bool UseSsl = true;
+}
 public class EmailSummary
 {
     public string Id { get; set; }

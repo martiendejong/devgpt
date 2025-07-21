@@ -3,14 +3,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Http;
 using System.Text.Json;
-using DevGPTChatMessage = DevGPTChatMessage;
-using DevGPTMessageRole = DevGPTMessageRole;
-using OpenAIClientWrapper = OpenAIClientWrapper;
-using OpenAIConfig = OpenAIConfig;
-using ToolsContextBase = ToolsContextBase;
 
 namespace HtmlMockupGenerator.Pages;
 
+[IgnoreAntiforgeryToken]
 public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
@@ -31,7 +27,6 @@ public class IndexModel : PageModel
     [BindProperty]
     public string ChatHistoryJson { get; set; } = string.Empty;
 
-    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> OnPostGenerateHtmlAsync()
     {
         try

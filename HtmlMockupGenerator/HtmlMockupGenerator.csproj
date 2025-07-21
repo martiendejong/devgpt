@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DevGPT.OpenAI\DevGPT.OpenAI.csproj" />
+    <ProjectReference Include="..\DevGPT.LLMClientTools\DevGPT.LLMClientTools.csproj" />
   </ItemGroup>
 
 </Project>
