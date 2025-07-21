@@ -860,14 +860,13 @@ public class AgentFactory {
 
         // also add to sent folder
         using var imap = new ImapClient();
-        await client.ConnectAsync(EmailSettings.SmtpHost, EmailSettings.SmtpPort, EmailSettings.UseSsl, cancel);
-        await client.AuthenticateAsync(EmailSettings.SmtpUser, EmailSettings.SmtpPassword, cancel);
+        await imap.ConnectAsync(EmailSettings.ImapHost, EmailSettings.ImapPort, EmailSettings.UseSsl, cancel);
+        await imap.AuthenticateAsync(EmailSettings.ImapUser, EmailSettings.ImapPassword, cancel);
 
         var sent = imap.GetFolder(SpecialFolder.Sent) ?? imap.GetFolder("Sent");
         await sent.OpenAsync(FolderAccess.ReadWrite);
         await sent.AppendAsync(message);
-
-        await client.DisconnectAsync(true, cancel);
+        await imap.DisconnectAsync(true, cancel);
         
         return true;
     }
@@ -1024,14 +1023,26 @@ public class EmailSettings
 {
     public string SmtpHost = "mail.zxcs.nl";
     public int SmtpPort = 587;
-    public string SmtpUser = "info@martiendejong.nl";
-    public string SmtpPassword = "hLPFy6MdUnfEDbYTwXps";
+    public string SmtpUser = "formsubmissions@martiendejong.nl";
+    public string SmtpPassword = "ysZU9TarE5qNZRvEBntY";
     public string ImapHost = "mail.zxcs.nl";
     public int ImapPort = 993;
-    public string ImapUser = "info@martiendejong.nl";
-    public string ImapPassword = "hLPFy6MdUnfEDbYTwXps";
+    public string ImapUser = "formsubmissions@martiendejong.nl";
+    public string ImapPassword = "ysZU9TarE5qNZRvEBntY";
     public bool UseSsl = true;
 }
+//public class EmailSettings
+//{
+//    public string SmtpHost = "mail.zxcs.nl";
+//    public int SmtpPort = 587;
+//    public string SmtpUser = "info@martiendejong.nl";
+//    public string SmtpPassword = "hLPFy6MdUnfEDbYTwXps";
+//    public string ImapHost = "mail.zxcs.nl";
+//    public int ImapPort = 993;
+//    public string ImapUser = "info@martiendejong.nl";
+//    public string ImapPassword = "hLPFy6MdUnfEDbYTwXps";
+//    public bool UseSsl = true;
+//}
 public class EmailSummary
 {
     public string Id { get; set; }
