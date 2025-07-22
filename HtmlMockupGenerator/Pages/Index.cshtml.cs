@@ -250,36 +250,34 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
         {
             var chatHistory = JsonSerializer.Deserialize<List<DevGPTChatMessage>>(ChatHistoryJson) ?? new List<DevGPTChatMessage>();
             var toolsContext = new ToolsContextBase();
+            var urlParameter = new ChatToolParameter { Name = "url", Description = "The URL of the image", Required = true, Type = "string" };
+            Func<List<DevGPTChatMessage>, DevGPTChatToolCall, CancellationToken, Task<string>> execCheckImageURL = async (messges, call, token) =>
+            {
+                urlParameter.TryGetValue(call, out string url);
+                return (await ImageChecker.IsImageUrlAsync(url)) ? "Image found" : "Image NOT found";
+            };
+            toolsContext.Add("check_image_url", "Verifies if a URL serves an image before using it in the HTML", [urlParameter], execCheckImageURL);
+
+            var historyCopy = new List<DevGPTChatMessage>(chatHistory);
 
             if (chatHistory.Count > 1)
             {
-                var historyCopy = new List<DevGPTChatMessage>(chatHistory);
+                historyCopy.Insert(historyCopy.Count - 1, new DevGPTChatMessage(DevGPTMessageRole.System, "Current document: " + html));
+
                 historyCopy.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _updatePromptPrompt));
-                historyCopy.Insert(chatHistory.Count - 1, new DevGPTChatMessage(DevGPTMessageRole.System, "Current document: " + html));
                 var prompt = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
 
-
-                // Update HTML
-                //chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _systemPrompt));
-                //chatHistory.Insert(1, new DevGPTChatMessage(DevGPTMessageRole.System, "You will generate only the part of the HTML code that needs to be changed. By providing the start index and end index of the text that needs to be replaced you will keep the amount of code that is changed as small as possible."));
                 chatHistory.Insert(chatHistory.Count - 1, new DevGPTChatMessage(DevGPTMessageRole.System, "Current document: " + html));
 
                 chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, prompt));
                 chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _updateSystemPrompt));
                 html = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
-                //var response = await _openAiClient.GetResponse<HtmlReplaceResponse>(chatHistory, toolsContext, null, CancellationToken.None);
-                //html = html.Substring(0, response.StartCharIndex) + response.ReplacementHTML + html.Substring(response.EndCharIndex);
             }
             else
             {
-
-                var historyCopy = new List<DevGPTChatMessage>(chatHistory);
                 historyCopy.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _createPromptPrompt));
                 var prompt = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
 
-
-                // First time, create new HTML page
-                //chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _systemPrompt));
                 chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, prompt));
                 chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _createSystemPrompt));
                 html = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
