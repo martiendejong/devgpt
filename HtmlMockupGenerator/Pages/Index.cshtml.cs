@@ -2,7 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
+using HtmlMockupGenerator.Services;
+using HtmlMockupGenerator.Models;
 
 namespace HtmlMockupGenerator.Pages;
 
@@ -11,7 +14,14 @@ public class IndexModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
     private readonly OpenAIClientWrapper _openAiClient;
-    private readonly string _createPromptPrompt =
+    private readonly UserService _userService;
+    private readonly AppSettings _appSettings;
+    
+    public int RemainingGenerations { get; set; } = 10;
+    public User? CurrentUser { get; set; }
+    public bool RequireAuthentication => _appSettings.RequireAuthentication;
+
+    private readonly string _createPromptPrompt = 
 @"🧠 Prompt: Prompt-Crafter for HTML Generation Agents
 
 You are an elite prompt engineering agent, designed specifically to translate vague or general human instructions into crystal-clear prompts for world-class frontend developer agents.
@@ -60,11 +70,12 @@ Your prompt must be self-contained and readable by another agent with no externa
 
 🧠 Your Output Should Be:
 
-""You are a world-class frontend designer. Generate a complete standalone HTML5 page for a small artisanal coffee roaster’s homepage. Use Flexbox for all layout. Include a visually compelling hero image with a title and subtitle, a section with at least 3 product cards showing coffee types, and a contact form with name, email, and message fields. Use semantic HTML5 structure. Style elements internally with <style>. Do not use Markdown or explanations — output only clean, valid HTML code.""
+""You are a world-class frontend designer. Generate a complete standalone HTML5 page for a small artisanal coffee roaster's homepage. Use Flexbox for all layout. Include a visually compelling hero image with a title and subtitle, a section with at least 3 product cards showing coffee types, and a contact form with name, email, and message fields. Use semantic HTML5 structure. Style elements internally with <style>. Do not use Markdown or explanations — output only clean, valid HTML code.""
 
 📌 Final Note
 You do not create HTML yourself — you only create the perfect prompt that will result in the perfect HTML.";
-    private readonly string _updatePromptPrompt =
+
+    private readonly string _updatePromptPrompt = 
 @"🧠 Prompt: HTML Update Prompt Generator (External HTML Context Version)
 
 You are a prompt design expert. Your task is to generate highly precise, context-aware prompts for an HTML Updater Agent.
@@ -87,7 +98,7 @@ Output the updated HTML only, with no commentary, Markdown, or explanation.
 🎨 Design & Behavior Guidelines
 Your crafted prompt should:
 
-Describe exactly what the user wants to change (translate vague terms like “bigger,” “more modern,” or “cleaner” into concrete HTML/CSS updates).
+Describe exactly what the user wants to change (translate vague terms like ""bigger,"" ""more modern,"" or ""cleaner"" into concrete HTML/CSS updates).
 
 Emphasize structure, layout, interaction, and aesthetics where relevant.
 
@@ -131,14 +142,14 @@ Output the updated HTML document only, with no Markdown, no explanations, and no
 
 Do not include the HTML document yourself — it is passed in separately.
 
-Your role is only to craft the downstream agent’s prompt.";
+Your role is only to craft the downstream agent's prompt.";
 
-    private readonly string _createSystemPrompt =
+    private readonly string _createSystemPrompt = 
 @"🧠 System Prompt (Core Identity for HTML Creation Agent)
 You are a world-class frontend developer and visual layout designer.
 You receive two types of system instructions: your own (this one), and a second task-specific prompt created by another agent.
 
-Your job is to synthesize both your identity and the second prompt, and then carry out the task described in the user’s instruction.
+Your job is to synthesize both your identity and the second prompt, and then carry out the task described in the user's instruction.
 
 🎯 Your responsibilities:
 
@@ -174,8 +185,8 @@ Your job is to harmonize both prompts and translate the instruction into a perfe
 📌 Example
 If the second prompt says to ""avoid animations and use only inline styles"", follow that, even though your default behavior includes transitions.";
 
-    private readonly string _updateSystemPrompt =
-        @"🧠 System Prompt (Core Identity for HTML Update Agent)
+    private readonly string _updateSystemPrompt = 
+@"🧠 System Prompt (Core Identity for HTML Update Agent)
 You are a highly skilled frontend developer and code editor, specialized in surgically updating existing HTML documents.
 
 You are given:
@@ -188,7 +199,7 @@ A second system prompt written by another agent that precisely guides how you sh
 
 🎯 Your core responsibilities:
 
-Modify the provided HTML document to reflect the user’s instruction.
+Modify the provided HTML document to reflect the user's instruction.
 
 Follow all behavioral and formatting guidelines in both this system prompt and the second one.
 
@@ -228,15 +239,31 @@ All changes must be visibly accurate and logically valid in the context of HTML 
 
 Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
 
-    public IndexModel(ILogger<IndexModel> logger)
+    public IndexModel(ILogger<IndexModel> logger, UserService userService, AppSettings appSettings)
     {
         _logger = logger;
+        _userService = userService;
+        _appSettings = appSettings;
         var config = OpenAIConfig.Load();
         _openAiClient = new OpenAIClientWrapper(config);
     }
 
-    public void OnGet()
+    public async Task OnGetAsync()
     {
+        if (_appSettings.RequireAuthentication && User.Identity?.IsAuthenticated == true)
+        {
+            var userId = User.FindFirst("sub")?.Value ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                CurrentUser = await _userService.GetUserByIdAsync(userId);
+                RemainingGenerations = await _userService.GetRemainingGenerationsAsync(userId);
+            }
+        }
+        else if (!_appSettings.RequireAuthentication)
+        {
+            // In development mode without auth, set unlimited generations
+            RemainingGenerations = _appSettings.DailyGenerationLimit;
+        }
     }
 
     public static string html { get; set; } = "";
@@ -246,6 +273,29 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
 
     public async Task<IActionResult> OnPostGenerateHtmlAsync()
     {
+        if (_appSettings.RequireAuthentication)
+        {
+            if (!User.Identity?.IsAuthenticated == true)
+            {
+                return new JsonResult(new { html = "<div style='color:red'>Je moet ingelogd zijn om HTML te genereren.</div>" });
+            }
+
+            var userId = User.FindFirst("sub")?.Value ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return new JsonResult(new { html = "<div style='color:red'>Gebruiker niet gevonden.</div>" });
+            }
+
+            // Check if user can generate
+            if (!await _userService.CanUserGenerateAsync(userId))
+            {
+                return new JsonResult(new { html = "<div style='color:red'>Je hebt je dagelijkse limiet van " + _appSettings.DailyGenerationLimit + " pagina's bereikt. Probeer het morgen opnieuw.</div>" });
+            }
+
+            // Increment user generation count
+            await _userService.IncrementUserGenerationAsync(userId);
+        }
+
         try
         {
             var chatHistory = JsonSerializer.Deserialize<List<DevGPTChatMessage>>(ChatHistoryJson) ?? new List<DevGPTChatMessage>();
@@ -282,6 +332,7 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
                 chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _createSystemPrompt));
                 html = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
             }
+
             return new JsonResult(new { html });
         }
         catch (Exception ex)
