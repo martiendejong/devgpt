@@ -191,7 +191,7 @@ public class DocumentGenerator : IDocumentGenerator
                 embeddings.AddRange(await s.Embeddings(relevancyQuery));
             }
             var e = new EmbeddingMatcher();
-            var docs = await e.TakeTop(embeddings);
+            var docs = await e.TakeTop(embeddings, 2000);
 
             var msgs = docs.Select(d => new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = d });
 

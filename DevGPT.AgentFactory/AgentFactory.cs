@@ -260,7 +260,7 @@ public class AgentFactory {
     public async Task<DevGPTAgent> CreateUnregisteredAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, IEnumerable<string> flows, bool isCoder = false)
     {
         var config = new OpenAIConfig(OpenAiApiKey);
-        config.Model = "gpt-5-mini";
+        config.Model = "gpt-5-nano";
         var llmClient = new OpenAIClientWrapper(config);
         var tools = new ToolsContextBase();
         AddStoreTools(stores, tools, function, agents, flows, name);
