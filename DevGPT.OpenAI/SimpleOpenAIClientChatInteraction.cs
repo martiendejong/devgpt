@@ -165,16 +165,16 @@ public partial class SimpleOpenAIClientChatInteraction
         return completion;
     }
 
-    public async Task<GeneratedImage> RunImage(string prompt, CancellationToken cancellationToken, string size = "1024x1024", int count = 1)
+    public async Task<GeneratedImage> RunImage(string prompt, CancellationToken cancellationToken)
     {
-        var options = new ImageGenerationOptions
-        {
-            Size = GeneratedImageSize.W1024xH1024,
-            Style = GeneratedImageStyle.Natural,
-            Quality = GeneratedImageQuality.Standard
-        };
+        //var options = new ImageGenerationOptions
+        //{
+        //    Size = GeneratedImageSize.W1024xH1024,
+        //    Style = GeneratedImageStyle.Natural,
+        //    Quality = GeneratedImageQuality.Standard
+        //};
 
-        var response = await ImageClient.GenerateImageAsync(prompt, options, cancellationToken);
+        var response = await ImageClient.GenerateImageAsync(prompt, null, cancellationToken);
         return response;
     }
 

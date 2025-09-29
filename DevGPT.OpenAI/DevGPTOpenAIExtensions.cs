@@ -6,7 +6,7 @@ public static class DevGPTOpenAIExtensions
 {
     public static DevGPTGeneratedImage DevGPT(this GeneratedImage image)
     {
-        return new(image.ImageUri.OriginalString, image.ImageBytes);
+        return new(image.ImageUri, image.ImageBytes);
     }
 
     public static DevGPTChatToolCall DevGPT(this ChatToolCall chatTool)

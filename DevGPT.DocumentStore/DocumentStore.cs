@@ -99,7 +99,7 @@ public class DocumentStore : IDocumentStore
 
     public async Task<List<string>> List(string folder = "", bool recursive = false)
     {
-        folder = folder.ToLower();
+        folder = folder.ToLower().Replace("/", "\\");
         if (string.IsNullOrWhiteSpace(folder))
             return EmbeddingStore.Embeddings.Select(e => e.Key.ToLower()).Where(p => recursive || !p.Contains("\\")).ToList();
         return EmbeddingStore.Embeddings.Select(e => e.Key.ToLower()).Where(p => p.StartsWith(folder) && (recursive || (p.Length > folder.Length + 1 && !p.Substring(folder.Length + 1).Contains("\\")))).ToList();

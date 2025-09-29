@@ -19,10 +19,10 @@ public class DocumentGenerator : IDocumentGenerator
 
     public EmbeddingMatcher EmbeddingMatcher = new EmbeddingMatcher();
 
-    public async Task<string> GetImage(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<DevGPTGeneratedImage> GetImage(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var response = await LLMClient.GetImage(message, DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
-        return response.Url;
+        return response;
     }
 
     public DocumentGenerator(IDocumentStore store, List<DevGPTChatMessage> baseMessages, ILLMClient client, List<IDocumentStore> readonlyStores)
@@ -199,8 +199,9 @@ public class DocumentGenerator : IDocumentGenerator
         }
         if (addFilesList)
         {
-            var filesList = Store.List();
-            sendMessages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"A list of all files in the document store:\n{filesList}" });
+            var filesList = await Store.List("", true);
+            var filesListString = string.Join("\n", filesList);
+            sendMessages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"A list of all files in the document store:\n{filesListString}" });
         }
         sendMessages.AddRange(BaseMessages);
         if(history != null) 
