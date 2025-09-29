@@ -1,5 +1,5 @@
 ﻿# PowerShell script to update Version across csproj files
-$targetVersion = "1.0.1"
+$targetVersion = "1.0.5"
 Write-Host "Updating Version to $targetVersion in all csproj files..."
 $csprojFiles = Get-ChildItem -Path . -Recurse -Filter *.csproj
 foreach ($path in $csprojFiles) {
