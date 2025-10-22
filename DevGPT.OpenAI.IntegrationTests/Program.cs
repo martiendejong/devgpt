@@ -40,7 +40,7 @@ async Task<int> Run()
 
     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
-    Console.WriteLine("Generating image...");
+    Console.WriteLine("=== Test 1: Basic image generation ===");
     var image = await wrapper.GetImage(
         prompt: "a simple red square icon on white background",
         responseFormat: DevGPTChatResponseFormat.Text,
@@ -70,6 +70,37 @@ async Task<int> Run()
     Console.WriteLine("PASS: Image generation returned valid output");
     Console.WriteLine($"URL present: {urlPresent}, Bytes present: {bytesPresent}");
     if (urlPresent) Console.WriteLine($"URL: {image.Url}");
+
+    // Test 2: Test DevGPTGeneratedImage with only ImageBytes
+    Console.WriteLine("\n=== Test 2: DevGPTGeneratedImage with only ImageBytes ===");
+    {
+        // Create a mock image response with only bytes
+        var mockBytes = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }; // PNG header
+        var mockImage = new DevGPTGeneratedImage(null, BinaryData.FromBytes(mockBytes));
+
+        if (mockImage.Url != null)
+            return Fail("Mock image should have null URL");
+
+        if (mockImage.ImageBytes == null || mockImage.ImageBytes.ToArray().Length == 0)
+            return Fail("Mock image should have bytes");
+
+        Console.WriteLine("PASS: DevGPTGeneratedImage handles null URL with bytes correctly");
+    }
+
+    // Test 3: Test DevGPTGeneratedImage with only URL
+    Console.WriteLine("\n=== Test 3: DevGPTGeneratedImage with only URL ===");
+    {
+        var mockUrl = new Uri("https://example.com/image.png");
+        var mockImage = new DevGPTGeneratedImage(mockUrl, null);
+
+        if (mockImage.Url == null)
+            return Fail("Mock image should have URL");
+
+        if (mockImage.ImageBytes != null && mockImage.ImageBytes.ToArray().Length > 0)
+            return Fail("Mock image should have null bytes");
+
+        Console.WriteLine("PASS: DevGPTGeneratedImage handles null bytes with URL correctly");
+    }
 
     // Optional: vision check by sending the generated image back to the chat model
     try

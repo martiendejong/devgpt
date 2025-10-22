@@ -45,13 +45,13 @@ public class HuggingFaceClientWrapper : ILLMClient
         }
     }
 
-    public async Task<DevGPTGeneratedImage> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext toolsContext, List<ImageData> images)
+    public async Task<DevGPTGeneratedImage> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         var endpoint = $"{_config.Endpoint}/pipeline/text-to-image/{DefaultImageModel}";
         var payload = new { inputs = prompt };
         var reqContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync(endpoint, reqContent);
+        var response = await _httpClient.PostAsync(endpoint, reqContent, cancel);
         if (!response.IsSuccessStatusCode)
             throw new Exception($"HuggingFace Image error: {response.StatusCode}, {await response.Content.ReadAsStringAsync()}");
 
@@ -62,24 +62,20 @@ public class HuggingFaceClientWrapper : ILLMClient
         if(doc.RootElement.TryGetProperty("generated_image", out var imgProp) || doc.RootElement.TryGetProperty("image", out imgProp)) {
             var base64 = imgProp.GetString();
             var bytes = Convert.FromBase64String(base64);
-            var url = $"data:image/png;base64,{base64}";
-#if NET8_0_OR_GREATER
-            return new DevGPTGeneratedImage(url, BinaryData.FromBytes(bytes));
-#else
-            return new DevGPTGeneratedImage(url, bytes);
-#endif
+            // Return only bytes, no URL for HuggingFace
+            return new DevGPTGeneratedImage(null, BinaryData.FromBytes(bytes));
         }
         throw new Exception($"Could not parse image response: {content}");
     }
 
-    public async Task<string> GetResponse(List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext toolsContext, List<ImageData> images)
+    public async Task<string> GetResponse(List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         var endpoint = $"{_config.Endpoint}/pipeline/text-generation/{DefaultChatModel}";
         var prompt = string.Join("\n", messages.ConvertAll(m => $"[{m.Role?.Role}] {m.Text}"));
         var payload = new { inputs = prompt };
         var reqContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync(endpoint, reqContent);
+        var response = await _httpClient.PostAsync(endpoint, reqContent, cancel);
         if (!response.IsSuccessStatusCode)
             throw new Exception($"HuggingFace Chat error: {response.StatusCode}, {await response.Content.ReadAsStringAsync()}");
 
@@ -103,25 +99,25 @@ public class HuggingFaceClientWrapper : ILLMClient
         }
     }
 
-    public async Task<ResponseType> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext toolsContext, List<ImageData> images) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<ResponseType?> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
         // Compose JSON format request as needed (like OpenAI implementation)
-        var text = await GetResponse(messages, DevGPTChatResponseFormat.Json, toolsContext, images);
+        var text = await GetResponse(messages, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
         return System.Text.Json.JsonSerializer.Deserialize<ResponseType>(text);
     }
 
-    public async Task<string> GetResponseStream(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext toolsContext, List<ImageData> images)
+    public async Task<string> GetResponseStream(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         // HuggingFace Inference API streaming support is only on paid tiers, so here chunk the output.
-        var result = await GetResponse(messages, responseFormat, toolsContext, images);
+        var result = await GetResponse(messages, responseFormat, toolsContext, images, cancel);
         foreach (var chunk in ChunkString(result, 40))
             onChunkReceived(chunk);
         return result;
     }
 
-    public async Task<ResponseType> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext toolsContext, List<ImageData> images) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<ResponseType?> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        var text = await GetResponseStream(messages, onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images);
+        var text = await GetResponseStream(messages, onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
         return System.Text.Json.JsonSerializer.Deserialize<ResponseType>(text);
     }
 
