@@ -37,7 +37,9 @@ public class QuickAgentCreator
     /// </summary>
     public DocumentStore CreateStore(StorePaths paths, string name)
     {
-        var embeddingStore = new EmbeddingFileStore(paths.EmbeddingsFile, Client);
+        var specPath = Path.Combine(paths.RootFolder, "embeddings.spec");
+        var embeddingsSpec = File.Exists(specPath) ? File.ReadAllText(specPath).Trim() : paths.EmbeddingsFile;
+        var embeddingStore = EmbeddingStoreFactory.CreateFromSpec(embeddingsSpec, Client);
         var textStore = new TextFileStore(paths.RootFolder);
         var partStore = new DocumentPartFileStore(paths.PartsFile);
         var store = new DocumentStore(embeddingStore, textStore, partStore, Client);

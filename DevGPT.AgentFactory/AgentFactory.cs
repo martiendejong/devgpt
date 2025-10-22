@@ -31,8 +31,16 @@ public class AgentFactory {
         GoogleProjectId = googleProjectId;
         LogFilePath = logFilePath;
 
+        // Initialize config lists
+        storesConfig = new List<StoreConfig>();
+        agentsConfig = new List<AgentConfig>();
+        flowsConfig = new List<FlowConfig>();
+
         var basePath = AppDomain.CurrentDomain.BaseDirectory;
         var credentialsPath = Path.Combine(basePath, "googleaccount.json");
+
+        if (!File.Exists(credentialsPath))
+            return;
 
         try
         {
@@ -320,7 +328,7 @@ public class AgentFactory {
 
     private void AddWriteTools(ToolsContextBase tools, IDocumentStore store)
     {
-        var config = storesConfig.First(x => x.Name == store.Name);
+        var config = storesConfig.FirstOrDefault(x => x.Name == store.Name) ?? new StoreConfig { Name = store.Name, Description = "" };
         var writeFile = new DevGPTChatTool($"{store.Name}_write", $"Store a file in store {store.Name}. {config.Description}", [keyParameter, contentParameter], async (messages, toolCall, cancel) =>
         {
             if (WriteMode) return "Cannot give write instructions when in write mode";
@@ -556,7 +564,7 @@ public class AgentFactory {
 
     private void AddReadTools(ToolsContextBase tools, IDocumentStore store)
     {
-        var config = storesConfig.First(x => x.Name == store.Name);
+        var config = storesConfig.FirstOrDefault(x => x.Name == store.Name) ?? new StoreConfig { Name = store.Name, Description = "" };
         var getFiles = new DevGPTChatTool($"{store.Name}_list", $"Retrieve a list of the files in store {store.Name}. {config.Description}", [folderParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();

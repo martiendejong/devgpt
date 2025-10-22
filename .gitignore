@@ -32,3 +32,4 @@ bin
 /HtmlMockupGenerator/appsettings.json
 /nuget.bat
 /bfg.jar
+/DevGPT.OpenAI.IntegrationTests/appsettings.json
