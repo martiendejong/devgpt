@@ -1,28 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<LanguageVersion>latest</LanguageVersion>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<RootNamespace>DevGPT</RootNamespace>
-		<Version>1.0.5</Version>
-		<PackageVersion>1.0.5</PackageVersion>	
-	</PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.11.0" />
-		<PackageReference Include="MailKit" Version="4.13.0" />
-	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\DevGPT.Classes\DevGPT.Classes.csproj" />
-		<ProjectReference Include="..\DevGPT.DocumentStore\DevGPT.DocumentStore.csproj" />
-		<ProjectReference Include="..\DevGPT.EmbeddingStore\DevGPT.EmbeddingStore.csproj" />
-		<ProjectReference Include="..\DevGPT.Generator\DevGPT.Generator.csproj" />
-		<ProjectReference Include="..\DevGPT.Helpers\DevGPT.Helpers.csproj" />
-		<ProjectReference Include="..\DevGPT.LLMClient\DevGPT.LLMClient.csproj" />
-		<ProjectReference Include="..\DevGPT.LLMClientTools\DevGPT.LLMClientTools.csproj" />
-		<ProjectReference Include="..\DevGPT.OpenAI\DevGPT.OpenAI.csproj" />
-	</ItemGroup>
-
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LanguageVersion>latest</LanguageVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT</RootNamespace>
+    <Version>1.0.6</Version>
+    <PackageVersion>1.0.6</PackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.11.0" />
+    <PackageReference Include="MailKit" Version="4.13.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DevGPT.Classes\DevGPT.Classes.csproj" />
+    <ProjectReference Include="..\DevGPT.DocumentStore\DevGPT.DocumentStore.csproj" />
+    <ProjectReference Include="..\DevGPT.EmbeddingStore\DevGPT.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\DevGPT.Generator\DevGPT.Generator.csproj" />
+    <ProjectReference Include="..\DevGPT.Helpers\DevGPT.Helpers.csproj" />
+    <ProjectReference Include="..\DevGPT.LLMClient\DevGPT.LLMClient.csproj" />
+    <ProjectReference Include="..\DevGPT.LLMClientTools\DevGPT.LLMClientTools.csproj" />
+    <ProjectReference Include="..\DevGPT.OpenAI\DevGPT.OpenAI.csproj" />
+  </ItemGroup>
 </Project>

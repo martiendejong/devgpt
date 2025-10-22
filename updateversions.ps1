@@ -1,5 +1,11 @@
 ﻿# PowerShell script to update Version across csproj files
-$targetVersion = "1.0.5"
+# Usage: updateversions.ps1 or set $targetVersion variable before calling
+
+# Check if $targetVersion is already set (called from another script)
+if (-not $targetVersion) {
+    $targetVersion = "1.0.5"  # Default fallback version
+}
+
 Write-Host "Updating Version to $targetVersion in all csproj files..."
 $csprojFiles = Get-ChildItem -Path . -Recurse -Filter *.csproj
 foreach ($path in $csprojFiles) {

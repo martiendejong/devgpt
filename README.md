@@ -212,9 +212,12 @@ The following libraries are intended for packaging and reuse in Visual Studio pr
 - DevGPT.DocumentStore — Store composition and RAG helpers.
 - DevGPT.LLMClient — Provider abstraction.
 - DevGPT.OpenAI — OpenAI client implementation.
+- DevGPT.HuggingFace — HuggingFace client implementation.
 - DevGPT.LLMClientTools — Tooling context and helpers.
 - DevGPT.Generator — Response generation and update‑store pipeline.
 - DevGPT.AgentFactory — Agent/flow creation and built‑in tools.
+
+All packages follow synchronized semantic versioning. See [NUGET-VERSIONING.md](NUGET-VERSIONING.md) for details on publishing and version management.
 
 Local builds of these packages exist under `local_packages/`.
 

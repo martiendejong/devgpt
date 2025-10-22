@@ -31,5 +31,6 @@ bin
 /sprintplanning
 /HtmlMockupGenerator/appsettings.json
 /nuget.bat
+/nuget.bat.old
 /bfg.jar
 /DevGPT.OpenAI.IntegrationTests/appsettings.json
