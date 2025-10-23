@@ -46,9 +46,11 @@ Key libraries and roles:
 - DevGPT.LLMClientTools: Tool context abstraction and helper tools (e.g., `WebPageScraper`).
 - DevGPT.Generator: `DocumentGenerator` that assembles messages with relevant context and can safely apply file updates.
 - DevGPT.AgentFactory: Agent/store/flow creation, config format helpers, built‑in toolsets (read/write/list/relevancy, git/dotnet/npm/build, BigQuery, email, WordPress placeholder).
+- DevGPT.ChatShared: Shared WPF chat UI (`ChatWindow`) and `IChatController` abstraction so multiple apps can reuse a single chat experience.
 
 Applications:
 - Windows: WPF app to author Stores/Agents/Flows (as text or cards) and chat with selected agent/flow.
+- DevGPT.ExplorerIntegration: WPF utility that integrates with Windows Explorer workflows to embed a folder and chat over its contents; uses the shared chat component.
 - EmbeddingsViewer: WPF tool to inspect `.embed` files and list their keys.
 - Crosslink: Console sample showing semantic matching of a CV to job postings using stores.
 - PDFMaker, HtmlMockupGenerator: Samples that show how to compose DevGPT components.
@@ -66,7 +68,9 @@ Applications:
 - DevGPT.LLMClient — Provider‑agnostic LLM interface.
 - DevGPT.OpenAI — OpenAI implementation (chat, stream, images, embeddings).
 - DevGPT.LLMClientTools — Tool context and helper tools (e.g., web page scraping).
+- DevGPT.ChatShared — Shared WPF chat UI and controller abstraction used by Windows and ExplorerIntegration.
 - Windows — WPF desktop authoring and chat app for DevGPT.
+- DevGPT.ExplorerIntegration — Explorer‑focused WPF utility to embed and chat over a selected folder, using the shared chat window.
 - EmbeddingsViewer — WPF embedding file inspector.
 - Crosslink — Console sample for semantic matching.
 

@@ -6,7 +6,7 @@ namespace DevGPT.ExplorerIntegration
 {
     public static class ChatService
     {
-        public static async Task<ChatWindow> CreateChatWindowAsync(string folder)
+        public static async Task<DevGPT.ChatShared.ChatWindow> CreateChatWindowAsync(string folder)
         {
             var apiKey = Microsoft.Win32.Registry.GetValue("HKEY_CURRENT_USER\\Software\\DevGPT\\OpenAI", "ApiKey", null) as string;
             if (string.IsNullOrWhiteSpace(apiKey))
@@ -38,8 +38,8 @@ namespace DevGPT.ExplorerIntegration
                 isCoder: true
             );
 
-            return new ChatWindow(agent, folder, store);
+            var controller = new ChatControllerExplorer(agent);
+            return new DevGPT.ChatShared.ChatWindow(controller);
         }
     }
 }
-

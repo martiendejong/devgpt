@@ -384,7 +384,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 );
                 await agentManager.LoadStoresAndAgents();
 
-                var newChatWindow = new ChatWindow(agentManager);
+                var newChatWindow = new DevGPT.ChatShared.ChatWindow(new ChatControllerAgentManager(agentManager));
                 newChatWindow.AgentOrFlow = SelectedAgentOrFlow;
                 newChatWindow.Owner = this;
                 newChatWindow.Show();

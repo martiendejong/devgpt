@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.ExplorerIntegration"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.OpenAI.IntegrationTests", "DevGPT.OpenAI.IntegrationTests\DevGPT.OpenAI.IntegrationTests.csproj", "{6A89E1CE-E893-48E3-8111-51201E860EBD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.ChatShared", "DevGPT.ChatShared\DevGPT.ChatShared.csproj", "{CFC57623-C5FB-44D0-848D-2134D1425DA2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -253,6 +255,18 @@ Global
 		{6A89E1CE-E893-48E3-8111-51201E860EBD}.Release|x64.Build.0 = Release|Any CPU
 		{6A89E1CE-E893-48E3-8111-51201E860EBD}.Release|x86.ActiveCfg = Release|Any CPU
 		{6A89E1CE-E893-48E3-8111-51201E860EBD}.Release|x86.Build.0 = Release|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Debug|x64.Build.0 = Debug|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Debug|x86.Build.0 = Debug|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Release|x64.ActiveCfg = Release|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Release|x64.Build.0 = Release|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Release|x86.ActiveCfg = Release|Any CPU
+		{CFC57623-C5FB-44D0-848D-2134D1425DA2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
