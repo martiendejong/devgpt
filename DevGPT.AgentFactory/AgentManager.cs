@@ -54,6 +54,18 @@ public class AgentManager
         _quickAgentCreator = new QuickAgentCreator(agentFactory, llmClient);
     }
 
+    // New: allow injecting a custom LLM client (e.g., ClaudeClientWrapper)
+    public AgentManager(string storesJsonPath, string agentsJsonPath, string flowsJsonPath, ILLMClient llmClient, string openAIApiKey, string logFilePath, string googleProjectId = "")
+    {
+        _storesJsonPath = storesJsonPath ?? throw new ArgumentNullException(nameof(storesJsonPath));
+        _agentsJsonPath = agentsJsonPath ?? throw new ArgumentNullException(nameof(agentsJsonPath));
+        _flowsJsonPath = flowsJsonPath ?? throw new ArgumentNullException(nameof(flowsJsonPath));
+
+        var agentFactory = new AgentFactory(openAIApiKey, logFilePath, googleProjectId);
+        agentFactory.Messages = History;
+        _quickAgentCreator = new QuickAgentCreator(agentFactory, llmClient);
+    }
+
     public AgentManager(string storesJson, string agentsJson, string flowsJson, string openAIApiKey, string logFilePath, bool isContent, string googleProjectId = "")
     {
         _storesJson = storesJson;
