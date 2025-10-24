@@ -22,7 +22,13 @@ namespace DevGPT.ExplorerIntegration
 
         public void AttachStreaming(Action<string, string, string> onInterimMessage)
         {
-            // No streaming wiring for this simple controller
+            if (_agent?.Tools != null)
+            {
+                _agent.Tools.SendMessage = (string id, string agent, string output) =>
+                {
+                    onInterimMessage?.Invoke(id, agent, output);
+                };
+            }
         }
 
         public async Task<string> SendMessageAsync(string text, CancellationToken token, string agentOrFlow)
@@ -33,4 +39,3 @@ namespace DevGPT.ExplorerIntegration
         }
     }
 }
-

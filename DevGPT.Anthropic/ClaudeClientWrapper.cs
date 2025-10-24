@@ -62,9 +62,11 @@ public class ClaudeClientWrapper : ILLMClient
         return (system, mapped);
     }
 
-    private async Task<string> CallClaude(List<DevGPTChatMessage> messages, CancellationToken cancel)
+    private async Task<string> CallClaude(List<DevGPTChatMessage> messages, CancellationToken cancel, IToolsContext? toolsContext = null)
     {
         var (system, mapped) = MapMessages(messages);
+        var id = Guid.NewGuid().ToString();
+        toolsContext?.SendMessage?.Invoke(id, "LLM Request (Claude)", string.Join("\n", messages.Select(m => $"{m.Role?.Role}: {m.Text}")));
         var req = new AnthropicMessageRequest(
             model: _config.Model,
             max_tokens: 1024,
@@ -84,11 +86,13 @@ public class ClaudeClientWrapper : ILLMClient
         {
             var parsed = JsonSerializer.Deserialize<AnthropicMessageResponse>(respText);
             var firstText = parsed?.content?.FirstOrDefault(c => c.type == "text")?.text ?? string.Empty;
+            toolsContext?.SendMessage?.Invoke(id, "LLM Response (Claude)", firstText);
             return firstText;
         }
         catch
         {
             // Fallback to raw
+            toolsContext?.SendMessage?.Invoke(id, "LLM Response (Claude)", respText);
             return respText;
         }
     }
@@ -96,7 +100,7 @@ public class ClaudeClientWrapper : ILLMClient
     public async Task<string> GetResponse(List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         // images/tooling ignored in this basic implementation
-        return await CallClaude(messages, cancel);
+        return await CallClaude(messages, cancel, toolsContext);
     }
 
     public async Task<ResponseType?> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
@@ -108,7 +112,7 @@ public class ClaudeClientWrapper : ILLMClient
         var insertIndex = Math.Max(0, withFormat.Count - 1);
         withFormat.Insert(insertIndex, new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = instruction });
 
-        var text = await CallClaude(withFormat, cancel);
+        var text = await CallClaude(withFormat, cancel, toolsContext);
         try
         {
             return JsonSerializer.Deserialize<ResponseType>(text);
@@ -151,4 +155,3 @@ public class ClaudeClientWrapper : ILLMClient
             yield return s.Substring(i, Math.Min(size, s.Length - i));
     }
 }
-

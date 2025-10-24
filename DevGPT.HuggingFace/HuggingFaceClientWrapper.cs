@@ -71,6 +71,8 @@ public class HuggingFaceClientWrapper : ILLMClient
     public async Task<string> GetResponse(List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         var endpoint = $"{_config.Endpoint}/pipeline/text-generation/{DefaultChatModel}";
+        var id = Guid.NewGuid().ToString();
+        toolsContext?.SendMessage?.Invoke(id, "LLM Request (HuggingFace)", string.Join("\n", messages.ConvertAll(m => $"{m.Role?.Role}: {m.Text}")));
         var prompt = string.Join("\n", messages.ConvertAll(m => $"[{m.Role?.Role}] {m.Text}"));
         var payload = new { inputs = prompt };
         var reqContent = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
@@ -88,13 +90,25 @@ public class HuggingFaceClientWrapper : ILLMClient
             {
                 var elem = doc.RootElement[0];
                 if (elem.TryGetProperty("generated_text", out var text))
-                    return text.GetString();
+                {
+                    var t = text.GetString();
+                    toolsContext?.SendMessage?.Invoke(id, "LLM Response (HuggingFace)", t);
+                    return t;
+                }
                 if(elem.TryGetProperty("output", out text))
-                    return text.GetString();
-                return elem.ToString();
+                {
+                    var t = text.GetString();
+                    toolsContext?.SendMessage?.Invoke(id, "LLM Response (HuggingFace)", t);
+                    return t;
+                }
+                var raw = elem.ToString();
+                toolsContext?.SendMessage?.Invoke(id, "LLM Response (HuggingFace)", raw);
+                return raw;
             }
+            toolsContext?.SendMessage?.Invoke(id, "LLM Response (HuggingFace)", content);
             return content;
         } catch {
+            toolsContext?.SendMessage?.Invoke(id, "LLM Response (HuggingFace)", content);
             return content; // Fallback as plain text
         }
     }

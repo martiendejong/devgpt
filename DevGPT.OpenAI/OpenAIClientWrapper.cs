@@ -65,14 +65,28 @@ public partial class OpenAIClientWrapper : ILLMClient
         Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         Log(messages.Last()?.Text);
-        return await StreamHandler.HandleStream(onChunkReceived, StreamChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel));
+        var id = Guid.NewGuid().ToString();
+        toolsContext?.SendMessage?.Invoke(id, "LLM Request (OpenAI)", string.Join("\n", messages.Select(m => $"{m.Role?.Role}: {m.Text}")));
+        var collected = new List<string>();
+        string result = await StreamHandler.HandleStream(chunk =>
+        {
+            collected.Add(chunk);
+            onChunkReceived(chunk);
+        }, StreamChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel));
+        toolsContext?.SendMessage?.Invoke(id, "LLM Response (OpenAI)", result);
+        return result;
     }
 
     public async Task<string> GetResponse(
         List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         Log(messages.Last()?.Text);
-        return GetText(await GetChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel));
+        var id = Guid.NewGuid().ToString();
+        toolsContext?.SendMessage?.Invoke(id, "LLM Request (OpenAI)", string.Join("\n", messages.Select(m => $"{m.Role?.Role}: {m.Text}")));
+        var completion = await GetChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel);
+        var text = GetText(completion);
+        toolsContext?.SendMessage?.Invoke(id, "LLM Response (OpenAI)", text);
+        return text;
     }
 
     public async Task<DevGPTGeneratedImage> GetImage(
