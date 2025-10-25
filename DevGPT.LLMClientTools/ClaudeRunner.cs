@@ -8,36 +8,78 @@ public static class ClaudeRunner
         var argsBuilder = new StringBuilder();
         if (!string.IsNullOrWhiteSpace(model)) argsBuilder.Append($"--model \"{EscapeArg(model)}\" ");
         if (!string.IsNullOrWhiteSpace(extraArgs)) argsBuilder.Append(extraArgs.Trim()).Append(' ');
-        argsBuilder.Append($"--message \"{EscapeArg(prompt)}\" ");
+        argsBuilder.Append($"\"{EscapeArg(prompt)}\" ");
 
-        return await RunProcessAsync("claude", argsBuilder.ToString().Trim(), TimeSpan.FromSeconds(Math.Max(1, timeoutSeconds)), cancel);
+        return await RunProcessAsync(argsBuilder.ToString().Trim(), TimeSpan.FromSeconds(Math.Max(1, timeoutSeconds)), cancel);
     }
 
     private static string EscapeArg(string value)
         => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
-    private static async Task<string> RunProcessAsync(string fileName, string arguments, TimeSpan timeout, CancellationToken cancel)
+    private static ProcessStartInfo BuildClaudePsi(string arguments)
     {
+        var envPath = Environment.GetEnvironmentVariable("CLAUDE_CLI_PATH");
+        var isWindows = OperatingSystem.IsWindows();
+
         var psi = new ProcessStartInfo
         {
-            FileName = fileName,
-            Arguments = arguments,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
 
+        if (!string.IsNullOrWhiteSpace(envPath))
+        {
+            if (isWindows && (envPath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || envPath.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)))
+            {
+                psi.FileName = "cmd.exe";
+                psi.Arguments = $"/c \"\"{envPath}\" {arguments}\"";
+            }
+            else
+            {
+                psi.FileName = envPath;
+                psi.Arguments = arguments;
+            }
+            return psi;
+        }
+
+        if (isWindows)
+        {
+            psi.FileName = "cmd.exe";
+            psi.Arguments = $"/c claude {arguments}";
+        }
+        else
+        {
+            psi.FileName = "claude";
+            psi.Arguments = arguments;
+        }
+
+        return psi;
+    }
+
+    private static async Task<string> RunProcessAsync(string arguments, TimeSpan timeout, CancellationToken cancel)
+    {
+        var psi = BuildClaudePsi(arguments);
+
         using var proc = new Process { StartInfo = psi, EnableRaisingEvents = true };
         var stdout = new StringBuilder();
         var stderr = new StringBuilder();
-        var tcs = new TaskCompletionSource<object?>();
 
         proc.OutputDataReceived += (_, e) => { if (e.Data != null) stdout.AppendLine(e.Data); };
         proc.ErrorDataReceived += (_, e) => { if (e.Data != null) stderr.AppendLine(e.Data); };
 
-        if (!proc.Start())
-            return "Failed to start 'claude' process.";
+        try
+        {
+            if (!proc.Start())
+                return "Failed to start 'claude' process.";
+        }
+        catch (Exception ex)
+        {
+            return $"Failed to start 'claude' process. Error: {ex.Message}\n" +
+                   "Ensure the Claude CLI is installed, on PATH, and logged in. " +
+                   "Optionally set full path via CLAUDE_CLI_PATH environment variable.";
+        }
 
         proc.BeginOutputReadLine();
         proc.BeginErrorReadLine();
@@ -70,4 +112,3 @@ public static class ClaudeRunner
         return tcs.Task;
     }
 }
-

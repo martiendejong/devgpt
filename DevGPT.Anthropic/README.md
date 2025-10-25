@@ -10,7 +10,7 @@ Usage
 
   var cfg = new DevGPT.Anthropic.AnthropicConfig {
       ApiKey = "YOUR_ANTHROPIC_KEY",
-      Model = "claude-3-5-sonnet-20241022"
+      Model = "claude-3-5-sonnet-latest"
   };
   var llm = new ClaudeClientWrapper(cfg);
 
@@ -19,4 +19,3 @@ Usage
 Notes
 - For typed JSON responses, the client injects a system formatting instruction like the OpenAI wrapper. Ensure your prompts fit within model limits.
 - Anthropic SSE streaming can be added in a future iteration if needed.
-

@@ -6,8 +6,8 @@ public static class ClaudeCliTool
     public static DevGPTChatTool Create()
     {
         var promptParam = new ChatToolParameter { Name = "prompt", Description = "The message to send to Claude.", Type = "string", Required = true };
-        var modelParam = new ChatToolParameter { Name = "model", Description = "Optional model override (e.g., claude-3-5-sonnet-20241022).", Type = "string", Required = false };
-        var extraArgsParam = new ChatToolParameter { Name = "extra_args", Description = "Optional extra CLI args passed verbatim before --message.", Type = "string", Required = false };
+        var modelParam = new ChatToolParameter { Name = "model", Description = "Optional model override (e.g., claude-3-5-sonnet-latest).", Type = "string", Required = false };
+        var extraArgsParam = new ChatToolParameter { Name = "extra_args", Description = "Optional extra CLI args passed verbatim before the prompt.", Type = "string", Required = false };
         var timeoutParam = new ChatToolParameter { Name = "timeout", Description = "Optional timeout in seconds.", Type = "number", Required = false };
 
         return new DevGPTChatTool(
@@ -28,7 +28,7 @@ public static class ClaudeCliTool
                 {
                     argsBuilder.Append(extra.Trim()).Append(' ');
                 }
-                argsBuilder.Append($"--message \"{EscapeArg(prompt)}\" ");
+                argsBuilder.Append($"\"{EscapeArg(prompt)}\" ");
 
                 // Default timeout 120s if not specified
                 int timeoutSeconds = 120;
@@ -38,7 +38,6 @@ public static class ClaudeCliTool
                 }
 
                 return await RunProcessAsync(
-                    fileName: "claude",
                     arguments: argsBuilder.ToString().Trim(),
                     timeout: TimeSpan.FromSeconds(timeoutSeconds),
                     cancel: cancel);
@@ -54,17 +53,50 @@ public static class ClaudeCliTool
     private static string EscapeArg(string value)
         => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
-    private static async Task<string> RunProcessAsync(string fileName, string arguments, TimeSpan timeout, CancellationToken cancel)
+    private static ProcessStartInfo BuildClaudePsi(string arguments)
     {
+        var envPath = Environment.GetEnvironmentVariable("CLAUDE_CLI_PATH");
+        var isWindows = OperatingSystem.IsWindows();
+
         var psi = new ProcessStartInfo
         {
-            FileName = fileName,
-            Arguments = arguments,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+
+        if (!string.IsNullOrWhiteSpace(envPath))
+        {
+            if (isWindows && (envPath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || envPath.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)))
+            {
+                psi.FileName = "cmd.exe";
+                psi.Arguments = $"/c \"\"{envPath}\" {arguments}\"";
+            }
+            else
+            {
+                psi.FileName = envPath;
+                psi.Arguments = arguments;
+            }
+            return psi;
+        }
+
+        if (isWindows)
+        {
+            psi.FileName = "cmd.exe";
+            psi.Arguments = $"/c claude {arguments}";
+        }
+        else
+        {
+            psi.FileName = "claude";
+            psi.Arguments = arguments;
+        }
+        return psi;
+    }
+
+    private static async Task<string> RunProcessAsync(string arguments, TimeSpan timeout, CancellationToken cancel)
+    {
+        var psi = BuildClaudePsi(arguments);
 
         using var proc = new Process { StartInfo = psi, EnableRaisingEvents = true };
         var stdout = new StringBuilder();
@@ -74,8 +106,17 @@ public static class ClaudeCliTool
         proc.OutputDataReceived += (_, e) => { if (e.Data != null) stdout.AppendLine(e.Data); };
         proc.ErrorDataReceived += (_, e) => { if (e.Data != null) stderr.AppendLine(e.Data); };
 
-        if (!proc.Start())
-            return "Failed to start 'claude' process.";
+        try
+        {
+            if (!proc.Start())
+                return "Failed to start 'claude' process.";
+        }
+        catch (Exception ex)
+        {
+            return $"Failed to start 'claude' process. Error: {ex.Message}\n" +
+                   "Ensure the Claude CLI is installed, on PATH, and logged in. " +
+                   "Optionally set full path via CLAUDE_CLI_PATH environment variable.";
+        }
 
         proc.BeginOutputReadLine();
         proc.BeginErrorReadLine();
@@ -111,4 +152,3 @@ public static class ClaudeCliTool
         return tcs.Task;
     }
 }
-
