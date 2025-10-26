@@ -12,4 +12,8 @@
     <ProjectReference Include="..\DevGPT.Helpers\DevGPT.Helpers.csproj" />
     <ProjectReference Include="..\DevGPT.LLMClient\DevGPT.LLMClient.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+    <PackageReference Include="Pgvector" Version="0.2.0" />
+  </ItemGroup>
 </Project>
