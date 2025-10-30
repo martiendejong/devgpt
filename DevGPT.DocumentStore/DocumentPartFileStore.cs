@@ -49,4 +49,9 @@ public class DocumentPartFileStore : IDocumentPartStore
         StorePartsFile();
         return true;
     }
+
+    public async Task<IEnumerable<string>> ListNames()
+    {
+        return Parts.Keys.ToArray();
+    }
 }

@@ -67,5 +67,18 @@ public class PostgresDocumentPartStore : IDocumentPartStore
         await cmd.ExecuteNonQueryAsync();
         return true;
     }
-}
 
+    public async Task<IEnumerable<string>> ListNames()
+    {
+        var list = new List<string>();
+        await using var conn = new NpgsqlConnection(_connectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand("SELECT DISTINCT name FROM document_parts ORDER BY name", conn);
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            list.Add(reader.GetString(0));
+        }
+        return list;
+    }
+}

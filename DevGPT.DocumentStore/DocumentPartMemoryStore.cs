@@ -20,4 +20,9 @@ public class DocumentPartMemoryStore : IDocumentPartStore
         Parts.Remove(name);
         return true;
     }
+
+    public async Task<IEnumerable<string>> ListNames()
+    {
+        return Parts.Keys.ToArray();
+    }
 }

@@ -27,7 +27,7 @@ public class DocumentStore : IDocumentStore
 
     public string Sanitize(string name)
     {
-        return name.Replace("/", "\\");
+        return name;
     }
 
     public async Task<bool> Embed(string name)
@@ -61,7 +61,8 @@ public class DocumentStore : IDocumentStore
             {
                 var partKey = $"{name} part {i}";
                 await EmbeddingStore.StoreEmbedding(partKey, parts[i]);
-                await TextStore.Store(partKey, content);
+                // Store only the part content for each part key
+                await TextStore.Store(partKey, parts[i]);
                 partKeys.Add(partKey);
             }
         }
@@ -78,7 +79,7 @@ public class DocumentStore : IDocumentStore
         foreach (var part in parts)
         {
             await EmbeddingStore.RemoveEmbedding(part);
-            await TextStore.Remove(name);
+            await TextStore.Remove(part);
         }
         return true;
     }
@@ -94,15 +95,28 @@ public class DocumentStore : IDocumentStore
 
     public async Task<List<TreeNode<string>>> Tree()
     {
-        return TreeMaker.GetTree(EmbeddingStore.Embeddings.Select(e => e.Key).ToList());
+        var names = await PartStore.ListNames();
+        return TreeMaker.GetTree(names.Select(n => n).ToList());
     }
 
     public async Task<List<string>> List(string folder = "", bool recursive = false)
     {
-        folder = folder.ToLower().Replace("/", "\\");
+        var names = (await PartStore.ListNames()).ToList();
         if (string.IsNullOrWhiteSpace(folder))
-            return EmbeddingStore.Embeddings.Select(e => e.Key.ToLower()).Where(p => recursive || !p.Contains("\\")).ToList();
-        return EmbeddingStore.Embeddings.Select(e => e.Key.ToLower()).Where(p => p.StartsWith(folder) && (recursive || (p.Length > folder.Length + 1 && !p.Substring(folder.Length + 1).Contains("\\")))).ToList();
+        {
+            if (recursive) return names;
+            return names.Where(p => !p.Contains('/') && !p.Contains('\\')).ToList();
+        }
+        // Normalize folder separators for matching
+        var f1 = folder.Replace('\\','/').TrimEnd('/');
+        return names.Where(p => {
+            var np = p.Replace('\\','/');
+            if (!np.StartsWith(f1)) return false;
+            if (recursive) return true;
+            if (np.Length <= f1.Length) return false;
+            var rest = np.Substring(f1.Length).TrimStart('/');
+            return !rest.Contains('/');
+        }).ToList();
     }
 
     public async Task<List<string>> RelevantItems(string query)

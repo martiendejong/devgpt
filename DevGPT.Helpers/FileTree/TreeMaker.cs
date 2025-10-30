@@ -18,13 +18,13 @@ public static class TreeMaker
 
             for (var i = 1; i < names.Length - 1; ++i)
             {
-                var childNode = nodes.SingleOrDefault(n => n.Name == names[0] && n.Parent == parentNode);
+                var childNode = nodes.SingleOrDefault(n => n.Name == names[i] && n.Parent == parentNode);
                 if (childNode == null)
                 {
                     childNode = new TreeNode<string>(names[i]);
                     childNode.Parent = parentNode;
                     parentNode.Children.Add(childNode);
-                    nodes.Add(parentNode);
+                    nodes.Add(childNode);
                     parentNode = childNode;
                 }
             }
@@ -44,13 +44,13 @@ public static class TreeMaker
 
             for (var i = 1; i < names.Length - 1; ++i)
             {
-                var childNode = nodes.SingleOrDefault(n => n.Name == names[0] && n.Parent == parentNode);
+                var childNode = nodes.SingleOrDefault(n => n.Name == names[i] && n.Parent == parentNode);
                 if (childNode == null)
                 {
                     childNode = new TreeNode<T>(names[i]);
                     childNode.Parent = parentNode;
                     parentNode.Children.Add(childNode);
-                    nodes.Add(parentNode);
+                    nodes.Add(childNode);
                     parentNode = childNode;
                 }
             }
