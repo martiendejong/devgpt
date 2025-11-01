@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Http;
@@ -306,7 +306,8 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
                 urlParameter.TryGetValue(call, out string url);
                 return (await ImageChecker.IsImageUrlAsync(url)) ? "Image found" : "Image NOT found";
             };
-            toolsContext.Add("check_image_url", "Verifies if a URL serves an image before using it in the HTML", [urlParameter], execCheckImageURL);
+            var checkImageUrlTool = new DevGPTChatTool("check_image_url", "Verifies if a URL serves an image before using it in the HTML", [urlParameter], execCheckImageURL);
+            toolsContext.Add(checkImageUrlTool);
 
             var historyCopy = new List<DevGPTChatMessage>(chatHistory);
 
