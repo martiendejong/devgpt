@@ -18,6 +18,5 @@
   <ItemGroup>
     <ProjectReference Include="..\\..\\DevGPT.AgentFactory\\DevGPT.AgentFactory.csproj" />
     <ProjectReference Include="..\\..\\LLMs\\OpenAI\\DevGPT.LLMs.OpenAI.csproj" />
-    <ProjectReference Include="..\\..\\DevGPT.LLMClientTools\\DevGPT.LLMClientTools.csproj" />
   </ItemGroup>
 </Project>
