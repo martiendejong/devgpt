@@ -20,6 +20,7 @@
     <ProjectReference Include="..\\..\\DevGPT.LLMClientTools\\DevGPT.LLMClientTools.csproj" />
     <ProjectReference Include="..\\..\\LLMs\\Classes\\DevGPT.LLMs.Classes.csproj" />
     <ProjectReference Include="..\\..\\LLMs\\Helpers\\DevGPT.LLMs.Helpers.csproj" />
-    <ProjectReference Include="..\\..\\DevGPT.ChatShared\\DevGPT.ChatShared.csproj" />
+    <ProjectReference Include="..\\ChatShared\\DevGPT.ChatShared.csproj" />
   </ItemGroup>
 </Project>
+
