@@ -262,7 +262,7 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
         try
         {
             var chatHistory = JsonSerializer.Deserialize<List<DevGPTChatMessage>>(ChatHistoryJson) ?? new List<DevGPTChatMessage>();
-            var toolsContext = new ToolsContextBase();
+            var toolsContext = new ToolsContext();
 
             var historyCopy = new List<DevGPTChatMessage>(chatHistory);
 

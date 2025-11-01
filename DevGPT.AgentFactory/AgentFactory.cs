@@ -271,7 +271,7 @@ public class AgentFactory {
         if(!string.IsNullOrWhiteSpace(model))
             config.Model = model;
         var llmClient = new OpenAIClientWrapper(config);
-        var tools = new ToolsContextBase();
+        var tools = new ToolsContext();
         AddStoreTools(stores, tools, function, agents, flows, name);
         var tempStores = stores.Skip(1).Select(s => s.Store as IDocumentStore).ToList();
         var generator = new DocumentGenerator(stores.First().Store, new List<DevGPTChatMessage>() { new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = systemPrompt } }, llmClient, OpenAiApiKey, LogFilePath, tempStores);
@@ -293,7 +293,7 @@ public class AgentFactory {
         return flow;
     }
 
-    private void AddStoreTools(IEnumerable<(IDocumentStore Store, bool Write)> stores, ToolsContextBase tools, IEnumerable<string> functions, IEnumerable<string> agents, IEnumerable<string> flows, string caller)
+    private void AddStoreTools(IEnumerable<(IDocumentStore Store, bool Write)> stores, IToolsContext tools, IEnumerable<string> functions, IEnumerable<string> agents, IEnumerable<string> flows, string caller)
     {
         AddAgentTools(tools, agents, caller);
         AddFlowTools(tools, flows, caller);
@@ -326,7 +326,7 @@ public class AgentFactory {
         }
     }
 
-    private void AddWriteTools(ToolsContextBase tools, IDocumentStore store)
+    private void AddWriteTools(IToolsContext tools, IDocumentStore store)
     {
         var config = storesConfig.FirstOrDefault(x => x.Name == store.Name) ?? new StoreConfig { Name = store.Name, Description = "" };
         var writeFile = new DevGPTChatTool($"{store.Name}_write", $"Store a file in store {store.Name}. {config.Description}", [keyParameter, contentParameter], async (messages, toolCall, cancel) =>
@@ -349,7 +349,7 @@ public class AgentFactory {
         tools.Add(deleteFile);
     }
 
-    private void AddBuildTools(ToolsContextBase tools, IEnumerable<string> functions, IDocumentStore store)
+    private void AddBuildTools(IToolsContext tools, IEnumerable<string> functions, IDocumentStore store)
     {
         if (functions.Contains("git"))
         {
@@ -567,7 +567,7 @@ public class AgentFactory {
         return client;
     }
 
-    private void AddReadTools(ToolsContextBase tools, IDocumentStore store)
+    private void AddReadTools(IToolsContext tools, IDocumentStore store)
     {
         var config = storesConfig.FirstOrDefault(x => x.Name == store.Name) ?? new StoreConfig { Name = store.Name, Description = "" };
         var getFiles = new DevGPTChatTool($"{store.Name}_list", $"Retrieve a list of the files in store {store.Name}. {config.Description}", [folderParameter], async (messages, toolCall, cancel) =>
@@ -604,7 +604,7 @@ public class AgentFactory {
         tools.Add(getFile);
     }
 
-    private void AddWordpressTools(ToolsContextBase tools, IEnumerable<string> agents, string caller)
+    private void AddWordpressTools(IToolsContext tools, IEnumerable<string> agents, string caller)
     {
         var wordpressAgent = new DevGPTChatTool($"wordpress_cli", $"Call the wordpress cli", [wpcommandParameter, wpargumentsParameter], async (messages, toolCall, cancel) =>
         {
@@ -655,7 +655,7 @@ public class AgentFactory {
         tools.Add(wordpressAgent);
     }
 
-    private void AddEmailFunctions(ToolsContextBase tools)
+    private void AddEmailFunctions(IToolsContext tools)
     {
         var sendEmailTool = new DevGPTChatTool("email_send", "Sends an email", [recipientParameter, subjectParameter, bodyParameter], async (messages, toolCall, cancel) =>
         {
@@ -759,7 +759,7 @@ public class AgentFactory {
     }
 
 
-    private void AddAdvancedAgentTools(ToolsContextBase tools, IEnumerable<string> agents, string caller)
+    private void AddAdvancedAgentTools(IToolsContext tools, IEnumerable<string> agents, string caller)
     {
         var callAgent = new DevGPTChatTool($"custom_agent_getstores", $"Gets a list of stores that a custom agent can use", [], async (messages, toolCall, cancel) =>
         {
@@ -797,7 +797,7 @@ public class AgentFactory {
         tools.Add(callAgent3);
     }
 
-    private void AddAgentTools(ToolsContextBase tools, IEnumerable<string> agents, string caller)
+    private void AddAgentTools(IToolsContext tools, IEnumerable<string> agents, string caller)
     {
         foreach (var agent in agents)
         {
@@ -835,7 +835,7 @@ public class AgentFactory {
         }
     }
 
-    private void AddFlowTools(ToolsContextBase tools, IEnumerable<string> flows, string caller)
+    private void AddFlowTools(IToolsContext tools, IEnumerable<string> flows, string caller)
     {
         foreach (var flow in flows)
         {
