@@ -414,11 +414,12 @@ public class AgentFactory {
             });
             tools.Add(git);
         }
-        if (functions.Contains("claude_cli") || functions.Contains("llm_claude_cli"))
-        {
-            // Adds a tool that calls local Anthropic Claude CLI
-            tools.Add(ClaudeCliTool.Create());
-        }
+        // TODO: Re-implement ClaudeCliTool if needed
+        // if (functions.Contains("claude_cli") || functions.Contains("llm_claude_cli"))
+        // {
+        //     // Adds a tool that calls local Anthropic Claude CLI
+        //     tools.Add(ClaudeCliTool.Create());
+        // }
         if (functions.Contains("bigquery"))
         {
             //var bigQueryProject = "social-media-hulp";
