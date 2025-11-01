@@ -4,12 +4,12 @@
     <LanguageVersion>latest</LanguageVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>DevGPT</RootNamespace>
-    <Version>1.0.6</Version>
-    <PackageVersion>1.0.6</PackageVersion>
+    <RootNamespace>DevGPT.Store</RootNamespace>
+    <Version>1.0.7</Version>
+    <PackageVersion>1.0.7</PackageVersion>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DevGPT.DocumentStore\DevGPT.DocumentStore.csproj" />
-    <ProjectReference Include="..\DevGPT.OpenAI\DevGPT.OpenAI.csproj" />
+    <ProjectReference Include="..\\Store\\DocumentStore\\DevGPT.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\\LLMs\\OpenAI\\DevGPT.LLMs.OpenAI.csproj" />
   </ItemGroup>
 </Project>
