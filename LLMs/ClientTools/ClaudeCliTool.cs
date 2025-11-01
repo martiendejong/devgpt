@@ -45,7 +45,7 @@ public static class ClaudeCliTool
         );
     }
 
-    public static void Register(ToolsContextBase tools)
+    public static void Register(IToolsContext tools)
     {
         tools.Add(Create());
     }
