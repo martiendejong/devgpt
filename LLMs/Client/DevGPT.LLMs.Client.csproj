@@ -4,15 +4,16 @@
     <LanguageVersion>latest</LanguageVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>DevGPT.Store</RootNamespace>
+    <RootNamespace>DevGPT.LLMs</RootNamespace>
     <Version>1.0.7</Version>
     <PackageVersion>1.0.7</PackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.12.0" />
+    <PackageReference Include="OpenAI" Version="2.1.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\\LLMs\\Classes\\DevGPT.LLMs.Classes.csproj" />
-    <ProjectReference Include="..\\LLMs\\Client\\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\\Classes\\DevGPT.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\\Helpers\\DevGPT.LLMs.Helpers.csproj" />
   </ItemGroup>
 </Project>
