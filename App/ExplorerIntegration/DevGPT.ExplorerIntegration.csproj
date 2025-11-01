@@ -17,7 +17,6 @@
     <ProjectReference Include="..\\..\\Store\\DocumentStore\\DevGPT.Store.DocumentStore.csproj" />
     <ProjectReference Include="..\\..\\Store\\EmbeddingStore\\DevGPT.Store.EmbeddingStore.csproj" />
     <ProjectReference Include="..\\..\\LLMs\\Client\\DevGPT.LLMs.Client.csproj" />
-    <ProjectReference Include="..\\..\\DevGPT.LLMClientTools\\DevGPT.LLMClientTools.csproj" />
     <ProjectReference Include="..\\..\\LLMs\\Classes\\DevGPT.LLMs.Classes.csproj" />
     <ProjectReference Include="..\\..\\LLMs\\Helpers\\DevGPT.LLMs.Helpers.csproj" />
     <ProjectReference Include="..\\ChatShared\\DevGPT.ChatShared.csproj" />

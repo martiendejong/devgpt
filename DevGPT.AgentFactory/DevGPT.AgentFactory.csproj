@@ -19,7 +19,6 @@
     <ProjectReference Include="..\\DevGPT.Generator\\DevGPT.Generator.csproj" />
     <ProjectReference Include="..\\LLMs\\Helpers\\DevGPT.LLMs.Helpers.csproj" />
     <ProjectReference Include="..\\LLMs\\Client\\DevGPT.LLMs.Client.csproj" />
-    <ProjectReference Include="..\\DevGPT.LLMClientTools\\DevGPT.LLMClientTools.csproj" />
     <ProjectReference Include="..\\LLMs\\OpenAI\\DevGPT.LLMs.OpenAI.csproj" />
   </ItemGroup>
 </Project>
