@@ -14,13 +14,40 @@ public interface IDocumentStore
     public Task<string> Get(string id);
 
     /// <summary>
-    /// Adds an item to the document store under the given key/name
+    /// Adds a text document to the document store under the given key/name
     /// </summary>
-    /// <param name="id">The key under which</param>
-    /// <param name="content"></param>
-    /// <param name="split"></param>
+    /// <param name="id">The key under which to store the document</param>
+    /// <param name="content">Text content to store</param>
+    /// <param name="metadata">Optional metadata for the document</param>
+    /// <param name="split">Whether to split the document into chunks</param>
     /// <returns></returns>
-    public Task<bool> Store(string id, string content, bool split = true);
+    public Task<bool> Store(string id, string content, Dictionary<string, string>? metadata = null, bool split = true);
+
+    /// <summary>
+    /// Adds a binary document to the document store
+    /// </summary>
+    /// <param name="id">The key under which to store the document</param>
+    /// <param name="content">Binary content to store</param>
+    /// <param name="mimeType">MIME type of the binary content</param>
+    /// <param name="metadata">Optional metadata for the document</param>
+    /// <returns></returns>
+    public Task<bool> Store(string id, byte[] content, string mimeType, Dictionary<string, string>? metadata = null);
+
+    /// <summary>
+    /// Adds a document from a file path
+    /// </summary>
+    /// <param name="id">The key under which to store the document</param>
+    /// <param name="filePath">Path to the file to store</param>
+    /// <param name="metadata">Optional metadata for the document</param>
+    /// <returns></returns>
+    public Task<bool> StoreFromFile(string id, string filePath, Dictionary<string, string>? metadata = null);
+
+    /// <summary>
+    /// Gets metadata for a document
+    /// </summary>
+    /// <param name="id">Document ID</param>
+    /// <returns>Document metadata or null if not found</returns>
+    public Task<DocumentMetadata?> GetMetadata(string id);
     public Task<bool> Embed(string key);
     public Task<bool> Remove(string id);
     public Task<bool> Move(string name, string newName, bool split = true);

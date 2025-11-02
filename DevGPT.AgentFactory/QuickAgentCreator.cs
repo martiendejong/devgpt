@@ -46,7 +46,8 @@ public class QuickAgentCreator
         var partsSpec = File.Exists(partsSpecPath) ? File.ReadAllText(partsSpecPath).Trim() : paths.PartsFile;
         var textStore = StoreFactory.CreateTextStore(textSpec);
         var partStore = StoreFactory.CreatePartStore(partsSpec);
-        var store = new DocumentStore(embeddingStore, textStore, partStore, Client);
+        var metadataStore = StoreFactory.CreateMetadataStore(textSpec);
+        var store = new DocumentStore(embeddingStore, textStore, partStore, metadataStore, Client);
         store.Name = name;
         return store;
     }

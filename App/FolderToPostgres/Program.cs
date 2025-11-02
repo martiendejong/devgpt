@@ -46,7 +46,8 @@ class Program
         var embeddingStore = new PgVectorTextEmbeddingStore(conn, llm, dimension);
         var textStore = new PostgresTextStore(conn);
         var partStore = new PostgresDocumentPartStore(conn);
-        var store = new DocumentStore(embeddingStore, textStore, partStore, llm) { Name = "folder-loader" };
+        var metadataStore = new PostgresDocumentMetadataStore(conn);
+        var store = new DocumentStore(embeddingStore, textStore, partStore, metadataStore, llm) { Name = "folder-loader" };
 
         var searchOption = recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
         var files = Directory.EnumerateFiles(folder, pattern, searchOption).ToList();
