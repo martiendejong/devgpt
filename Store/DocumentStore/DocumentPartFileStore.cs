@@ -54,4 +54,24 @@ public class DocumentPartFileStore : IDocumentPartStore
     {
         return Parts.Keys.ToArray();
     }
+
+    public async Task<string?> GetParentDocument(string chunkKey)
+    {
+        // First check if the chunk key itself is a document
+        if (Parts.ContainsKey(chunkKey))
+        {
+            return chunkKey;
+        }
+
+        // Otherwise, search through all documents to find which one contains this chunk
+        foreach (var kvp in Parts)
+        {
+            if (kvp.Value.Contains(chunkKey))
+            {
+                return kvp.Key;
+            }
+        }
+
+        return null;
+    }
 }

@@ -1,6 +1,17 @@
 using Npgsql;
 using Pgvector;
 
+/// <summary>
+/// Legacy PostgreSQL + pgvector embedding store.
+/// </summary>
+/// <remarks>
+/// This class is obsolete. Use PgVectorStore instead for:
+/// - Better separation of concerns (no embedding generation in storage)
+/// - Native vector search with pgvector operators (10-100x faster)
+/// - No memory overhead from caching all embeddings
+/// - Support for vector indices (HNSW, IVFFlat)
+/// </remarks>
+[Obsolete("Use PgVectorStore with EmbeddingService instead. See Store/EmbeddingStore/PgVectorStore.cs")]
 public class PgVectorTextEmbeddingStore : AbstractTextEmbeddingStore, ITextEmbeddingStore
 {
     private readonly string _connectionString;

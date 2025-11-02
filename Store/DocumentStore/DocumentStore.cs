@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using DevGPT.Store.EmbeddingStore;
 
 public class DocumentStore : IDocumentStore
 {
@@ -18,7 +19,25 @@ public class DocumentStore : IDocumentStore
     public IDocumentMetadataStore MetadataStore { get; set; }
     public BinaryDocumentProcessor BinaryProcessor { get; set; }
 
+    // New architecture components (optional for backward compatibility)
+    private readonly IVectorSearchStore? _vectorSearchStore;
+    private readonly IEmbeddingGenerator? _embeddingGenerator;
+
+    // Legacy constructor for backward compatibility
     public DocumentStore(ITextEmbeddingStore embeddingStore, ITextStore textStore, IDocumentPartStore partStore, IDocumentMetadataStore metadataStore, ILLMClient llmClient)
+        : this(embeddingStore, textStore, partStore, metadataStore, llmClient, null, null)
+    {
+    }
+
+    // New constructor with refactored architecture support
+    public DocumentStore(
+        ITextEmbeddingStore embeddingStore,
+        ITextStore textStore,
+        IDocumentPartStore partStore,
+        IDocumentMetadataStore metadataStore,
+        ILLMClient llmClient,
+        IVectorSearchStore? vectorSearchStore,
+        IEmbeddingGenerator? embeddingGenerator)
     {
         LLMClient = llmClient;
         EmbeddingStore = embeddingStore;
@@ -26,6 +45,8 @@ public class DocumentStore : IDocumentStore
         PartStore = partStore;
         MetadataStore = metadataStore;
         BinaryProcessor = new BinaryDocumentProcessor(llmClient);
+        _vectorSearchStore = vectorSearchStore;
+        _embeddingGenerator = embeddingGenerator;
     }
 
 
@@ -261,19 +282,88 @@ public class DocumentStore : IDocumentStore
 
     public async Task<List<string>> RelevantItems(string query)
     {
-        var embed = await LLMClient.GenerateEmbedding(EmbeddingMatcher.CutOffQuery(query));
+        var cutOffQuery = EmbeddingMatcher.CutOffQuery(query);
+
+        // Use new architecture if available
+        if (_vectorSearchStore != null && _embeddingGenerator != null)
+        {
+            var queryEmbedding = await _embeddingGenerator.GenerateAsync(cutOffQuery);
+            var scoredResults = await _vectorSearchStore.SearchSimilarAsync(queryEmbedding, topK: 1000, minSimilarity: 0.0);
+            var r = scoredResults.Select(scored => new RelevantEmbedding
+            {
+                Similarity = scored.Similarity,
+                StoreName = Name,
+                Document = scored.Info,
+                GetText = async (string a) => await TextStore.Get(a)
+            }).ToList();
+            var items = await EmbeddingMatcher.TakeTop(r);
+            return items;
+        }
+
+        // Fall back to old architecture
+        var embed = await LLMClient.GenerateEmbedding(cutOffQuery);
         var list = EmbeddingMatcher.GetEmbeddingsWithSimilarity(embed, EmbeddingStore.Embeddings);
-        var r = list.Select(item => new RelevantEmbedding { Similarity = item.similarity, StoreName = Name, Document = item.document, GetText = async (string a) => await TextStore.Get(a) }).ToList();
-        var items = await EmbeddingMatcher.TakeTop(r);
-        return items;
+        var legacyResults = list.Select(item => new RelevantEmbedding { Similarity = item.similarity, StoreName = Name, Document = item.document, GetText = async (string a) => await TextStore.Get(a) }).ToList();
+        var legacyItems = await EmbeddingMatcher.TakeTop(legacyResults);
+        return legacyItems;
     }
 
     public async Task<List<RelevantEmbedding>> Embeddings(string query)
     {
-        var embed = await LLMClient.GenerateEmbedding(EmbeddingMatcher.CutOffQuery(query));
+        var cutOffQuery = EmbeddingMatcher.CutOffQuery(query);
+
+        // Use new architecture if available (native vector search)
+        if (_vectorSearchStore != null && _embeddingGenerator != null)
+        {
+            // Generate query embedding using the new architecture
+            var queryEmbedding = await _embeddingGenerator.GenerateAsync(cutOffQuery);
+
+            // Perform native vector search (10-100x faster for large datasets)
+            var scoredResults = await _vectorSearchStore.SearchSimilarAsync(
+                queryEmbedding,
+                topK: 1000, // Get many results, will be filtered by token limit later
+                minSimilarity: 0.0
+            );
+
+            // Convert to legacy RelevantEmbedding format
+            var r = new List<RelevantEmbedding>();
+            foreach (var scored in scoredResults)
+            {
+                var parentKey = await PartStore.GetParentDocument(scored.Info.Key);
+                r.Add(new RelevantEmbedding
+                {
+                    Similarity = scored.Similarity,
+                    StoreName = Name,
+                    Document = scored.Info,
+                    ParentDocumentKey = parentKey,
+                    GetText = async (string a) => await TextStore.Get(a)
+                });
+            }
+
+            return r;
+        }
+
+        // Fall back to old architecture (in-memory search)
+        var embed = await LLMClient.GenerateEmbedding(cutOffQuery);
         var list = EmbeddingMatcher.GetEmbeddingsWithSimilarity(embed, EmbeddingStore.Embeddings);
-        var r = list.Select(item => new RelevantEmbedding { Similarity = item.similarity, StoreName = Name, Document = item.document, GetText = async (string a) => await TextStore.Get(a) }).ToList();
-        return r;
+        var legacyResults = new List<RelevantEmbedding>();
+
+        foreach (var item in list)
+        {
+            var chunkKey = item.document.Key;
+            var parentKey = await PartStore.GetParentDocument(chunkKey);
+
+            legacyResults.Add(new RelevantEmbedding
+            {
+                Similarity = item.similarity,
+                StoreName = Name,
+                Document = item.document,
+                ParentDocumentKey = parentKey,
+                GetText = async (string a) => await TextStore.Get(a)
+            });
+        }
+
+        return legacyResults;
     }
 
     public string GetPath(string name)
@@ -284,5 +374,37 @@ public class DocumentStore : IDocumentStore
     public async Task<string> Get(string name)
     {
         return await TextStore.Get(Sanitize(name));
+    }
+
+    public async Task<string?> GetChunk(string chunkKey)
+    {
+        chunkKey = Sanitize(chunkKey);
+        return await TextStore.Get(chunkKey);
+    }
+
+    public async Task<DocumentWithChunks?> GetDocumentWithChunks(string key)
+    {
+        key = Sanitize(key);
+
+        // Get the document content
+        var content = await TextStore.Get(key);
+        if (content == null)
+        {
+            return null;
+        }
+
+        // Get metadata
+        var metadata = await MetadataStore.Get(key);
+
+        // Get chunk keys
+        var chunkKeys = (await PartStore.Get(key)).ToList();
+
+        return new DocumentWithChunks
+        {
+            Key = key,
+            Content = content,
+            Metadata = metadata,
+            ChunkKeys = chunkKeys
+        };
     }
 }

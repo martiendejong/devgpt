@@ -1,3 +1,13 @@
+/// <summary>
+/// Legacy abstract base class for text embedding storage.
+/// </summary>
+/// <remarks>
+/// This class is obsolete. Use the new architecture instead:
+/// - Implement IEmbeddingStore for storage operations
+/// - Implement IVectorSearchStore for similarity search
+/// - Use EmbeddingService for orchestration with checksum-based caching
+/// </remarks>
+[Obsolete("Use IEmbeddingStore implementations with EmbeddingService instead.")]
 public abstract class AbstractTextEmbeddingStore : /*AbstractStore<string>,*/ ITextEmbeddingStore
 {
     public ILLMClient? EmbeddingProvider { get; set; }

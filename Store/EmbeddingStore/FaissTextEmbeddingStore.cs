@@ -1,3 +1,12 @@
+/// <summary>
+/// Placeholder FAISS embedding store (never fully implemented).
+/// </summary>
+/// <remarks>
+/// This class was a placeholder and is now obsolete.
+/// If you need FAISS vector search, implement IEmbeddingStore + IVectorSearchStore with FAISS backend.
+/// Consider using PgVectorStore with HNSW indices for production vector search.
+/// </remarks>
+[Obsolete("This was never fully implemented. Use PgVectorStore or implement FAISS support using IEmbeddingStore + IVectorSearchStore interfaces.")]
 public class FaissTextEmbeddingStore : AbstractTextEmbeddingStore, ITextEmbeddingStore
 {
     private readonly string _indexPathOrSpec;

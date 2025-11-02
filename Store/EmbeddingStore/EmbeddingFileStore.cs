@@ -5,6 +5,17 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+/// <summary>
+/// Legacy file-based embedding store.
+/// </summary>
+/// <remarks>
+/// This class is obsolete. Use EmbeddingJsonFileStore instead for:
+/// - Better separation of concerns (no embedding generation in storage)
+/// - Cleaner API with focused interfaces
+/// - Thread-safe operations
+/// - Better error handling
+/// </remarks>
+[Obsolete("Use EmbeddingJsonFileStore with EmbeddingService instead. See Store/EmbeddingStore/EmbeddingJsonFileStore.cs")]
 public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStore
 {
     public string EmbeddingsFilePath { get; set; }

@@ -338,7 +338,7 @@ public class AgentFactory {
             if (WriteMode) return "Cannot give write instructions when in write mode";
             if (keyParameter.TryGetValue(toolCall, out string key))
                 if (contentParameter.TryGetValue(toolCall, out string content))
-                    return await store.Store(key, content, false) ? "success" : "content provided was the same as the file";
+                    return await store.Store(key, content, null, false) ? "success" : "content provided was the same as the file";
                 else
                     return "No content given";
             return "No key given";

@@ -14,6 +14,20 @@ public interface IDocumentStore
     public Task<string> Get(string id);
 
     /// <summary>
+    /// Gets a specific chunk by its chunk key
+    /// </summary>
+    /// <param name="chunkKey">The chunk key (e.g., "doc.txt part 0")</param>
+    /// <returns>The chunk text, or null if not found</returns>
+    public Task<string?> GetChunk(string chunkKey);
+
+    /// <summary>
+    /// Gets a document with all its metadata and chunk keys
+    /// </summary>
+    /// <param name="key">The document key</param>
+    /// <returns>DocumentWithChunks object containing the full document, metadata, and chunk keys</returns>
+    public Task<DocumentWithChunks?> GetDocumentWithChunks(string key);
+
+    /// <summary>
     /// Adds a text document to the document store under the given key/name
     /// </summary>
     /// <param name="id">The key under which to store the document</param>

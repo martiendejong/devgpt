@@ -1,3 +1,15 @@
+/// <summary>
+/// Legacy in-memory embedding store.
+/// </summary>
+/// <remarks>
+/// This class is obsolete. Use EmbeddingMemoryStore instead for:
+/// - Better separation of concerns (no embedding generation in storage)
+/// - Dictionary-based storage for faster lookups
+/// - Batch operations support
+/// - Native vector search capability
+/// - Thread-safe operations
+/// </remarks>
+[Obsolete("Use EmbeddingMemoryStore with EmbeddingService instead. See Store/EmbeddingStore/EmbeddingMemoryStore.cs")]
 public class TextEmbeddingMemoryStore : AbstractTextEmbeddingStore, ITextEmbeddingStore
 {
     public TextEmbeddingMemoryStore(ILLMClient embeddingProvider) : base(embeddingProvider) { }

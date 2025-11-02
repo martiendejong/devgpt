@@ -151,8 +151,7 @@ public class DocumentGenerator : IDocumentGenerator
         if (response.Modifications != null)
             foreach (var modification in response.Modifications)
             {
-                await Store.Store(modification.Path, modification.Contents, false);
-                await Store.Store(modification.Path, modification.Contents, false);
+                await Store.Store(modification.Path, modification.Contents, null, false);
             }
         if (response.Deletions != null)
             foreach (var deletion in response.Deletions)

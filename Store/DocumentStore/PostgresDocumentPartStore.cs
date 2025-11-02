@@ -81,4 +81,34 @@ public class PostgresDocumentPartStore : IDocumentPartStore
         }
         return list;
     }
+
+    public async Task<string?> GetParentDocument(string chunkKey)
+    {
+        await using var conn = new NpgsqlConnection(_connectionString);
+        await conn.OpenAsync();
+
+        // First check if the chunk key itself is a document
+        await using (var cmd = new NpgsqlCommand("SELECT name FROM document_parts WHERE name = @key LIMIT 1", conn))
+        {
+            cmd.Parameters.AddWithValue("@key", chunkKey);
+            var result = await cmd.ExecuteScalarAsync();
+            if (result != null)
+            {
+                return chunkKey;
+            }
+        }
+
+        // Otherwise, search for documents that contain this chunk
+        await using (var cmd = new NpgsqlCommand("SELECT name FROM document_parts WHERE part_key = @key LIMIT 1", conn))
+        {
+            cmd.Parameters.AddWithValue("@key", chunkKey);
+            var result = await cmd.ExecuteScalarAsync();
+            if (result != null)
+            {
+                return result.ToString();
+            }
+        }
+
+        return null;
+    }
 }
