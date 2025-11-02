@@ -272,6 +272,7 @@ public class AgentFactory {
             config.Model = model;
         var llmClient = new OpenAIClientWrapper(config);
         var tools = new ToolsContext();
+        tools.SendMessage = ;
         AddStoreTools(stores, tools, function, agents, flows, name);
         var tempStores = stores.Skip(1).Select(s => s.Store as IDocumentStore).ToList();
         var generator = new DocumentGenerator(stores.First().Store, new List<DevGPTChatMessage>() { new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = systemPrompt } }, llmClient, OpenAiApiKey, LogFilePath, tempStores);

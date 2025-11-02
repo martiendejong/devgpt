@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Http;
@@ -263,6 +263,7 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
         {
             var chatHistory = JsonSerializer.Deserialize<List<DevGPTChatMessage>>(ChatHistoryJson) ?? new List<DevGPTChatMessage>();
             var toolsContext = new ToolsContext();
+            toolsContext.SendMessage = ;
 
             var historyCopy = new List<DevGPTChatMessage>(chatHistory);
 
