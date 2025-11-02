@@ -300,7 +300,6 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
         {
             var chatHistory = JsonSerializer.Deserialize<List<DevGPTChatMessage>>(ChatHistoryJson) ?? new List<DevGPTChatMessage>();
             var toolsContext = new ToolsContext();
-            tools.SendMessage = ;
             var urlParameter = new ChatToolParameter { Name = "url", Description = "The URL of the image", Required = true, Type = "string" };
             Func<List<DevGPTChatMessage>, DevGPTChatToolCall, CancellationToken, Task<string>> execCheckImageURL = async (messges, call, token) =>
             {
