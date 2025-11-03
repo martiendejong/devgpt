@@ -34,3 +34,4 @@ bin
 /nuget.bat.old
 /bfg.jar
 /DevGPT.OpenAI.IntegrationTests/appsettings.json
+/App/Windows/appsettings.json
