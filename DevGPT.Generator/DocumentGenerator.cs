@@ -16,6 +16,7 @@ public class DocumentGenerator : IDocumentGenerator
     //public SimpleOpenAIClient SimpleApi { get; set; }
     public List<DevGPTChatMessage> BaseMessages { get; set; }
     protected ILLMClient LLMClient { get; set; }
+    public int MaxTokens { get; set; } = 6000;
 
     public EmbeddingMatcher EmbeddingMatcher = new EmbeddingMatcher();
 
@@ -190,7 +191,7 @@ public class DocumentGenerator : IDocumentGenerator
                 embeddings.AddRange(await s.Embeddings(relevancyQuery));
             }
             var e = new EmbeddingMatcher();
-            var docs = await e.TakeTop(embeddings, 2000);
+            var docs = await e.TakeTop(embeddings, MaxTokens);
 
             var msgs = docs.Select(d => new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = d });
 
