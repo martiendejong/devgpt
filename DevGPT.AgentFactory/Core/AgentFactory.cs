@@ -272,10 +272,13 @@ public class AgentFactory {
             config.Model = model;
         var llmClient = new OpenAIClientWrapper(config);
         var tools = new ToolsContext();
+<<<<<<< HEAD:DevGPT.AgentFactory/Core/AgentFactory.cs
         tools.SendMessage = (string id, string agent, string output) =>
         {
             //
         };
+=======
+>>>>>>> d917293a6c55216684ce8c170f8813dd604f3c15:DevGPT.AgentFactory/AgentFactory.cs
         AddStoreTools(stores, tools, function, agents, flows, name);
         var tempStores = stores.Skip(1).Select(s => s.Store as IDocumentStore).ToList();
         var generator = new DocumentGenerator(stores.First().Store, new List<DevGPTChatMessage>() { new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = systemPrompt } }, llmClient, OpenAiApiKey, LogFilePath, tempStores);

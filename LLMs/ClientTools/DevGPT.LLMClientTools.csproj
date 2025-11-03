@@ -5,8 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.Store</RootNamespace>
+<<<<<<< HEAD
     <Version>1.0.6</Version>
     <PackageVersion>1.0.6</PackageVersion>
+=======
+    <Version>1.0.7</Version>
+    <PackageVersion>1.0.7</PackageVersion>
+>>>>>>> d917293a6c55216684ce8c170f8813dd604f3c15
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.12.0" />

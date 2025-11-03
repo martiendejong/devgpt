@@ -36,6 +36,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crosslink", "App\Crosslink\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmbeddingsViewer", "App\EmbeddingsViewer\EmbeddingsViewer.csproj", "{4A94DBC4-F6CB-4AD7-A94E-53C243E776BB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UI", "UI", "{FA674B5A-3394-926C-2B1E-70E5B00E4A5C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "App (2)", "App (2)", "{CDC084CF-DBBC-4414-ADCA-208E10861DFF}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.ExplorerIntegration", "App\ExplorerIntegration\DevGPT.ExplorerIntegration.csproj", "{FA66D3A8-7DE1-4FA8-8982-20E46C7687B7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderToPostgres", "App\FolderToPostgres\FolderToPostgres.csproj", "{EAB447AF-9F9A-4BFB-A961-4AD779058DC3}"
