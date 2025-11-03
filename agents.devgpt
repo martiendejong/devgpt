@@ -1,8 +1,0 @@
-Name: devgpt_simpleagent
-Description: 
-Prompt: Handle the instruction.
-Stores: devgpt_sourcecode|False
-Functions: 
-CallsAgents: 
-CallsFlows: 
-ExplicitModify: False

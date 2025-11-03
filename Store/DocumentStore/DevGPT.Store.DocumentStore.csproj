@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.Store</RootNamespace>
-    <Version>1.0.9</Version>
-    <PackageVersion>1.0.9</PackageVersion>
+    <Version>1.0.6</Version>
+    <PackageVersion>1.0.6</PackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\\EmbeddingStore\\DevGPT.Store.EmbeddingStore.csproj" />
