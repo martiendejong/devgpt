@@ -1,4 +1,3 @@
-<<<<<<<< HEAD:Store/EmbeddingStore/Stores/Memory/TextEmbeddingMemoryStore.cs
 /// <summary>
 /// Legacy in-memory embedding store.
 /// </summary>
@@ -11,8 +10,6 @@
 /// - Thread-safe operations
 /// </remarks>
 [Obsolete("Use EmbeddingMemoryStore with EmbeddingService instead. See Store/EmbeddingStore/EmbeddingMemoryStore.cs")]
-========
->>>>>>>> d917293a6c55216684ce8c170f8813dd604f3c15:Store/EmbeddingStore/TextEmbeddingMemoryStore.cs
 public class TextEmbeddingMemoryStore : AbstractTextEmbeddingStore, ITextEmbeddingStore
 {
     public TextEmbeddingMemoryStore(ILLMClient embeddingProvider) : base(embeddingProvider) { }

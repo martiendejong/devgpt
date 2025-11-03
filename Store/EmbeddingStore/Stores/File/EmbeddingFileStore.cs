@@ -5,7 +5,6 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-<<<<<<<< HEAD:Store/EmbeddingStore/Stores/File/EmbeddingFileStore.cs
 /// <summary>
 /// Legacy file-based embedding store.
 /// </summary>
@@ -17,8 +16,6 @@ using System.Threading.Tasks;
 /// - Better error handling
 /// </remarks>
 [Obsolete("Use EmbeddingJsonFileStore with EmbeddingService instead. See Store/EmbeddingStore/EmbeddingJsonFileStore.cs")]
-========
->>>>>>>> d917293a6c55216684ce8c170f8813dd604f3c15:Store/EmbeddingStore/EmbeddingFileStore.cs
 public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStore
 {
     public string EmbeddingsFilePath { get; set; }
