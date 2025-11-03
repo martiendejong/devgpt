@@ -1,4 +1,3 @@
-<<<<<<<< HEAD:Store/EmbeddingStore/Core/AbstractTextEmbeddingStore.cs
 /// <summary>
 /// Legacy abstract base class for text embedding storage.
 /// </summary>
@@ -9,8 +8,6 @@
 /// - Use EmbeddingService for orchestration with checksum-based caching
 /// </remarks>
 [Obsolete("Use IEmbeddingStore implementations with EmbeddingService instead.")]
-========
->>>>>>>> d917293a6c55216684ce8c170f8813dd604f3c15:Store/EmbeddingStore/AbstractTextEmbeddingStore.cs
 public abstract class AbstractTextEmbeddingStore : /*AbstractStore<string>,*/ ITextEmbeddingStore
 {
     public ILLMClient? EmbeddingProvider { get; set; }
