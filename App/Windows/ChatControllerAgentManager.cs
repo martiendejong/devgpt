@@ -50,16 +50,11 @@ namespace DevGPT.App.Windows
                 return await _agentManager.SendMessage(text, token, agentOrFlow);
             }
             else
-<<<<<<< HEAD
             {
                 if (agentOrFlow.StartsWith("FLOW: "))
                     agentOrFlow = agentOrFlow.Substring(6);
-=======
-            {
->>>>>>> d917293a6c55216684ce8c170f8813dd604f3c15
                 return await _agentManager.SendMessage_Flow(text, token, agentOrFlow);
             }
         }
     }
 }
-
