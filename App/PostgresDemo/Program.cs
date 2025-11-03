@@ -55,14 +55,9 @@ class Program
         var llm = new DummyLLMClient(dimension);
         var embeddingStore = new PgVectorTextEmbeddingStore(conn, llm, dimension);
         var textStore = new PostgresTextStore(conn);
-<<<<<<< HEAD
         var chunkStore = new PostgresChunkStore(conn);
         var metadataStore = new PostgresDocumentMetadataStore(conn);
         var store = new DocumentStore(embeddingStore, textStore, chunkStore, metadataStore, llm) { Name = "postgres-demo" };
-=======
-        var partStore = new PostgresDocumentPartStore(conn);
-        var store = new DocumentStore(embeddingStore, textStore, partStore, llm) { Name = "postgres-demo" };
->>>>>>> d917293a6c55216684ce8c170f8813dd604f3c15
 
         // Example document
         var docName = "examples/demo.txt";
