@@ -41,13 +41,13 @@ public class QuickAgentCreator
         var embeddingsSpec = File.Exists(specPath) ? File.ReadAllText(specPath).Trim() : paths.EmbeddingsFile;
         var embeddingStore = EmbeddingStoreFactory.CreateFromSpec(embeddingsSpec, Client);
         var textSpecPath = Path.Combine(paths.RootFolder, "textstore.spec");
-        var partsSpecPath = Path.Combine(paths.RootFolder, "partstore.spec");
+        var chunksSpecPath = Path.Combine(paths.RootFolder, "chunkstore.spec");
         var textSpec = File.Exists(textSpecPath) ? File.ReadAllText(textSpecPath).Trim() : paths.RootFolder;
-        var partsSpec = File.Exists(partsSpecPath) ? File.ReadAllText(partsSpecPath).Trim() : paths.PartsFile;
+        var chunksSpec = File.Exists(chunksSpecPath) ? File.ReadAllText(chunksSpecPath).Trim() : paths.ChunksFile;
         var textStore = StoreFactory.CreateTextStore(textSpec);
-        var partStore = StoreFactory.CreatePartStore(partsSpec);
+        var chunkStore = StoreFactory.CreateChunkStore(chunksSpec);
         var metadataStore = StoreFactory.CreateMetadataStore(textSpec);
-        var store = new DocumentStore(embeddingStore, textStore, partStore, metadataStore, Client);
+        var store = new DocumentStore(embeddingStore, textStore, chunkStore, metadataStore, Client);
         store.Name = name;
         return store;
     }

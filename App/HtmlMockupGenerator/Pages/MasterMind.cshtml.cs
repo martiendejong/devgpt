@@ -206,7 +206,7 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
         var paths = new StorePaths("C:\\dsa\\store");
         creator.CreateStore(paths, "store");
 
-        //var documentStore = new DocumentStore(embeddingStore, textStore, partStore, llmClient);
+        //var documentStore = new DocumentStore(embeddingStore, textStore, chunkStore, llmClient);
         //var oracle = factory.CreateAgent("Oracle", _oraclePrompt, (store, true), [], [], []);
         
     }

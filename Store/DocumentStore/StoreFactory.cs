@@ -11,19 +11,19 @@ public static class StoreFactory
         return new TextFileStore(spec);
     }
 
-    public static IDocumentPartStore CreatePartStore(string spec)
+    public static IChunkStore CreateChunkStore(string spec)
     {
         if (string.Equals(spec, "memory:", StringComparison.InvariantCultureIgnoreCase) || string.Equals(spec, "memory", StringComparison.InvariantCultureIgnoreCase))
         {
-            return new DocumentPartMemoryStore();
+            return new ChunkMemoryStore();
         }
         if (spec.StartsWith("postgres:", StringComparison.InvariantCultureIgnoreCase))
         {
             var cs = spec.Substring("postgres:".Length);
-            return new PostgresDocumentPartStore(cs);
+            return new PostgresChunkStore(cs);
         }
         // default to file path
-        return new DocumentPartFileStore(spec);
+        return new ChunkFileStore(spec);
     }
 
     public static IDocumentMetadataStore CreateMetadataStore(string spec)

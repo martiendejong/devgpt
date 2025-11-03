@@ -36,43 +36,94 @@ echo Publishing DevGPT Packages to NuGet
 echo ========================================
 echo.
 
-REM List of packages to publish
-set "PACKAGES=DevGPT.AgentFactory DevGPT.Classes DevGPT.DocumentStore DevGPT.EmbeddingStore DevGPT.Generator DevGPT.Helpers DevGPT.HuggingFace DevGPT.LLMClient DevGPT.LLMClientTools DevGPT.OpenAI"
+REM Define package paths and names
+set PKG_1_PATH=DevGPT.AgentFactory
+set PKG_1_NAME=DevGPT.AgentFactory
+
+set PKG_2_PATH=DevGPT.Generator
+set PKG_2_NAME=DevGPT.Generator
+
+set PKG_3_PATH=LLMs\Classes
+set PKG_3_NAME=DevGPT.LLMs.Classes
+
+set PKG_4_PATH=LLMs\Helpers
+set PKG_4_NAME=DevGPT.LLMs.Helpers
+
+set PKG_5_PATH=LLMs\Client
+set PKG_5_NAME=DevGPT.LLMs.Client
+
+set PKG_6_PATH=LLMs\OpenAI
+set PKG_6_NAME=DevGPT.LLMs.OpenAI
+
+set PKG_7_PATH=LLMs\Anthropic
+set PKG_7_NAME=DevGPT.LLMs.Anthropic
+
+set PKG_8_PATH=LLMs\HuggingFace
+set PKG_8_NAME=DevGPT.LLMs.HuggingFace
+
+set PKG_9_PATH=LLMs\ClientTools
+set PKG_9_NAME=DevGPT.LLMClientTools
+
+set PKG_10_PATH=Store\DocumentStore
+set PKG_10_NAME=DevGPT.Store.DocumentStore
+
+set PKG_11_PATH=Store\EmbeddingStore
+set PKG_11_NAME=DevGPT.Store.EmbeddingStore
+
+set PKG_12_PATH=App\ChatShared
+set PKG_12_NAME=DevGPT.ChatShared
 
 set "FAILED_PACKAGES="
 set "SUCCESS_COUNT=0"
 set "FAIL_COUNT=0"
 
-for %%P in (%PACKAGES%) do (
-    echo.
-    echo [%%P] Searching for package...
+REM Process each package
+for /L %%i in (1,1,12) do (
+    call :PublishPackage %%i
+)
 
-    set "NUPKG_FILE="
-    REM Find the .nupkg file (excluding .symbols.nupkg)
-    for /f "delims=" %%F in ('dir /b /s "%%P\bin\Release\%%P.*.nupkg" 2^>nul ^| findstr /v "\.symbols\."') do (
-        set "NUPKG_FILE=%%F"
-    )
+goto :Summary
 
-    if "!NUPKG_FILE!"=="" (
-        echo [%%P] WARNING: Package not found in bin\Release - skipping
+:PublishPackage
+setlocal enabledelayedexpansion
+set INDEX=%1
+set "PROJECT_PATH=!PKG_%INDEX%_PATH!"
+set "PACKAGE_NAME=!PKG_%INDEX%_NAME!"
+
+echo.
+echo [!PACKAGE_NAME!] Searching for package...
+
+set "NUPKG_FILE="
+REM Find the .nupkg file (excluding .symbols.nupkg)
+for /f "delims=" %%F in ('dir /b /s "!PROJECT_PATH!\bin\Release\!PACKAGE_NAME!.*.nupkg" 2^>nul ^| findstr /v "\.symbols\."') do (
+    set "NUPKG_FILE=%%F"
+)
+
+if "!NUPKG_FILE!"=="" (
+    echo [!PACKAGE_NAME!] WARNING: Package not found in !PROJECT_PATH!\bin\Release - skipping
+    endlocal
+    set /a "FAIL_COUNT+=1"
+    set "FAILED_PACKAGES=!FAILED_PACKAGES! !PACKAGE_NAME!"
+) else (
+    echo [!PACKAGE_NAME!] Found: !NUPKG_FILE!
+    echo [!PACKAGE_NAME!] Publishing...
+
+    dotnet nuget push "!NUPKG_FILE!" --api-key "%API_KEY%" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+    if errorlevel 1 (
+        echo [!PACKAGE_NAME!] FAILED to publish
+        endlocal
         set /a "FAIL_COUNT+=1"
-        set "FAILED_PACKAGES=!FAILED_PACKAGES! %%P"
+        set "FAILED_PACKAGES=!FAILED_PACKAGES! !PACKAGE_NAME!"
     ) else (
-        echo [%%P] Found: !NUPKG_FILE!
-        echo [%%P] Publishing...
-
-        dotnet nuget push "!NUPKG_FILE!" --api-key "%API_KEY%" --source https://api.nuget.org/v3/index.json --skip-duplicate
-
-        if errorlevel 1 (
-            echo [%%P] FAILED to publish
-            set /a "FAIL_COUNT+=1"
-            set "FAILED_PACKAGES=!FAILED_PACKAGES! %%P"
-        ) else (
-            echo [%%P] SUCCESS
-            set /a "SUCCESS_COUNT+=1"
-        )
+        echo [!PACKAGE_NAME!] SUCCESS
+        endlocal
+        set /a "SUCCESS_COUNT+=1"
     )
 )
+goto :eof
+
+:Summary
 
 echo.
 echo ========================================

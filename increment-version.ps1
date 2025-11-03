@@ -15,7 +15,7 @@ Write-Host "Publish after increment: $(!$NoPublish)"
 Write-Host ""
 
 # Get current version from first csproj file
-$csprojPath = "DevGPT.Classes\DevGPT.Classes.csproj"
+$csprojPath = "LLMs\Classes\DevGPT.LLMs.Classes.csproj"
 $content = Get-Content $csprojPath -Raw
 
 if ($content -match '<Version>(\d+)\.(\d+)\.(\d+)</Version>') {

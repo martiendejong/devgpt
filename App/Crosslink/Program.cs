@@ -15,15 +15,15 @@ class Program
         // Prepare document stores for werkzoekenden and bedrijven with your in-repo DocumentStore components
         var werkzoekendenEmbeddingStore = new EmbeddingFileStore(@"c:\stores\crosslink\werkzoekenden.embed", llmClient);
         var werkzoekendenTextStore = new TextFileStore(@"c:\stores\crosslink\werkzoekenden");
-        var werkzoekendenPartStore = new DocumentPartFileStore(@"c:\stores\crosslink\werkzoekenden.parts");
+        var werkzoekendenChunkStore = new ChunkFileStore(@"c:\stores\crosslink\werkzoekenden.chunks");
         var werkzoekendenMetadataStore = new DocumentMetadataFileStore(@"c:\stores\crosslink\werkzoekenden.metadata");
-        var werkzoekenden = new DocumentStore(werkzoekendenEmbeddingStore, werkzoekendenTextStore, werkzoekendenPartStore, werkzoekendenMetadataStore, llmClient);
+        var werkzoekenden = new DocumentStore(werkzoekendenEmbeddingStore, werkzoekendenTextStore, werkzoekendenChunkStore, werkzoekendenMetadataStore, llmClient);
 
         var bedrijvenEmbeddingStore = new EmbeddingFileStore(@"c:\stores\crosslink\bedrijven.embed", llmClient);
         var bedrijvenTextStore = new TextFileStore(@"c:\stores\crosslink\bedrijven");
-        var bedrijvenPartStore = new DocumentPartFileStore(@"c:\stores\crosslink\bedrijven.parts");
+        var bedrijvenChunkStore = new ChunkFileStore(@"c:\stores\crosslink\bedrijven.chunks");
         var bedrijvenMetadataStore = new DocumentMetadataFileStore(@"c:\stores\crosslink\bedrijven.metadata");
-        var bedrijven = new DocumentStore(bedrijvenEmbeddingStore, bedrijvenTextStore, bedrijvenPartStore, bedrijvenMetadataStore, llmClient);
+        var bedrijven = new DocumentStore(bedrijvenEmbeddingStore, bedrijvenTextStore, bedrijvenChunkStore, bedrijvenMetadataStore, llmClient);
 
         // Example CV data (this would be loaded dynamically in a production scenario)
         var candidateCV = @"**Curriculum Vitae**\n        \n**Persoonlijke gegevens**\nNaam: Mark van den Berg\nAdres: Keizersgracht 112, 1015 CV Amsterdam\nTelefoonnummer: 06-12345678\nE-mail: markvandenberg@email.com\nGeboortedatum: 12 mei 1990\nNationaliteit: Nederlands\nRijbewijs: B\n\n---\n**Profiel**\nAnalytische en gedreven IT-professional met een passie voor softwareontwikkeling en procesoptimalisatie. Ik ben een probleemoplosser die graag complexe vraagstukken analyseert en vertaalt naar effici├½nte technologische oplossingen. Mijn sterke communicatieve vaardigheden maken mij een bruggenbouwer tussen techniek en eindgebruikers. ... (etc, rest of CV as per sample)";

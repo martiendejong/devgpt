@@ -17,7 +17,9 @@
       "Bash(dotnet clean:*)",
       "Bash(dotnet pack:*)",
       "Bash(cmd /c nuget-publish.bat)",
-      "Bash(powershell -ExecutionPolicy Bypass -Command \"& ''.\\nuget-publish.bat''\")"
+      "Bash(powershell -ExecutionPolicy Bypass -Command \"& ''.\\nuget-publish.bat''\")",
+      "Bash(move IDocumentPartStore.cs IChunkStore.cs)",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []

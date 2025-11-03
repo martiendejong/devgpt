@@ -12,7 +12,7 @@ public class DocumentStore : IDocumentStore
 
     public EmbeddingMatcher EmbeddingMatcher = new EmbeddingMatcher();
     public ITextEmbeddingStore EmbeddingStore { get; set; }
-    public IDocumentPartStore PartStore { get; set; }
+    public IChunkStore ChunkStore { get; set; }
     public DocumentSplitter DocumentSplitter = new DocumentSplitter();
     public ITextStore TextStore { get; set; }
     public ILLMClient LLMClient { get; set; }
@@ -24,8 +24,8 @@ public class DocumentStore : IDocumentStore
     private readonly IEmbeddingGenerator? _embeddingGenerator;
 
     // Legacy constructor for backward compatibility
-    public DocumentStore(ITextEmbeddingStore embeddingStore, ITextStore textStore, IDocumentPartStore partStore, IDocumentMetadataStore metadataStore, ILLMClient llmClient)
-        : this(embeddingStore, textStore, partStore, metadataStore, llmClient, null, null)
+    public DocumentStore(ITextEmbeddingStore embeddingStore, ITextStore textStore, IChunkStore chunkStore, IDocumentMetadataStore metadataStore, ILLMClient llmClient)
+        : this(embeddingStore, textStore, chunkStore, metadataStore, llmClient, null, null)
     {
     }
 
@@ -33,7 +33,7 @@ public class DocumentStore : IDocumentStore
     public DocumentStore(
         ITextEmbeddingStore embeddingStore,
         ITextStore textStore,
-        IDocumentPartStore partStore,
+        IChunkStore chunkStore,
         IDocumentMetadataStore metadataStore,
         ILLMClient llmClient,
         IVectorSearchStore? vectorSearchStore,
@@ -42,7 +42,7 @@ public class DocumentStore : IDocumentStore
         LLMClient = llmClient;
         EmbeddingStore = embeddingStore;
         TextStore = textStore;
-        PartStore = partStore;
+        ChunkStore = chunkStore;
         MetadataStore = metadataStore;
         BinaryProcessor = new BinaryDocumentProcessor(llmClient);
         _vectorSearchStore = vectorSearchStore;
@@ -92,34 +92,34 @@ public class DocumentStore : IDocumentStore
         };
         await MetadataStore.Store(name, docMetadata);
 
-        var partKeys = new List<string>();
+        var chunkKeys = new List<string>();
 
         // First, store metadata as a searchable chunk
         var metadataKey = $"{name}::metadata";
         var metadataChunk = docMetadata.ToChunkText();
         await EmbeddingStore.StoreEmbedding(metadataKey, metadataChunk);
         await TextStore.Store(metadataKey, metadataChunk);
-        partKeys.Add(metadataKey);
+        chunkKeys.Add(metadataKey);
 
         // Then store content chunks
-        var parts = split ? DocumentSplitter.SplitDocument(content) : [EmbeddingMatcher.CutOffQuery(content)];
-        if (parts.Count == 1)
+        var chunks = split ? DocumentSplitter.SplitDocument(content) : [EmbeddingMatcher.CutOffQuery(content)];
+        if (chunks.Count == 1)
         {
             await EmbeddingStore.StoreEmbedding(name, content);
             await TextStore.Store(name, content);
-            partKeys.Add(name);
+            chunkKeys.Add(name);
         }
         else
         {
-            for (var i = 0; i < parts.Count; ++i)
+            for (var i = 0; i < chunks.Count; ++i)
             {
-                var partKey = $"{name} part {i}";
-                await EmbeddingStore.StoreEmbedding(partKey, parts[i]);
-                await TextStore.Store(partKey, parts[i]);
-                partKeys.Add(partKey);
+                var chunkKey = $"{name} chunk {i}";
+                await EmbeddingStore.StoreEmbedding(chunkKey, chunks[i]);
+                await TextStore.Store(chunkKey, chunks[i]);
+                chunkKeys.Add(chunkKey);
             }
         }
-        await PartStore.Store(name, partKeys);
+        await ChunkStore.Store(name, chunkKeys);
         return true;
     }
 
@@ -145,37 +145,37 @@ public class DocumentStore : IDocumentStore
         };
         await MetadataStore.Store(name, docMetadata);
 
-        var partKeys = new List<string>();
+        var chunkKeys = new List<string>();
 
         // Store metadata as a searchable chunk
         var metadataKey = $"{name}::metadata";
         var metadataChunk = docMetadata.ToChunkText();
         await EmbeddingStore.StoreEmbedding(metadataKey, metadataChunk);
         await TextStore.Store(metadataKey, metadataChunk);
-        partKeys.Add(metadataKey);
+        chunkKeys.Add(metadataKey);
 
         // Store the extracted/summarized text content
         var contentToStore = string.IsNullOrEmpty(summary) ? textContent : $"{summary}\n\nExtracted content:\n{textContent}";
-        var parts = DocumentSplitter.SplitDocument(contentToStore);
+        var chunks = DocumentSplitter.SplitDocument(contentToStore);
 
-        if (parts.Count == 1)
+        if (chunks.Count == 1)
         {
             await EmbeddingStore.StoreEmbedding(name, contentToStore);
             await TextStore.Store(name, contentToStore);
-            partKeys.Add(name);
+            chunkKeys.Add(name);
         }
         else
         {
-            for (var i = 0; i < parts.Count; ++i)
+            for (var i = 0; i < chunks.Count; ++i)
             {
-                var partKey = $"{name} part {i}";
-                await EmbeddingStore.StoreEmbedding(partKey, parts[i]);
-                await TextStore.Store(partKey, parts[i]);
-                partKeys.Add(partKey);
+                var chunkKey = $"{name} chunk {i}";
+                await EmbeddingStore.StoreEmbedding(chunkKey, chunks[i]);
+                await TextStore.Store(chunkKey, chunks[i]);
+                chunkKeys.Add(chunkKey);
             }
         }
 
-        await PartStore.Store(name, partKeys);
+        await ChunkStore.Store(name, chunkKeys);
         return true;
     }
 
@@ -230,11 +230,11 @@ public class DocumentStore : IDocumentStore
         await EmbeddingStore.RemoveEmbedding(name);
         await TextStore.Remove(name);
 
-        var parts = await PartStore.Get(name);
-        foreach (var part in parts)
+        var chunks = await ChunkStore.Get(name);
+        foreach (var chunk in chunks)
         {
-            await EmbeddingStore.RemoveEmbedding(part);
-            await TextStore.Remove(part);
+            await EmbeddingStore.RemoveEmbedding(chunk);
+            await TextStore.Remove(chunk);
         }
 
         return true;
@@ -256,13 +256,13 @@ public class DocumentStore : IDocumentStore
 
     public async Task<List<TreeNode<string>>> Tree()
     {
-        var names = await PartStore.ListNames();
+        var names = await ChunkStore.ListNames();
         return TreeMaker.GetTree(names.Select(n => n).ToList());
     }
 
     public async Task<List<string>> List(string folder = "", bool recursive = false)
     {
-        var names = (await PartStore.ListNames()).ToList();
+        var names = (await ChunkStore.ListNames()).ToList();
         if (string.IsNullOrWhiteSpace(folder))
         {
             if (recursive) return names;
@@ -329,7 +329,7 @@ public class DocumentStore : IDocumentStore
             var r = new List<RelevantEmbedding>();
             foreach (var scored in scoredResults)
             {
-                var parentKey = await PartStore.GetParentDocument(scored.Info.Key);
+                var parentKey = await ChunkStore.GetParentDocument(scored.Info.Key);
                 r.Add(new RelevantEmbedding
                 {
                     Similarity = scored.Similarity,
@@ -351,7 +351,7 @@ public class DocumentStore : IDocumentStore
         foreach (var item in list)
         {
             var chunkKey = item.document.Key;
-            var parentKey = await PartStore.GetParentDocument(chunkKey);
+            var parentKey = await ChunkStore.GetParentDocument(chunkKey);
 
             legacyResults.Add(new RelevantEmbedding
             {
@@ -397,7 +397,7 @@ public class DocumentStore : IDocumentStore
         var metadata = await MetadataStore.Get(key);
 
         // Get chunk keys
-        var chunkKeys = (await PartStore.Get(key)).ToList();
+        var chunkKeys = (await ChunkStore.Get(key)).ToList();
 
         return new DocumentWithChunks
         {
