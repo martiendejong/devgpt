@@ -96,7 +96,7 @@ public class BinaryDocumentProcessor
             };
 
             var response = await _llmClient.GetResponse(messages, DevGPTChatResponseFormat.Text, null, new List<ImageData> { imageData }, CancellationToken.None);
-            return response;
+            return response.Result;
         }
         catch
         {
