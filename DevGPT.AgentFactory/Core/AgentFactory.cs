@@ -115,7 +115,8 @@ public class AgentFactory {
             Response = string.Empty
         };
         Messages.Add(message);
-        string response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), cancel, null, true, true, agent.Tools, null);
+        var responseObj = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), cancel, null, true, true, agent.Tools, null);
+        string response = responseObj.Result;
         // Find the message by MessageId and update Response
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
@@ -175,7 +176,8 @@ public class AgentFactory {
             Response = string.Empty
         };
         Messages.Add(message);
-        string response = await agent.Generator.UpdateStore(query + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", cancel, null, true, true, agent.Tools, null);
+        var responseObj = await agent.Generator.UpdateStore(query + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", cancel, null, true, true, agent.Tools, null);
+        string response = responseObj.Result;
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
         var replyMsg = new DevGPTChatMessage
@@ -216,7 +218,8 @@ public class AgentFactory {
             WriteMode = true;
             try
             {
-                response = await agent.Generator.UpdateStore(instruction + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", cancel, null, true, true, agent.Tools, null);
+                var responseObj = await agent.Generator.UpdateStore(instruction + writeModeText + "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave antyhing out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */", cancel, null, true, true, agent.Tools, null);
+                response = responseObj.Result;
             }
             finally {
                 WriteMode = false;
@@ -224,7 +227,8 @@ public class AgentFactory {
         }
         else
         {
-            response = await agent.Generator.GetResponse(instruction, cancel, Messages);
+            var responseObj = await agent.Generator.GetResponse(instruction, cancel, Messages);
+            response = responseObj.Result;
         }
         return response;
     }
@@ -247,7 +251,8 @@ public class AgentFactory {
             Response = string.Empty
         };
         Messages.Add(message);
-        string response = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), cancel, null, true, true, agent.Tools, null);
+        var responseObj = await agent.Generator.GetResponse(query + (WriteMode ? writeModeText : ""), cancel, null, true, true, agent.Tools, null);
+        string response = responseObj.Result;
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
         var replyMsg = new DevGPTChatMessage

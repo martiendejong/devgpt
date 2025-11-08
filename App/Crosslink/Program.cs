@@ -52,11 +52,12 @@ class Program
                 new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "De vacature: " + vacature },
                 new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "Genereer een sollicitatiegesprek tussen de kandidaat en de interviewer..." }
             };
-            string simulatedInterview = await chatClient.GetResponse(
-                messages, 
-                DevGPTChatResponseFormat.Text, 
-                null, 
+            var simulatedInterviewResponse = await chatClient.GetResponse(
+                messages,
+                DevGPTChatResponseFormat.Text,
+                null,
                 new List<ImageData>(), default);
+            string simulatedInterview = simulatedInterviewResponse.Result;
 
             // Analyse the match
             var analysisMessages = new List<DevGPTChatMessage>
@@ -66,11 +67,12 @@ class Program
                 new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "Het gesimuleerde gesprek: " + simulatedInterview },
                 new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "Geef een voorlopige analyse conclusie beoordeling van de match en het gesimuleerde gesprek. Geef de match een score tussen 0 en 100..." }
             };
-            string analysis = await chatClient.GetResponse(
-                analysisMessages, 
-                DevGPTChatResponseFormat.Text, 
-                null, 
+            var analysisResponse = await chatClient.GetResponse(
+                analysisMessages,
+                DevGPTChatResponseFormat.Text,
+                null,
                 new List<ImageData>(), default);
+            string analysis = analysisResponse.Result;
 
             string report = $@"Er is een match gevonden met een CV en een vacature.\n\nDe CV:\n{candidateCV}\n\nDe vacature:\n{vacature}\n\nOp basis van de match van CV en vacature wordt het volgende gesprek gesimuleerd:\n{simulatedInterview}\n\nHier volgt de analyse van de match tot zover.\n{analysis}\n";
 

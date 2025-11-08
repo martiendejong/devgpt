@@ -36,7 +36,8 @@ namespace DevGPT.App.ExplorerIntegration
         {
             // Maintain chat history so LLM retains context across turns.
             _history.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.User, Text = text });
-            var response = await _agent.Generator.UpdateStore(text, token, _history, true, true, _agent.Tools, null);
+            var responseObj = await _agent.Generator.UpdateStore(text, token, _history, true, true, _agent.Tools, null);
+            string response = responseObj.Result;
             _history.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response });
             return response;
         }
