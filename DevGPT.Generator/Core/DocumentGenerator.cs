@@ -20,7 +20,7 @@ public class DocumentGenerator : IDocumentGenerator
 
     public EmbeddingMatcher EmbeddingMatcher = new EmbeddingMatcher();
 
-    public async Task<DevGPTGeneratedImage> GetImage(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<DevGPTGeneratedImage>> GetImage(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var response = await LLMClient.GetImage(message, DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
         return response;
@@ -49,55 +49,55 @@ public class DocumentGenerator : IDocumentGenerator
         //SimpleApi = TypedApi;
     }
 
-    public async Task<string> GetResponse(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> GetResponse(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponse(sendMessages.ToList(), DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
     }
 
-    public async Task<string> GetResponse(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> GetResponse(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(messages.ToList(), history?.ToList(), addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponse(sendMessages, DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
     }
 
-    public async Task<string> StreamResponse(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> StreamResponse(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponseStream(sendMessages, onChunkReceived, DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
     }
 
-    public async Task<string> StreamResponse(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> StreamResponse(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponseStream(sendMessages, onChunkReceived, DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
     }
 
-    public async Task<ResponseType> GetResponse<ResponseType>(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponse<ResponseType>(sendMessages, toolsContext, images, cancel);
     }
 
-    public async Task<ResponseType> GetResponse<ResponseType>(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
     {
         var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponse<ResponseType>(sendMessages, toolsContext, images, cancel);
     }
 
-    public async Task<ResponseType> StreamResponse<ResponseType>(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> StreamResponse<ResponseType>(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponseStream<ResponseType>(sendMessages, onChunkReceived, toolsContext, images, cancel);
     }
 
-    public async Task<ResponseType> StreamResponse<ResponseType>(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> StreamResponse<ResponseType>(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
     {
         var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponseStream<ResponseType>(sendMessages, onChunkReceived, toolsContext, images, cancel);
     }
 
-    public async Task<string> UpdateStore(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> UpdateStore(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
 
@@ -126,28 +126,28 @@ public class DocumentGenerator : IDocumentGenerator
 
         var response = await LLMClient.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext, images, cancel);
 
-        await ModifyDocuments(response);
+        await ModifyDocuments(response.Result);
 
-        return response.ResponseMessage;
+        return new LLMResponse<string>(response.Result?.ResponseMessage ?? "", response.TokenUsage);
     }
 
-    public async Task<string> UpdateStore(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> UpdateStore(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
         var response = await LLMClient.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext, images, cancel);
-        await ModifyDocuments(response);
-        return response.ResponseMessage;
+        await ModifyDocuments(response.Result);
+        return new LLMResponse<string>(response.Result?.ResponseMessage ?? "", response.TokenUsage);
     }
 
-    public async Task<string> StreamUpdateStore(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> StreamUpdateStore(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
         var response = await LLMClient.GetResponseStream<UpdateStoreResponse>(sendMessages, onChunkReceived, toolsContext, images, cancel);
-        await ModifyDocuments(response);
-        return response.ResponseMessage;
+        await ModifyDocuments(response.Result);
+        return new LLMResponse<string>(response.Result?.ResponseMessage ?? "", response.TokenUsage);
     }
 
-    private async Task ModifyDocuments(UpdateStoreResponse response)
+    private async Task ModifyDocuments(UpdateStoreResponse? response)
     {
         if (response.Modifications != null)
             foreach (var modification in response.Modifications)
