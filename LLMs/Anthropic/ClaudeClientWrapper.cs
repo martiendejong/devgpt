@@ -30,7 +30,9 @@ public class ClaudeClientWrapper : ILLMClient
 
     private sealed record AnthropicMessage(string role, AnthropicContentBlock[] content);
 
-    private sealed record AnthropicMessageResponse(AnthropicContentBlock[] content);
+    private sealed record AnthropicUsage(int input_tokens, int output_tokens);
+
+    private sealed record AnthropicMessageResponse(AnthropicContentBlock[] content, AnthropicUsage usage);
 
     private static string BuildJsonFormatInstruction<ResponseType>() where ResponseType : ChatResponse<ResponseType>, new()
     {
@@ -62,7 +64,7 @@ public class ClaudeClientWrapper : ILLMClient
         return (system, mapped);
     }
 
-    private async Task<string> CallClaude(List<DevGPTChatMessage> messages, CancellationToken cancel, IToolsContext? toolsContext = null)
+    private async Task<(string text, TokenUsageInfo tokenUsage)> CallClaude(List<DevGPTChatMessage> messages, CancellationToken cancel, IToolsContext? toolsContext = null)
     {
         var (system, mapped) = MapMessages(messages);
         var id = Guid.NewGuid().ToString();
@@ -86,24 +88,54 @@ public class ClaudeClientWrapper : ILLMClient
         {
             var parsed = JsonSerializer.Deserialize<AnthropicMessageResponse>(respText);
             var firstText = parsed?.content?.FirstOrDefault(c => c.type == "text")?.text ?? string.Empty;
+            var tokenUsage = ExtractTokenUsage(parsed);
             toolsContext?.SendMessage?.Invoke(id, "LLM Response (Claude)", firstText);
-            return firstText;
+            return (firstText, tokenUsage);
         }
         catch
         {
             // Fallback to raw
             toolsContext?.SendMessage?.Invoke(id, "LLM Response (Claude)", respText);
-            return respText;
+            return (respText, new TokenUsageInfo(0, 0, 0, 0, _config.Model));
         }
     }
 
-    public async Task<string> GetResponse(List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    private TokenUsageInfo ExtractTokenUsage(AnthropicMessageResponse? response)
     {
-        // images/tooling ignored in this basic implementation
-        return await CallClaude(messages, cancel, toolsContext);
+        if (response?.usage == null)
+            return new TokenUsageInfo(0, 0, 0, 0, _config.Model);
+
+        var inputTokens = response.usage.input_tokens;
+        var outputTokens = response.usage.output_tokens;
+
+        decimal inputCost = CalculateClaudeCost(_config.Model, inputTokens, true);
+        decimal outputCost = CalculateClaudeCost(_config.Model, outputTokens, false);
+
+        return new TokenUsageInfo(inputTokens, outputTokens, inputCost, outputCost, _config.Model);
     }
 
-    public async Task<ResponseType?> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    private decimal CalculateClaudeCost(string model, int tokens, bool isInput)
+    {
+        decimal pricePerMillion = model.ToLower() switch
+        {
+            var m when m.Contains("claude-3-5-sonnet") => isInput ? 3m : 15m,
+            var m when m.Contains("claude-3-opus") => isInput ? 15m : 75m,
+            var m when m.Contains("claude-3-sonnet") => isInput ? 3m : 15m,
+            var m when m.Contains("claude-3-haiku") => isInput ? 0.25m : 1.25m,
+            _ => isInput ? 3m : 15m
+        };
+
+        return (tokens / 1_000_000m) * pricePerMillion;
+    }
+
+    public async Task<LLMResponse<string>> GetResponse(List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    {
+        // images/tooling ignored in this basic implementation
+        var (text, tokenUsage) = await CallClaude(messages, cancel, toolsContext);
+        return new LLMResponse<string>(text, tokenUsage);
+    }
+
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
         // Inject formatting instruction as a System message before the final user prompt for better adherence
         var withFormat = new List<DevGPTChatMessage>(messages);
@@ -112,10 +144,11 @@ public class ClaudeClientWrapper : ILLMClient
         var insertIndex = Math.Max(0, withFormat.Count - 1);
         withFormat.Insert(insertIndex, new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = instruction });
 
-        var text = await CallClaude(withFormat, cancel, toolsContext);
+        var (text, tokenUsage) = await CallClaude(withFormat, cancel, toolsContext);
         try
         {
-            return JsonSerializer.Deserialize<ResponseType>(text);
+            var result = JsonSerializer.Deserialize<ResponseType>(text);
+            return new LLMResponse<ResponseType?>(result, tokenUsage);
         }
         catch
         {
@@ -125,28 +158,34 @@ public class ClaudeClientWrapper : ILLMClient
             if (start >= 0 && end > start)
             {
                 var json = text.Substring(start, end - start + 1);
-                try { return JsonSerializer.Deserialize<ResponseType>(json); } catch { }
+                try
+                {
+                    var result = JsonSerializer.Deserialize<ResponseType>(json);
+                    return new LLMResponse<ResponseType?>(result, tokenUsage);
+                }
+                catch { }
             }
             throw;
         }
     }
 
-    public async Task<string> GetResponseStream(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<string>> GetResponseStream(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         // Simple chunking as a placeholder; Anthropic SSE can be added later
-        var full = await GetResponse(messages, responseFormat, toolsContext, images, cancel);
-        foreach (var chunk in Chunk(full, 60))
+        var response = await GetResponse(messages, responseFormat, toolsContext, images, cancel);
+        foreach (var chunk in Chunk(response.Result, 60))
             onChunkReceived(chunk);
-        return full;
+        return response;
     }
 
-    public async Task<ResponseType?> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        var text = await GetResponseStream(messages, onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
-        return JsonSerializer.Deserialize<ResponseType>(text);
+        var response = await GetResponseStream(messages, onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
+        var result = JsonSerializer.Deserialize<ResponseType>(response.Result);
+        return new LLMResponse<ResponseType?>(result, response.TokenUsage);
     }
 
-    public Task<DevGPTGeneratedImage> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public Task<LLMResponse<DevGPTGeneratedImage>> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
         => throw new NotSupportedException("Claude does not generate images in this client.");
 
     private static IEnumerable<string> Chunk(string s, int size)
