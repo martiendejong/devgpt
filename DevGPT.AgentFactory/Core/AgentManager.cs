@@ -133,12 +133,12 @@ public class AgentManager
                 break;
             var cancel = new CancellationToken();
             var response = await agent.Generator.GetResponse<IsReadyResult>(input, cancel, History, true, true, agent.Tools, null);
-            while (!response.IsTheUserRequestProperlyHandledAndFinished)
+            while (!response.Result.IsTheUserRequestProperlyHandledAndFinished)
             {
                 response = await agent.Generator.GetResponse<IsReadyResult>("Continue handling the user request: " + input, cancel, History, true, true, agent.Tools, null);
-                Console.WriteLine(response.Message);
+                Console.WriteLine(response.Result.Message);
             }
-            History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response.Message });
+            History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response.Result.Message });
         }
     }
 
@@ -160,9 +160,9 @@ public class AgentManager
 
         var response = await agent.Generator.GetResponse<IsReadyResult>(input, cancel, History, true, true, agent.Tools, null);
 
-        await AddHistory(response.Message);
+        await AddHistory(response.Result.Message);
 
-        return response.Message;
+        return response.Result.Message;
     }
 
     public async Task<string> SendMessage_Flow(string input, CancellationToken cancel, string flowName = null)
