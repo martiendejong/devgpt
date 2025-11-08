@@ -24,14 +24,16 @@ public partial class OpenAIClientWrapper : ILLMClient
 
     public PartialJsonParser Parser { get; set; } = new PartialJsonParser();
 
-    public async Task<ResponseType?> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        return Parser.Parse<ResponseType>(await GetResponse(AddFormattingInstruction<ResponseType>(messages), DevGPTChatResponseFormat.Json, toolsContext, images, cancel));
+        var response = await GetResponse(AddFormattingInstruction<ResponseType>(messages), DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
+        return new LLMResponse<ResponseType?>(Parser.Parse<ResponseType>(response.Result), response.TokenUsage);
     }
 
-    public async Task<ResponseType?> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        return Parser.Parse<ResponseType>(await GetResponseStream(AddFormattingInstruction<ResponseType>(messages), onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel));
+        var response = await GetResponseStream(AddFormattingInstruction<ResponseType>(messages), onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
+        return new LLMResponse<ResponseType?>(Parser.Parse<ResponseType>(response.Result), response.TokenUsage);
     }
 }
 
@@ -60,7 +62,7 @@ public partial class OpenAIClientWrapper : ILLMClient
         });
     }
 
-    public async Task<string> GetResponseStream(
+    public async Task<LLMResponse<string>> GetResponseStream(
         List<DevGPTChatMessage> messages,
         Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
@@ -68,16 +70,17 @@ public partial class OpenAIClientWrapper : ILLMClient
         var id = Guid.NewGuid().ToString();
         toolsContext?.SendMessage?.Invoke(id, "LLM Request (OpenAI)", string.Join("\n", messages.Select(m => $"{m.Role?.Role}: {m.Text}")));
         var collected = new List<string>();
+        var tokenUsage = new TokenUsageInfo();
         string result = await StreamHandler.HandleStream(chunk =>
         {
             collected.Add(chunk);
             onChunkReceived(chunk);
-        }, StreamChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel));
+        }, StreamChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel), tokenUsage);
         toolsContext?.SendMessage?.Invoke(id, "LLM Response (OpenAI)", result);
-        return result;
+        return new LLMResponse<string>(result, tokenUsage);
     }
 
-    public async Task<string> GetResponse(
+    public async Task<LLMResponse<string>> GetResponse(
         List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         Log(messages.Last()?.Text);
@@ -85,15 +88,18 @@ public partial class OpenAIClientWrapper : ILLMClient
         toolsContext?.SendMessage?.Invoke(id, "LLM Request (OpenAI)", string.Join("\n", messages.Select(m => $"{m.Role?.Role}: {m.Text}")));
         var completion = await GetChatResult(messages.OpenAI(), responseFormat.OpenAI(), toolsContext, images, cancel);
         var text = GetText(completion);
+        var tokenUsage = ExtractTokenUsage(completion);
         toolsContext?.SendMessage?.Invoke(id, "LLM Response (OpenAI)", text);
-        return text;
+        return new LLMResponse<string>(text, tokenUsage);
     }
 
-    public async Task<DevGPTGeneratedImage> GetImage(
+    public async Task<LLMResponse<DevGPTGeneratedImage>> GetImage(
         string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         Log(prompt);
-        return (await GetImageResult(prompt, responseFormat.OpenAI(), toolsContext, images, cancel)).DevGPT();
+        var image = (await GetImageResult(prompt, responseFormat.OpenAI(), toolsContext, images, cancel)).DevGPT();
+        var tokenUsage = new TokenUsageInfo(0, 0, 0, 0.04m, Config.ImageModel);
+        return new LLMResponse<DevGPTGeneratedImage>(image, tokenUsage);
     }
 
     #region internal
@@ -125,6 +131,35 @@ public partial class OpenAIClientWrapper : ILLMClient
     protected string GetText(ChatCompletion result)
     {
         return result.Content.ToList().First().Text;
+    }
+
+    protected TokenUsageInfo ExtractTokenUsage(ChatCompletion result)
+    {
+        var usage = result.Usage;
+        var inputTokens = usage.InputTokens;
+        var outputTokens = usage.OutputTokens;
+
+        decimal inputCost = CalculateCost(Config.Model, inputTokens, true);
+        decimal outputCost = CalculateCost(Config.Model, outputTokens, false);
+
+        return new TokenUsageInfo(inputTokens, outputTokens, inputCost, outputCost, Config.Model);
+    }
+
+    protected decimal CalculateCost(string model, int tokens, bool isInput)
+    {
+        decimal pricePerMillion = model.ToLower() switch
+        {
+            var m when m.Contains("gpt-4o") => isInput ? 2.5m : 10m,
+            var m when m.Contains("gpt-4-turbo") => isInput ? 10m : 30m,
+            var m when m.Contains("gpt-4") => isInput ? 30m : 60m,
+            var m when m.Contains("gpt-3.5-turbo") => isInput ? 0.5m : 1.5m,
+            var m when m.Contains("o1-preview") => isInput ? 15m : 60m,
+            var m when m.Contains("o1-mini") => isInput ? 3m : 12m,
+            var m when m.Contains("o3-mini") => isInput ? 1.1m : 4.4m,
+            _ => isInput ? 2.5m : 10m
+        };
+
+        return (tokens / 1_000_000m) * pricePerMillion;
     }
 
     #endregion

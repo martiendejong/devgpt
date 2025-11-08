@@ -5,17 +5,24 @@ using System.Text;
 public class OpenAIStreamHandler
 {
     public async Task<string> HandleStream(
-    Action<string> onChunkReceived, IAsyncEnumerable<StreamingChatCompletionUpdate> stream)
+    Action<string> onChunkReceived, IAsyncEnumerable<StreamingChatCompletionUpdate> stream, TokenUsageInfo tokenUsage)
     {
         var fullResponse = new StringBuilder();
+        StreamingChatCompletionUpdate? lastChunk = null;
         await foreach (var chunk in stream)
         {
             if (chunk != null)
             {
+                lastChunk = chunk;
                 HandleChunk(chunk, onChunkReceived, fullResponse);
                 if (chunk.FinishReason != null)
                     break;
             }
+        }
+        if (lastChunk?.Usage != null)
+        {
+            tokenUsage.InputTokens = lastChunk.Usage.InputTokens;
+            tokenUsage.OutputTokens = lastChunk.Usage.OutputTokens;
         }
         return fullResponse.ToString();
     }
