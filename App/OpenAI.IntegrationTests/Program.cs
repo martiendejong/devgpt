@@ -51,8 +51,8 @@ async Task<int> Run()
 
     if (image == null) return Fail("Image result is null");
 
-    var urlPresent = image.Url != null && !string.IsNullOrWhiteSpace(image.Url.ToString());
-    var bytes = image.ImageBytes?.ToArray() ?? Array.Empty<byte>();
+    var urlPresent = image.Result.Url != null && !string.IsNullOrWhiteSpace(image.Result.Url.ToString());
+    var bytes = image.Result.ImageBytes?.ToArray() ?? Array.Empty<byte>();
     var bytesPresent = bytes.Length > 0;
 
     if (!urlPresent && !bytesPresent)
@@ -69,7 +69,7 @@ async Task<int> Run()
 
     Console.WriteLine("PASS: Image generation returned valid output");
     Console.WriteLine($"URL present: {urlPresent}, Bytes present: {bytesPresent}");
-    if (urlPresent) Console.WriteLine($"URL: {image.Url}");
+    if (urlPresent) Console.WriteLine($"URL: {image.Result.Url}");
 
     // Test 2: Test DevGPTGeneratedImage with only ImageBytes
     Console.WriteLine("\n=== Test 2: DevGPTGeneratedImage with only ImageBytes ===");
@@ -114,15 +114,15 @@ async Task<int> Run()
         // Heuristic MIME check
         var looksPng = bytes.Length > 4 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47;
         var mime = looksPng ? "image/png" : "image/jpeg";
-        var testImage = new ImageData { Name = "generated", MimeType = mime, BinaryData = image.ImageBytes };
+        var testImage = new ImageData { Name = "generated", MimeType = mime, BinaryData = image.Result.ImageBytes };
         var messages = new List<DevGPTChatMessage>
         {
             new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = "You are a helpful assistant." },
             new DevGPTChatMessage { Role = DevGPTMessageRole.User, Text = "What primary color is dominant in the attached image? Answer 'red', 'green', or 'blue' only." }
         };
         var visionAnswer = await wrapper.GetResponse(messages, DevGPTChatResponseFormat.Text, toolsContext: null, images: new() { testImage }, cancel: cts.Token);
-        Console.WriteLine($"Vision answer: {visionAnswer}");
-        if (visionAnswer?.ToLowerInvariant().Contains("red") == true)
+        Console.WriteLine($"Vision answer: {visionAnswer.Result}");
+        if (visionAnswer?.Result?.ToLowerInvariant().Contains("red") == true)
         {
             Console.WriteLine("PASS: Vision check matched expected 'red'");
         }
