@@ -136,8 +136,8 @@ public partial class OpenAIClientWrapper : ILLMClient
     protected TokenUsageInfo ExtractTokenUsage(ChatCompletion result)
     {
         var usage = result.Usage;
-        var inputTokens = usage.InputTokens;
-        var outputTokens = usage.OutputTokens;
+        var inputTokens = usage.InputTokenCount;
+        var outputTokens = usage.OutputTokenCount;
 
         decimal inputCost = CalculateCost(Config.Model, inputTokens, true);
         decimal outputCost = CalculateCost(Config.Model, outputTokens, false);

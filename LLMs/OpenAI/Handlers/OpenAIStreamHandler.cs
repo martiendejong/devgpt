@@ -21,8 +21,8 @@ public class OpenAIStreamHandler
         }
         if (lastChunk?.Usage != null)
         {
-            tokenUsage.InputTokens = lastChunk.Usage.InputTokens;
-            tokenUsage.OutputTokens = lastChunk.Usage.OutputTokens;
+            tokenUsage.InputTokens = lastChunk.Usage.InputTokenCount;
+            tokenUsage.OutputTokens = lastChunk.Usage.OutputTokenCount;
         }
         return fullResponse.ToString();
     }
