@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.Store</RootNamespace>
-    <Version>1.0.10</Version>
-    <PackageVersion>1.0.10</PackageVersion>
+    <Version>1.1.0</Version>
+    <PackageVersion>1.1.0</PackageVersion>
     <Authors>Prospergenics</Authors>
     <Description>Vector embedding storage for semantic search in DevGPT. Provides IEmbeddingStore interface with PostgreSQL/pgvector backend, batch operations, similarity matching, and embedding generation service. Essential for RAG implementations.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

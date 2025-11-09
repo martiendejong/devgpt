@@ -3,8 +3,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.10</Version>
-    <PackageVersion>1.0.10</PackageVersion>
+    <Version>1.1.0</Version>
+    <PackageVersion>1.1.0</PackageVersion>
     <Authors>Prospergenics</Authors>
     <Description>Dynamic API client for DevGPT that calls any HTTP API without pre-configuration. Includes credential management, automatic authentication injection, and LLM tool integration. Enables AI agents to interact with external APIs on-the-fly with support for API keys, OAuth, and custom headers.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

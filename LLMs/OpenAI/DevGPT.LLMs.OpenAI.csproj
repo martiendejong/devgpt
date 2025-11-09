@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.LLMs</RootNamespace>
-    <Version>1.0.10</Version>
-    <PackageVersion>1.0.10</PackageVersion>
+    <Version>1.1.0</Version>
+    <PackageVersion>1.1.0</PackageVersion>
     <Authors>Prospergenics</Authors>
     <Description>OpenAI implementation of ILLMClient for DevGPT. Provides access to GPT models including chat completions, streaming, image generation (DALL-E), embeddings, and structured JSON outputs. Includes token cost calculation and configuration management for OpenAI's API.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

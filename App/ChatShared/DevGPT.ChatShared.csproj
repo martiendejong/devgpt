@@ -5,8 +5,8 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <RootNamespace>DevGPT.ChatShared</RootNamespace>
-    <Version>1.0.10</Version>
-    <PackageVersion>1.0.10</PackageVersion>
+    <Version>1.1.0</Version>
+    <PackageVersion>1.1.0</PackageVersion>
     <Authors>Prospergenics</Authors>
     <Description>Shared WPF chat UI components for DevGPT applications. Provides reusable ChatWindow XAML component, IChatController interface, and chat message display models. Enables consistent chat experience across multiple DevGPT Windows applications.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
