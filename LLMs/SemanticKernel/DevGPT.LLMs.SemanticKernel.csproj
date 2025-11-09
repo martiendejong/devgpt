@@ -30,5 +30,6 @@
     <ProjectReference Include="..\Client\DevGPT.LLMs.Client.csproj" />
     <ProjectReference Include="..\Classes\DevGPT.LLMs.Classes.csproj" />
     <ProjectReference Include="..\Helpers\DevGPT.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\..\Store\DocumentStore\DevGPT.Store.DocumentStore.csproj" />
   </ItemGroup>
 </Project>

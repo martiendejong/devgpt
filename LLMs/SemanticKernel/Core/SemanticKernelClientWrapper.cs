@@ -107,6 +107,9 @@ public class SemanticKernelClientWrapper : ILLMClient
 
         var tokenUsage = new TokenUsageInfo { ModelName = Config.Model };
 
+        // Register tools if present
+        RegisterToolsInKernel(toolsContext, messages, cancel);
+
         try
         {
             var result = await _chatService.GetChatMessageContentAsync(
@@ -175,6 +178,9 @@ public class SemanticKernelClientWrapper : ILLMClient
         var executionSettings = CreateExecutionSettings(responseFormat, toolsContext);
 
         var tokenUsage = new TokenUsageInfo { ModelName = Config.Model };
+
+        // Register tools if present
+        RegisterToolsInKernel(toolsContext, messages, cancel);
 
         try
         {
@@ -320,7 +326,10 @@ public class SemanticKernelClientWrapper : ILLMClient
                 MaxTokens = Config.MaxTokens,
                 TopP = Config.TopP,
                 FrequencyPenalty = Config.FrequencyPenalty,
-                PresencePenalty = Config.PresencePenalty
+                PresencePenalty = Config.PresencePenalty,
+                ToolCallBehavior = toolsContext?.Tools?.Any() == true
+                    ? ToolCallBehavior.AutoInvokeKernelFunctions
+                    : null
             };
 
             // Apply response format
@@ -328,9 +337,6 @@ public class SemanticKernelClientWrapper : ILLMClient
             {
                 openAISettings.ResponseFormat = "json_object";
             }
-
-            // TODO: Add tool functions from toolsContext
-            // This will be implemented in Phase 2 (Tool & Plugin System)
 
             settings = openAISettings;
         }
@@ -347,6 +353,18 @@ public class SemanticKernelClientWrapper : ILLMClient
         }
 
         return settings;
+    }
+
+    /// <summary>
+    /// Register tools from IToolsContext into the kernel as plugins
+    /// </summary>
+    private void RegisterToolsInKernel(IToolsContext? toolsContext, List<DevGPTChatMessage> messages, CancellationToken cancel)
+    {
+        if (toolsContext == null || !toolsContext.Tools.Any())
+            return;
+
+        var adapter = new Plugins.ToolsContextPluginAdapter(toolsContext);
+        adapter.RegisterToolsAsPlugins(_kernel, messages, cancel);
     }
 
     private List<DevGPTChatMessage> AddFormattingInstruction<ResponseType>(List<DevGPTChatMessage> messages)
