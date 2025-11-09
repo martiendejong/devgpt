@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls; // Correct toegevoegd
+using WinForms = System.Windows.Forms;
 using Microsoft.Win32;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
@@ -306,6 +307,120 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 catch (Exception ex)
                 {
                     System.Windows.MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void LoadAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            using var dlg = new WinForms.FolderBrowserDialog
+            {
+                Description = "Select a directory containing stores.devgpt, agents.devgpt and flows.devgpt"
+            };
+            if (dlg.ShowDialog() == WinForms.DialogResult.OK)
+            {
+                var dir = dlg.SelectedPath;
+                var storesPath = Path.Combine(dir, "stores.devgpt");
+                var agentsPath = Path.Combine(dir, "agents.devgpt");
+                var flowsPath = Path.Combine(dir, "flows.devgpt");
+
+                int loadedCount = 0;
+                var missing = new List<string>();
+
+                if (File.Exists(storesPath))
+                {
+                    storesFilePath = storesPath;
+                    appConfig.StoresFile = storesFilePath;
+                    TryLoadStoresFromFile(storesFilePath);
+                    loadedCount++;
+                }
+                else missing.Add("stores.devgpt");
+
+                if (File.Exists(agentsPath))
+                {
+                    agentsFilePath = agentsPath;
+                    appConfig.AgentsFile = agentsFilePath;
+                    TryLoadAgentsFromFile(agentsFilePath);
+                    loadedCount++;
+                }
+                else missing.Add("agents.devgpt");
+
+                if (File.Exists(flowsPath))
+                {
+                    flowsFilePath = flowsPath;
+                    appConfig.FlowsFile = flowsFilePath;
+                    TryLoadFlowsFromFile(flowsFilePath);
+                    loadedCount++;
+                }
+                else missing.Add("flows.devgpt");
+
+                SaveAppConfig();
+                SetChatVisibilityIfReady();
+
+                if (missing.Count == 0)
+                {
+                    System.Windows.MessageBox.Show($"All configurations loaded from:\n{dir}", "Load All", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else if (loadedCount > 0)
+                {
+                    System.Windows.MessageBox.Show($"Loaded {loadedCount} file(s) from:\n{dir}\nMissing: {string.Join(", ", missing)}", "Load All", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show($"No configuration files found in:\n{dir}", "Load All", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        }
+
+        private void SaveAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            using var dlg = new WinForms.FolderBrowserDialog
+            {
+                Description = "Select a directory to save stores.devgpt, agents.devgpt and flows.devgpt"
+            };
+            if (dlg.ShowDialog() == WinForms.DialogResult.OK)
+            {
+                var dir = dlg.SelectedPath;
+                try
+                {
+                    Directory.CreateDirectory(dir);
+
+                    // Stores
+                    var storesData = DevGPTStoreConfigParser.Parse(StoresDevGPTEditor.Text);
+                    var storesOutput = DevGPTStoreConfigParser.Serialize(storesData);
+                    var storesPath = Path.Combine(dir, "stores.devgpt");
+                    File.WriteAllText(storesPath, storesOutput);
+                    storesFilePath = storesPath;
+                    appConfig.StoresFile = storesFilePath;
+                    parsedStores = storesData;
+
+                    // Agents
+                    var agentsData = DevGPTAgentConfigParser.Parse(AgentsDevGPTEditor.Text);
+                    var agentsOutput = DevGPTAgentConfigParser.Serialize(agentsData);
+                    var agentsPath = Path.Combine(dir, "agents.devgpt");
+                    File.WriteAllText(agentsPath, agentsOutput);
+                    agentsFilePath = agentsPath;
+                    appConfig.AgentsFile = agentsFilePath;
+                    parsedAgents = agentsData;
+
+                    // Flows
+                    var flowsData = DevGPTFlowConfigParser.Parse(FlowsDevGPTEditor.Text);
+                    var flowsOutput = DevGPTFlowConfigParser.Serialize(flowsData);
+                    var flowsPath = Path.Combine(dir, "flows.devgpt");
+                    File.WriteAllText(flowsPath, flowsOutput);
+                    flowsFilePath = flowsPath;
+                    appConfig.FlowsFile = flowsFilePath;
+                    parsedFlows = flowsData;
+
+                    SaveAppConfig();
+                    FillAgentsAndFlows();
+                    SetChatVisibilityIfReady();
+
+                    System.Windows.MessageBox.Show($"All configurations saved to:\n{dir}", "Save All", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Error during Save All: {ex.Message}", "Save All", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }

@@ -95,7 +95,7 @@ public class DocumentStore : IDocumentStore
         var chunkKeys = new List<string>();
 
         // First, store metadata as a searchable chunk
-        var metadataKey = $"{name}::metadata";
+        var metadataKey = $"{name}.metadata";
         var metadataChunk = docMetadata.ToChunkText();
         await EmbeddingStore.StoreEmbedding(metadataKey, metadataChunk);
         await TextStore.Store(metadataKey, metadataChunk);
@@ -148,7 +148,7 @@ public class DocumentStore : IDocumentStore
         var chunkKeys = new List<string>();
 
         // Store metadata as a searchable chunk
-        var metadataKey = $"{name}::metadata";
+        var metadataKey = $"{name}.metadata";
         var metadataChunk = docMetadata.ToChunkText();
         await EmbeddingStore.StoreEmbedding(metadataKey, metadataChunk);
         await TextStore.Store(metadataKey, metadataChunk);

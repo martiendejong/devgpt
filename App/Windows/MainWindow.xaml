@@ -9,10 +9,12 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="File">
+                <MenuItem Header="Load All..." Click="LoadAllButton_Click"/>
                 <MenuItem Header="Open Stores..." Click="LoadStoresButton_Click"/>
                 <MenuItem Header="Open Agents..." Click="LoadAgentsButton_Click"/>
                 <MenuItem Header="Open Flows..." Click="LoadFlowsButton_Click"/>
                 <Separator/>
+                <MenuItem Header="Save All..." Click="SaveAllButton_Click"/>
                 <MenuItem Header="Save Stores" Click="SaveStoresButton_Click"/>
                 <MenuItem Header="Save Agents" Click="SaveAgentsButton_Click"/>
                 <MenuItem Header="Save Flows" Click="SaveFlowsButton_Click"/>
