@@ -7,6 +7,8 @@ using OpenAI.Chat;
 using OpenAI.Embeddings;
 using OpenAI.Images;
 using static System.Net.Mime.MediaTypeNames;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 public partial class OpenAIClientWrapper : ILLMClient
 {
@@ -43,6 +45,7 @@ public partial class OpenAIClientWrapper : ILLMClient
     private readonly EmbeddingClient EmbeddingClient;
     private readonly OpenAIClient API;
     private OpenAIStreamHandler StreamHandler { get; set; }
+    private readonly HttpClient _http;
 
     public OpenAIClientWrapper(OpenAIConfig config)
     {
@@ -50,6 +53,8 @@ public partial class OpenAIClientWrapper : ILLMClient
         EmbeddingClient = new EmbeddingClient(config.EmbeddingModel, config.ApiKey);
         API = new OpenAIClient(config.ApiKey);
         StreamHandler = new OpenAIStreamHandler();
+        _http = new HttpClient();
+        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.ApiKey);
     }
 
     public async Task<Embedding> GenerateEmbedding(string text)
@@ -100,6 +105,40 @@ public partial class OpenAIClientWrapper : ILLMClient
         var image = (await GetImageResult(prompt, responseFormat.OpenAI(), toolsContext, images, cancel)).DevGPT();
         var tokenUsage = new TokenUsageInfo(0, 0, 0, 0.04m, Config.ImageModel);
         return new LLMResponse<DevGPTGeneratedImage>(image, tokenUsage);
+    }
+
+    public async Task SpeakStream(string text, string voice, Action<byte[]> onAudioChunk, string mimeType, CancellationToken cancel)
+    {
+        // Default to mp3 if not provided
+        var contentType = string.IsNullOrWhiteSpace(mimeType) ? "audio/mpeg" : mimeType;
+
+        var url = "https://api.openai.com/v1/audio/speech";
+        var requestObj = new
+        {
+            model = Config.TtsModel ?? "gpt-4o-mini-tts",
+            input = text,
+            voice = string.IsNullOrWhiteSpace(voice) ? "alloy" : voice,
+            format = contentType.Contains("mpeg") || contentType.Contains("mp3") ? "mp3" : (contentType.Contains("wav") ? "wav" : "mp3")
+        };
+
+        var req = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(requestObj), System.Text.Encoding.UTF8, "application/json")
+        };
+        req.Headers.Accept.Clear();
+        req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(contentType));
+
+        using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cancel);
+        resp.EnsureSuccessStatusCode();
+        using var stream = await resp.Content.ReadAsStreamAsync(cancel);
+        var buffer = new byte[8192];
+        int read;
+        while ((read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancel)) > 0)
+        {
+            var chunk = new byte[read];
+            Buffer.BlockCopy(buffer, 0, chunk, 0, read);
+            onAudioChunk(chunk);
+        }
     }
 
     #region internal

@@ -166,5 +166,8 @@ class DummyLLMClient : ILLMClient
 
     public Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
         => throw new NotImplementedException();
+
+    public Task SpeakStream(string text, string voice, Action<byte[]> onAudioChunk, string mimeType, CancellationToken cancel)
+        => Task.CompletedTask;
 }
 

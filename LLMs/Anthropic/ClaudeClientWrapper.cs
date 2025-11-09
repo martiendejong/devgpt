@@ -188,6 +188,9 @@ public class ClaudeClientWrapper : ILLMClient
     public Task<LLMResponse<DevGPTGeneratedImage>> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
         => throw new NotSupportedException("Claude does not generate images in this client.");
 
+    public Task SpeakStream(string text, string voice, Action<byte[]> onAudioChunk, string mimeType, CancellationToken cancel)
+        => throw new NotSupportedException("Voice streaming is not supported for Anthropic in this client.");
+
     private static IEnumerable<string> Chunk(string s, int size)
     {
         for (int i = 0; i < s.Length; i += size)

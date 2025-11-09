@@ -141,6 +141,9 @@ public class HuggingFaceClientWrapper : ILLMClient
         return new LLMResponse<ResponseType?>(result, response.TokenUsage);
     }
 
+    public Task SpeakStream(string text, string voice, Action<byte[]> onAudioChunk, string mimeType, CancellationToken cancel)
+        => throw new NotSupportedException("Voice streaming is not supported for HuggingFace in this client.");
+
     // Util
     private static IEnumerable<string> ChunkString(string str, int chunkSize)
     {

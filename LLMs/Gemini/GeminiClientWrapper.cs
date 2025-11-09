@@ -155,8 +155,131 @@ public class GeminiClientWrapper : ILLMClient
         return new LLMResponse<ResponseType?>(result, response.TokenUsage);
     }
 
-    public Task<LLMResponse<DevGPTGeneratedImage>> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
-        => throw new NotSupportedException("Gemini image generation is not supported by this client.");
+    public async Task SpeakStream(string text, string voice, Action<byte[]> onAudioChunk, string mimeType, CancellationToken cancel)
+    {
+        // Use Google Cloud Text-to-Speech REST API
+        var ttsApiKey = _config.TtsApiKey ?? _config.ApiKey;
+        if (string.IsNullOrWhiteSpace(ttsApiKey))
+            throw new InvalidOperationException("Gemini TTS requires an API key in Gemini:TtsApiKey or Gemini:ApiKey.");
+
+        string encoding = MapMimeToGoogleEncoding(mimeType, _config.TtsAudioEncoding);
+        var payload = new
+        {
+            input = new { text },
+            voice = new { languageCode = _config.TtsLanguageCode, name = string.IsNullOrWhiteSpace(voice) ? _config.TtsVoiceName : voice },
+            audioConfig = new { audioEncoding = encoding }
+        };
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, $"https://texttospeech.googleapis.com/v1/text:synthesize?key={ttsApiKey}")
+        {
+            Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+        };
+        using var resp = await _http.SendAsync(req, cancel);
+        var respText = await resp.Content.ReadAsStringAsync(cancel);
+        if (!resp.IsSuccessStatusCode)
+            throw new Exception($"Google TTS error: {resp.StatusCode}: {respText}");
+
+        using var doc = JsonDocument.Parse(respText);
+        if (!doc.RootElement.TryGetProperty("audioContent", out var audioProp))
+            throw new Exception("Google TTS response missing audioContent.");
+        var b64 = audioProp.GetString();
+        var bytes = Convert.FromBase64String(b64);
+
+        int offset = 0;
+        const int chunk = 8192;
+        while (offset < bytes.Length)
+        {
+            var size = Math.Min(chunk, bytes.Length - offset);
+            var slice = new byte[size];
+            Buffer.BlockCopy(bytes, offset, slice, 0, size);
+            onAudioChunk(slice);
+            offset += size;
+        }
+    }
+
+    private static string MapMimeToGoogleEncoding(string mime, string fallback)
+    {
+        var m = (mime ?? "").ToLowerInvariant();
+        if (m.Contains("wav") || m.Contains("linear16")) return "LINEAR16";
+        if (m.Contains("ogg") || m.Contains("opus")) return "OGG_OPUS";
+        if (m.Contains("mp3") || m.Contains("mpeg")) return "MP3";
+        return string.IsNullOrWhiteSpace(fallback) ? "MP3" : fallback;
+    }
+
+    public async Task<LLMResponse<DevGPTGeneratedImage>> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    {
+        // Google Generative Language Image Generation (v1beta)
+        // Default endpoint/model:
+        //   POST {Endpoint}/models/{ImageModel}:generate?key=API_KEY
+        //   Body: { prompt: { text: "..." }, numberOfImages: 1 }
+        var id = Guid.NewGuid().ToString();
+        toolsContext?.SendMessage?.Invoke(id, "IMAGE Request (Gemini/Google)", prompt);
+
+        var url = $"{_config.Endpoint}/models/{_config.ImageModel}:generate?key={_config.ApiKey}";
+        var payload = new
+        {
+            prompt = new { text = prompt },
+            numberOfImages = 1
+        };
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+        };
+        using var resp = await _http.SendAsync(req, cancel);
+        var respText = await resp.Content.ReadAsStringAsync(cancel);
+        if (!resp.IsSuccessStatusCode)
+            throw new Exception($"Gemini image error: {resp.StatusCode}: {respText}");
+
+        try
+        {
+            using var doc = JsonDocument.Parse(respText);
+            // Response schema varies; common shapes:
+            // - { images: [{ data: "base64..." }] }
+            // - { generatedImages: [{ image: { data: "base64..." } }] }
+            string? b64 = null;
+            if (doc.RootElement.TryGetProperty("images", out var imagesArr) && imagesArr.ValueKind == JsonValueKind.Array && imagesArr.GetArrayLength() > 0)
+            {
+                var imgObj = imagesArr[0];
+                if (imgObj.TryGetProperty("data", out var dataProp))
+                    b64 = dataProp.GetString();
+            }
+            else if (doc.RootElement.TryGetProperty("generatedImages", out var genArr) && genArr.ValueKind == JsonValueKind.Array && genArr.GetArrayLength() > 0)
+            {
+                var first = genArr[0];
+                if (first.TryGetProperty("image", out var imageObj) && imageObj.TryGetProperty("data", out var dataProp2))
+                    b64 = dataProp2.GetString();
+            }
+
+            if (string.IsNullOrEmpty(b64))
+            {
+                // Try a generic path
+                var found = doc.RootElement.GetRawText();
+                toolsContext?.SendMessage?.Invoke(id, "IMAGE Response (Gemini/Google)", found);
+                throw new Exception("Could not find image data in response");
+            }
+
+            var bytes = Convert.FromBase64String(b64);
+            var img = new DevGPTGeneratedImage(null, BinaryData.FromBytes(bytes));
+            var tokenUsage = new TokenUsageInfo(0, 0, 0, 0, _config.ImageModel);
+            toolsContext?.SendMessage?.Invoke(id, "IMAGE Response (Gemini/Google)", $"Generated {bytes.Length} bytes");
+            return new LLMResponse<DevGPTGeneratedImage>(img, tokenUsage);
+        }
+        catch
+        {
+            // Fallback: try treat response as raw base64
+            try
+            {
+                var bytes = Convert.FromBase64String(respText);
+                var img = new DevGPTGeneratedImage(null, BinaryData.FromBytes(bytes));
+                var tokenUsage = new TokenUsageInfo(0, 0, 0, 0, _config.ImageModel);
+                return new LLMResponse<DevGPTGeneratedImage>(img, tokenUsage);
+            }
+            catch { throw; }
+        }
+    }
+
+    
 
     private static IEnumerable<string> Chunk(string s, int size)
     {

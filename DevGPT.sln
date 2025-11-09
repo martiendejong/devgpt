@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -45,8 +44,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Crosslink", "App\Crosslink\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmbeddingsViewer", "App\EmbeddingsViewer\EmbeddingsViewer.csproj", "{4A94DBC4-F6CB-4AD7-A94E-53C243E776BB}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "App (2)", "App (2)", "{CDC084CF-DBBC-4414-ADCA-208E10861DFF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.ExplorerIntegration", "App\ExplorerIntegration\DevGPT.ExplorerIntegration.csproj", "{FA66D3A8-7DE1-4FA8-8982-20E46C7687B7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderToPostgres", "App\FolderToPostgres\FolderToPostgres.csproj", "{EAB447AF-9F9A-4BFB-A961-4AD779058DC3}"
@@ -62,6 +59,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PostgresDemo", "App\PostgresDemo\PostgresDemo.csproj", "{E93CE6ED-C659-4629-8BEE-231FBCA2AE57}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Windows", "App\Windows\Windows.csproj", "{FA739B97-A907-4342-B0A1-985C92A64DD8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClaudeCode", "App\ClaudeCode\ClaudeCode.csproj", "{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMClientTools", "LLMs\ClientTools\DevGPT.LLMClientTools.csproj", "{F6D7B610-3463-C406-B883-D2C06AF94D92}"
 EndProject
@@ -379,6 +378,18 @@ Global
 		{FA739B97-A907-4342-B0A1-985C92A64DD8}.Release|x64.Build.0 = Release|Any CPU
 		{FA739B97-A907-4342-B0A1-985C92A64DD8}.Release|x86.ActiveCfg = Release|Any CPU
 		{FA739B97-A907-4342-B0A1-985C92A64DD8}.Release|x86.Build.0 = Release|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Debug|x64.Build.0 = Debug|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Debug|x86.Build.0 = Debug|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Release|x64.ActiveCfg = Release|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Release|x64.Build.0 = Release|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Release|x86.ActiveCfg = Release|Any CPU
+		{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}.Release|x86.Build.0 = Release|Any CPU
 		{F6D7B610-3463-C406-B883-D2C06AF94D92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F6D7B610-3463-C406-B883-D2C06AF94D92}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6D7B610-3463-C406-B883-D2C06AF94D92}.Debug|x64.ActiveCfg = Debug|Any CPU
