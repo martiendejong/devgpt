@@ -1,32 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet build:*)",
-      "Bash(cmd /c \"echo n | increment-and-publish.bat patch --no-publish\")",
-      "Bash(findstr:*)",
-      "Bash(cmd /c test-versioning.bat)",
-      "Bash(powershell -ExecutionPolicy Bypass -File test-version-read.ps1)",
-      "Bash(dotnet restore:*)",
-      "Bash(powershell -ExecutionPolicy Bypass -Command \"$targetVersion=''1.0.1''; & ''.\\updateversions.ps1''\")",
-      "Bash(cmd /c \"for /f \"\"tokens=2 delims=<>\"\" %a in (''findstr /r \"\"<Version>.*</Version>\"\" DevGPT.Classes\\DevGPT.Classes.csproj'') do @echo %a\")",
-      "Bash(cmd /c test-findstr.bat)",
-      "Bash(powershell -ExecutionPolicy Bypass -Command \"& ''.\\increment-version.ps1'' -IncrementType patch -NoPublish; Write-Host ''n'' | & ''.\\increment-version.ps1'' -IncrementType patch -NoPublish\")",
-      "Bash(powershell -ExecutionPolicy Bypass -Command \"$targetVersion=''1.0.6''; & ''.\\updateversions.ps1''\")",
-      "Bash(powershell -ExecutionPolicy Bypass -Command \"$targetVersion=''1.0.6''; . .\\updateversions.ps1\")",
-      "Bash(powershell -ExecutionPolicy Bypass -File set-version.ps1:*)",
-      "Bash(dotnet clean:*)",
-      "Bash(dotnet pack:*)",
-      "Bash(cmd /c nuget-publish.bat)",
-      "Bash(powershell -ExecutionPolicy Bypass -Command \"& ''.\\nuget-publish.bat''\")",
-      "Bash(move IDocumentPartStore.cs IChunkStore.cs)",
-      "Bash(powershell:*)",
-      "Bash(dir:*)",
-      "Bash(nul)",
-      "Bash(cmd /c \"scripts\\nuget-publish.bat\")",
-      "Bash(for file in DevGPT*.1.0.10.nupkg)",
-      "Bash(do echo \"Publishing $file...\")",
-      "Bash(dotnet nuget push:*)",
-      "Bash(done)"
+      "WebFetch(domain:www.nuget.org)"
     ],
     "deny": [],
     "ask": []

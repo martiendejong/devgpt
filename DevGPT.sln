@@ -1,3 +1,4 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -91,6 +92,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Store.DocumentStore.Tests", "Tests\DevGPT.Store.DocumentStore.Tests\DevGPT.Store.DocumentStore.Tests.csproj", "{0CB505AB-23C0-498C-8D39-8792B7AC564F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Store.EmbeddingStore.Tests", "Tests\DevGPT.Store.EmbeddingStore.Tests\DevGPT.Store.EmbeddingStore.Tests.csproj", "{FD045532-1207-4C95-83FC-F4DEEA2F8DEB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SemanticKernel", "SemanticKernel", "{45B1004C-442D-47BC-B584-BAD1AF5FB533}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.SemanticKernel", "LLMs\SemanticKernel\DevGPT.LLMs.SemanticKernel.csproj", "{665AE2AB-E2D1-4428-A617-C355A460FB27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -546,6 +551,18 @@ Global
 		{FD045532-1207-4C95-83FC-F4DEEA2F8DEB}.Release|x64.Build.0 = Release|Any CPU
 		{FD045532-1207-4C95-83FC-F4DEEA2F8DEB}.Release|x86.ActiveCfg = Release|Any CPU
 		{FD045532-1207-4C95-83FC-F4DEEA2F8DEB}.Release|x86.Build.0 = Release|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Debug|x64.Build.0 = Debug|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Debug|x86.Build.0 = Debug|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Release|Any CPU.Build.0 = Release|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Release|x64.ActiveCfg = Release|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Release|x64.Build.0 = Release|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Release|x86.ActiveCfg = Release|Any CPU
+		{665AE2AB-E2D1-4428-A617-C355A460FB27}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -588,6 +605,8 @@ Global
 		{B55D678D-80AA-4A24-91DE-CDCABC3C9D28} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{0CB505AB-23C0-498C-8D39-8792B7AC564F} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{FD045532-1207-4C95-83FC-F4DEEA2F8DEB} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{45B1004C-442D-47BC-B584-BAD1AF5FB533} = {165A751F-EFC0-41ED-DABE-41C1AA8C0163}
+		{665AE2AB-E2D1-4428-A617-C355A460FB27} = {45B1004C-442D-47BC-B584-BAD1AF5FB533}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {27B8372A-AF64-487F-9A89-1B2DA0B56B12}
