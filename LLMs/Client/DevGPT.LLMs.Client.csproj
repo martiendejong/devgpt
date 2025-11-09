@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.LLMs</RootNamespace>
-    <Version>1.1.2</Version>
-    <PackageVersion>1.1.2</PackageVersion>
+    <Version>1.1.3</Version>
+    <PackageVersion>1.1.3</PackageVersion>
     <Authors>Prospergenics</Authors>
     <Description>Provider-agnostic interface for LLM interactions. Defines the ILLMClient interface with support for chat completions, streaming, structured JSON responses, image generation, text-to-speech, embeddings, and tool calling. Enables swapping between OpenAI, Anthropic, Gemini, and other providers.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

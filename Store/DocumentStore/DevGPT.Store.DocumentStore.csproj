@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.Store</RootNamespace>
-    <Version>1.1.2</Version>
-    <PackageVersion>1.1.2</PackageVersion>
+    <Version>1.1.3</Version>
+    <PackageVersion>1.1.3</PackageVersion>
     <Authors>Prospergenics</Authors>
     <Description>Document storage and retrieval system for RAG (Retrieval-Augmented Generation) in DevGPT. Provides IDocumentStore interface with support for text/binary documents, chunking, metadata management, and relevancy matching. Includes file-based and memory-based backends.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
