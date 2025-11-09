@@ -30,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\\..\\DevGPT.AgentFactory\\DevGPT.AgentFactory.csproj" />
+    <ProjectReference Include="..\\..\\DevGPT.DynamicAPI\\DevGPT.DynamicAPI.csproj" />
     <ProjectReference Include="..\\..\\LLMs\\Classes\\DevGPT.LLMs.Classes.csproj" />
     <ProjectReference Include="..\\..\\Store\\DocumentStore\\DevGPT.Store.DocumentStore.csproj" />
     <ProjectReference Include="..\\..\\Store\\EmbeddingStore\\DevGPT.Store.EmbeddingStore.csproj" />

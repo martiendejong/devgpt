@@ -11,6 +11,8 @@ using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
+using DevGPT.DynamicAPI.Core;
+using DevGPT.DynamicAPI.Tools;
 namespace DevGPT.App.Windows;
 // Eventueel missing modelimports, aannemende dat volgende types lokaal zijn:
 // Als deze elders staan (bijv. in DevGPT.AgentFactory) graag correcte using plaatsen.
@@ -344,11 +346,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             // Toon direct de laad-animatie zodat de gebruiker direct ziet dat er iets gebeurt (en niet pas na zware disk/config-io)
             IsOpeningChat = true;
-            await Task.Yield(); // Forceer UI render van animatie v+¦+¦r langzame disk-operaties (anders zien gebruikers soms de animatie te laat!)
+            await Task.Yield(); // Forceer UI render van animatie v+ï¿½+ï¿½r langzame disk-operaties (anders zien gebruikers soms de animatie te laat!)
 
             // Het inlezen van OpenAI/Google config kan op sommige systemen trage disk I/O veroorzaken (b.v. als netwerk-drive, USB, virusscanner, etc.)
             // - Dit blokkeerde in eerdere versies de zichtbaarheid van de laad-animatie: de animatie kwam pas na de disk-IO!
-            // - Daarom laden we deze configs nu asynchroon, v+¦+¦r de rest van de logica, ZODAT de animatie altijd zichtbaar is v+¦+¦rdat prijzige disk reads starten.
+            // - Daarom laden we deze configs nu asynchroon, v+ï¿½+ï¿½r de rest van de logica, ZODAT de animatie altijd zichtbaar is v+ï¿½+ï¿½rdat prijzige disk reads starten.
             GoogleConfig googleSettings = null;
             OpenAIConfig openAISettings = null;
             try
@@ -383,6 +385,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     googleSettings.ProjectId
                 );
                 await agentManager.LoadStoresAndAgents();
+
+                // Add DynamicAPI tools to all agents
+                AddDynamicAPIToolsToAgents(agentManager);
 
                 var newChatWindow = new DevGPT.ChatShared.ChatWindow(new ChatControllerAgentManager(agentManager));
                 newChatWindow.AgentOrFlow = SelectedAgentOrFlow;
@@ -538,6 +543,40 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 // Update de raw editor met de nieuwe serialized stores
                 StoresDevGPTEditor.Text = DevGPTStoreConfigParser.Serialize(parsedStores);
                 storesDevGPTRaw = StoresDevGPTEditor.Text;
+            }
+        }
+
+        private void AddDynamicAPIToolsToAgents(AgentManager agentManager)
+        {
+            try
+            {
+                // Initialize DynamicAPI components
+                var credentialsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "credentials");
+                if (!Directory.Exists(credentialsPath))
+                {
+                    Directory.CreateDirectory(credentialsPath);
+                }
+
+                var credentialStore = new CredentialStore(credentialsPath);
+                var apiClient = new DynamicAPIClient(credentialStore);
+                var searchTool = new WebSearchTool(credentialStore);
+
+                // Add tools to all agents
+                foreach (var agent in agentManager.Agents)
+                {
+                    // Add web search tool
+                    agent.Tools.Add(new WebSearchDevGPTTool(searchTool));
+
+                    // Add fetch URL tool
+                    agent.Tools.Add(new FetchUrlDevGPTTool(searchTool));
+
+                    // Add dynamic API call tool
+                    agent.Tools.Add(new DynamicAPIDevGPTTool(apiClient));
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Warning: Could not add DynamicAPI tools: {ex.Message}", "DynamicAPI Tools", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
