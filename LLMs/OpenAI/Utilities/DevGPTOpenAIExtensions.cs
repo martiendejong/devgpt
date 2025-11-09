@@ -15,8 +15,12 @@ public static class DevGPTOpenAIExtensions
     }
 
     public static ChatResponseFormat OpenAI(this DevGPTChatResponseFormat format) {
+        // Be permissive: default null or unknown formats to text to avoid hard crashes
+        if (format == null) return ChatResponseFormat.CreateTextFormat();
         if (format == DevGPTChatResponseFormat.Text) return ChatResponseFormat.CreateTextFormat();
         if (format == DevGPTChatResponseFormat.Json) return ChatResponseFormat.CreateJsonObjectFormat();
+        // Accept custom format values like "images" by treating them as text prompts for OpenAI
+        try { if (string.Equals(format.Format, "images", StringComparison.OrdinalIgnoreCase)) return ChatResponseFormat.CreateTextFormat(); } catch { }
         throw new Exception("DevGPTChatResponseFormat not recognized");
     }
     public static ChatMessage OpenAI(this DevGPTChatMessage message) 
