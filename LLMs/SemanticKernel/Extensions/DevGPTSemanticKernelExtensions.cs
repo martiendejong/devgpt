@@ -155,8 +155,9 @@ public static class DevGPTSemanticKernelExtensions
     }
 
     /// <summary>
-    /// Extract token usage from streaming chat message content
+    /// Extract token usage from streaming chat message content (deprecated - use SemanticKernelStreamHandler)
     /// </summary>
+    [Obsolete("Use SemanticKernelStreamHandler.ExtractTokenUsageFromChunk instead")]
     public static void UpdateTokenUsage(this StreamingChatMessageContent chunk, TokenUsageInfo tokenUsage)
     {
         if (chunk.Metadata == null)
@@ -165,15 +166,60 @@ public static class DevGPTSemanticKernelExtensions
         if (chunk.Metadata.TryGetValue("Usage", out var usage) && usage is Dictionary<string, object> usageDict)
         {
             if (usageDict.TryGetValue("InputTokens", out var inputTokens) && inputTokens is int input)
-                tokenUsage.InputTokens = input;
+                tokenUsage.InputTokens = Math.Max(tokenUsage.InputTokens, input);
             if (usageDict.TryGetValue("OutputTokens", out var outputTokens) && outputTokens is int output)
-                tokenUsage.OutputTokens = output;
+                tokenUsage.OutputTokens = Math.Max(tokenUsage.OutputTokens, output);
 
             // Alternative keys
             if (usageDict.TryGetValue("PromptTokens", out var promptTokens) && promptTokens is int prompt)
-                tokenUsage.InputTokens = prompt;
+                tokenUsage.InputTokens = Math.Max(tokenUsage.InputTokens, prompt);
             if (usageDict.TryGetValue("CompletionTokens", out var completionTokens) && completionTokens is int completion)
-                tokenUsage.OutputTokens = completion;
+                tokenUsage.OutputTokens = Math.Max(tokenUsage.OutputTokens, completion);
+        }
+    }
+
+    /// <summary>
+    /// Create an async enumerable wrapper for streaming with progress tracking
+    /// </summary>
+    public static async IAsyncEnumerable<T> WithProgress<T>(
+        this IAsyncEnumerable<T> source,
+        Action<int> onProgress,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var count = 0;
+        await foreach (var item in source.WithCancellation(cancellationToken))
+        {
+            count++;
+            onProgress?.Invoke(count);
+            yield return item;
+        }
+    }
+
+    /// <summary>
+    /// Buffer streaming chunks for batch processing
+    /// </summary>
+    public static async IAsyncEnumerable<List<T>> Buffer<T>(
+        this IAsyncEnumerable<T> source,
+        int bufferSize,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var buffer = new List<T>(bufferSize);
+
+        await foreach (var item in source.WithCancellation(cancellationToken))
+        {
+            buffer.Add(item);
+
+            if (buffer.Count >= bufferSize)
+            {
+                yield return buffer;
+                buffer = new List<T>(bufferSize);
+            }
+        }
+
+        // Return remaining items
+        if (buffer.Count > 0)
+        {
+            yield return buffer;
         }
     }
 
