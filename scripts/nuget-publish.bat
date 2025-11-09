@@ -79,12 +79,15 @@ set PKG_13_NAME=DevGPT.LLMs.Gemini
 set PKG_14_PATH=LLMs\Mistral
 set PKG_14_NAME=DevGPT.LLMs.Mistral
 
+set PKG_15_PATH=DevGPT.DynamicAPI
+set PKG_15_NAME=DevGPT.DynamicAPI
+
 set "FAILED_PACKAGES="
 set "SUCCESS_COUNT=0"
 set "FAIL_COUNT=0"
 
 REM Process each package
-for /L %%i in (1,1,14) do (
+for /L %%i in (1,1,15) do (
     call :PublishPackage %%i
 )
 
