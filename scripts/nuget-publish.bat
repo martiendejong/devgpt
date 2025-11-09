@@ -73,12 +73,18 @@ set PKG_11_NAME=DevGPT.Store.EmbeddingStore
 set PKG_12_PATH=App\ChatShared
 set PKG_12_NAME=DevGPT.ChatShared
 
+set PKG_13_PATH=LLMs\Gemini
+set PKG_13_NAME=DevGPT.LLMs.Gemini
+
+set PKG_14_PATH=LLMs\Mistral
+set PKG_14_NAME=DevGPT.LLMs.Mistral
+
 set "FAILED_PACKAGES="
 set "SUCCESS_COUNT=0"
 set "FAIL_COUNT=0"
 
 REM Process each package
-for /L %%i in (1,1,12) do (
+for /L %%i in (1,1,14) do (
     call :PublishPackage %%i
 )
 

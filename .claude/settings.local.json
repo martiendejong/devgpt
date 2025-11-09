@@ -19,7 +19,8 @@
       "Bash(cmd /c nuget-publish.bat)",
       "Bash(powershell -ExecutionPolicy Bypass -Command \"& ''.\\nuget-publish.bat''\")",
       "Bash(move IDocumentPartStore.cs IChunkStore.cs)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []
