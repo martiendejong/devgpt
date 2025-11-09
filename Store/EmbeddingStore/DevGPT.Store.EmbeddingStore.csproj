@@ -5,8 +5,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.Store</RootNamespace>
-    <Version>1.0.7</Version>
-    <PackageVersion>1.0.7</PackageVersion>
+    <Version>1.0.10</Version>
+    <PackageVersion>1.0.10</PackageVersion>
+    <Authors>Prospergenics</Authors>
+    <Description>Vector embedding storage for semantic search in DevGPT. Provides IEmbeddingStore interface with PostgreSQL/pgvector backend, batch operations, similarity matching, and embedding generation service. Essential for RAG implementations.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>embeddings;vector-store;semantic-search;pgvector;postgresql;rag;similarity</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\\..\\LLMs\\Helpers\\DevGPT.LLMs.Helpers.csproj" />

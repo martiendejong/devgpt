@@ -5,8 +5,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.LLMs</RootNamespace>
-    <Version>1.0.7</Version>
-    <PackageVersion>1.0.7</PackageVersion>
+    <Version>1.0.10</Version>
+    <PackageVersion>1.0.10</PackageVersion>
+    <Authors>Prospergenics</Authors>
+    <Description>Provider-agnostic interface for LLM interactions. Defines the ILLMClient interface with support for chat completions, streaming, structured JSON responses, image generation, text-to-speech, embeddings, and tool calling. Enables swapping between OpenAI, Anthropic, Gemini, and other providers.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>llm;ai;interface;abstraction;chat;streaming;embeddings;tool-calling;provider-agnostic</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.12.0" />

@@ -5,8 +5,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.LLMs</RootNamespace>
-    <Version>1.0.7</Version>
-    <PackageVersion>1.0.7</PackageVersion>
+    <Version>1.0.10</Version>
+    <PackageVersion>1.0.10</PackageVersion>
+    <Authors>Prospergenics</Authors>
+    <Description>Utility functions for document and token processing. Includes TokenCounter for GPT token counting, DocumentSplitter for chunking by token limits, PartialJsonParser for streaming JSON, and helpers for checksums, file trees, and embeddings.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>llm;tokens;document-splitting;chunking;utilities;helpers;json-parser</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />

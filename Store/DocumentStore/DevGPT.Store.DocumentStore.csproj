@@ -5,8 +5,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.Store</RootNamespace>
-    <Version>1.0.7</Version>
-    <PackageVersion>1.0.7</PackageVersion>
+    <Version>1.0.10</Version>
+    <PackageVersion>1.0.10</PackageVersion>
+    <Authors>Prospergenics</Authors>
+    <Description>Document storage and retrieval system for RAG (Retrieval-Augmented Generation) in DevGPT. Provides IDocumentStore interface with support for text/binary documents, chunking, metadata management, and relevancy matching. Includes file-based and memory-based backends.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>rag;document-store;retrieval;storage;chunking;embeddings;semantic-search</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\\EmbeddingStore\\DevGPT.Store.EmbeddingStore.csproj" />

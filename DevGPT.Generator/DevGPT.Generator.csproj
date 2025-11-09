@@ -5,8 +5,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.Store</RootNamespace>
-    <Version>1.0.7</Version>
-    <PackageVersion>1.0.7</PackageVersion>
+    <Version>1.0.10</Version>
+    <PackageVersion>1.0.10</PackageVersion>
+    <Authors>Prospergenics</Authors>
+    <Description>Document-augmented LLM response orchestration for DevGPT. Provides IDocumentGenerator for composing RAG context with prompts, streaming responses, and safe file modification handling. Core component for context-aware AI applications.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>rag;document-generation;llm-orchestration;context-injection;streaming</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\\Store\\DocumentStore\\DevGPT.Store.DocumentStore.csproj" />

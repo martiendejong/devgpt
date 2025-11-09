@@ -5,8 +5,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.LLMs</RootNamespace>
-    <Version>1.0.7</Version>
-    <PackageVersion>1.0.7</PackageVersion>
+    <Version>1.0.10</Version>
+    <PackageVersion>1.0.10</PackageVersion>
+    <Authors>Prospergenics</Authors>
+    <Description>Anthropic Claude implementation of ILLMClient for DevGPT. Provides access to Claude models (Opus, Sonnet, Haiku) with chat completions, streaming, structured JSON outputs, and token usage tracking. Supports Claude 3 and 3.5 series models via the Anthropic Messages API.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>anthropic;claude;llm;ai;chat;streaming;sonnet;opus;haiku;claude-3</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\\Client\\DevGPT.LLMs.Client.csproj" />
