@@ -38,3 +38,5 @@ bin
 /App/Windows/appsettings.json
 /App/ClaudeCode/appsettings.json
 /nul
+
+/Tests/DevGPT.LLMs.OpenAI.Tests/appsettings.json
