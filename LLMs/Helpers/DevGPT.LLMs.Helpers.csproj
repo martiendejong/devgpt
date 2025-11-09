@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.LLMs</RootNamespace>
-    <Version>1.1.0</Version>
-    <PackageVersion>1.1.0</PackageVersion>
+    <Version>1.1.2</Version>
+    <PackageVersion>1.1.2</PackageVersion>
     <Authors>Prospergenics</Authors>
     <Description>Utility functions for document and token processing. Includes TokenCounter for GPT token counting, DocumentSplitter for chunking by token limits, PartialJsonParser for streaming JSON, and helpers for checksums, file trees, and embeddings.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

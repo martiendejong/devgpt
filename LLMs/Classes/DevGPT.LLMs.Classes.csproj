@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.LLMs</RootNamespace>
-    <Version>1.1.0</Version>
-    <PackageVersion>1.1.0</PackageVersion>
+    <Version>1.1.2</Version>
+    <PackageVersion>1.1.2</PackageVersion>
     <Authors>Prospergenics</Authors>
     <Description>Core data models and contracts for the DevGPT ecosystem. Provides chat message models, LLM response wrappers with token usage tracking, tool definitions, image generation models, and shared interfaces used across all DevGPT packages.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

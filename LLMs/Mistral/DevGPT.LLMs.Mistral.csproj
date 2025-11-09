@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.LLMs</RootNamespace>
-    <Version>1.1.0</Version>
-    <PackageVersion>1.1.0</PackageVersion>
+    <Version>1.1.2</Version>
+    <PackageVersion>1.1.2</PackageVersion>
     <Authors>Prospergenics</Authors>
     <Description>Mistral AI implementation of ILLMClient for DevGPT. Provides access to Mistral language models with chat completions, streaming, token usage tracking, and structured JSON outputs. Supports Mistral's latest models via their API.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
