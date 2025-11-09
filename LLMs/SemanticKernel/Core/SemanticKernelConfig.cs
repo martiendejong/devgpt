@@ -57,6 +57,10 @@ public class SemanticKernelConfig
     public double FrequencyPenalty { get; set; } = 0.0;
     public double PresencePenalty { get; set; } = 0.0;
 
+    // Structured output settings
+    public bool UseNativeStructuredOutput { get; set; } = true; // Auto-detect and prefer native when available
+    public bool FallbackToSchemaInjection { get; set; } = true; // Fall back if native fails
+
     /// <summary>
     /// Load configuration from appsettings.json under "SemanticKernel" section
     /// Falls back to "OpenAI" section for backward compatibility

@@ -144,6 +144,104 @@ public class SemanticKernelClientWrapper : ILLMClient
         CancellationToken cancel)
         where ResponseType : ChatResponse<ResponseType>, new()
     {
+        // Try native SK structured output first (if supported)
+        if (SupportsNativeStructuredOutput())
+        {
+            try
+            {
+                return await GetResponseWithNativeStructuredOutput<ResponseType>(messages, toolsContext, images, cancel);
+            }
+            catch (NotSupportedException)
+            {
+                // Fall back to schema injection approach if allowed
+                if (!Config.FallbackToSchemaInjection)
+                    throw;
+            }
+            catch (Exception)
+            {
+                // Fall back to schema injection approach if allowed
+                if (!Config.FallbackToSchemaInjection)
+                    throw;
+            }
+        }
+
+        // Fall back to schema injection approach (always works)
+        return await GetResponseWithSchemaInjection<ResponseType>(messages, toolsContext, images, cancel);
+    }
+
+    /// <summary>
+    /// Get typed response using native SK structured output (OpenAI, Azure only)
+    /// </summary>
+    private async Task<LLMResponse<ResponseType?>> GetResponseWithNativeStructuredOutput<ResponseType>(
+        List<DevGPTChatMessage> messages,
+        IToolsContext? toolsContext,
+        List<ImageData>? images,
+        CancellationToken cancel)
+        where ResponseType : ChatResponse<ResponseType>, new()
+    {
+        if (Config.Provider != LLMProvider.OpenAI && Config.Provider != LLMProvider.AzureOpenAI)
+            throw new NotSupportedException("Native structured output only supported for OpenAI and Azure OpenAI");
+
+        var chatHistory = messages.ToSemanticKernelChatHistory();
+        var tokenUsage = new TokenUsageInfo { ModelName = Config.Model };
+
+        // Register tools if present
+        RegisterToolsInKernel(toolsContext, messages, cancel);
+
+        // Create execution settings with response format
+        var settings = new OpenAIPromptExecutionSettings
+        {
+            Temperature = Config.Temperature,
+            MaxTokens = Config.MaxTokens,
+            TopP = Config.TopP,
+            FrequencyPenalty = Config.FrequencyPenalty,
+            PresencePenalty = Config.PresencePenalty,
+            ToolCallBehavior = toolsContext?.Tools?.Any() == true
+                ? ToolCallBehavior.AutoInvokeKernelFunctions
+                : null,
+            ResponseFormat = typeof(ResponseType) // Native structured output
+        };
+
+        try
+        {
+            // SK will automatically serialize/deserialize based on ResponseFormat type
+            var result = await _chatService.GetChatMessageContentAsync(
+                chatHistory,
+                settings,
+                _kernel,
+                cancel);
+
+            var response = result.Content ?? string.Empty;
+
+            // Extract token usage
+            var usage = ExtractTokenUsageFromMetadata(result.Metadata);
+            tokenUsage.InputTokens = usage.InputTokens;
+            tokenUsage.OutputTokens = usage.OutputTokens;
+            CalculateCosts(tokenUsage);
+
+            // Parse the JSON response
+            var parser = new PartialJsonParser();
+            var parsed = parser.Parse<ResponseType>(response);
+
+            return new LLMResponse<ResponseType?>(parsed, tokenUsage);
+        }
+        catch (Exception ex)
+        {
+            LogError("GetResponseWithNativeStructuredOutput", ex);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Get typed response using schema injection (works with all providers)
+    /// </summary>
+    private async Task<LLMResponse<ResponseType?>> GetResponseWithSchemaInjection<ResponseType>(
+        List<DevGPTChatMessage> messages,
+        IToolsContext? toolsContext,
+        List<ImageData>? images,
+        CancellationToken cancel)
+        where ResponseType : ChatResponse<ResponseType>, new()
+    {
         // Add JSON schema instruction to messages
         var messagesWithSchema = AddFormattingInstruction<ResponseType>(messages);
 
@@ -160,6 +258,19 @@ public class SemanticKernelClientWrapper : ILLMClient
         var parsed = parser.Parse<ResponseType>(response.Result);
 
         return new LLMResponse<ResponseType?>(parsed, response.TokenUsage);
+    }
+
+    /// <summary>
+    /// Check if provider supports native structured output
+    /// </summary>
+    private bool SupportsNativeStructuredOutput()
+    {
+        // Check config setting
+        if (!Config.UseNativeStructuredOutput)
+            return false;
+
+        // Only OpenAI and Azure OpenAI support ResponseFormat = typeof(T)
+        return Config.Provider == LLMProvider.OpenAI || Config.Provider == LLMProvider.AzureOpenAI;
     }
 
     #endregion
@@ -216,23 +327,88 @@ public class SemanticKernelClientWrapper : ILLMClient
         CancellationToken cancel)
         where ResponseType : ChatResponse<ResponseType>, new()
     {
-        // Add JSON schema instruction
-        var messagesWithSchema = AddFormattingInstruction<ResponseType>(messages);
-
-        // Stream with JSON format
-        var response = await GetResponseStream(
-            messagesWithSchema,
+        // For streaming, we always use schema injection approach
+        // Native structured output doesn't stream the JSON incrementally
+        return await GetResponseStreamWithSchemaInjection<ResponseType>(
+            messages,
             onChunkReceived,
-            DevGPTChatResponseFormat.Json,
             toolsContext,
             images,
             cancel);
+    }
 
-        // Parse streamed JSON response
+    /// <summary>
+    /// Get typed streaming response with schema injection and partial JSON parsing
+    /// </summary>
+    private async Task<LLMResponse<ResponseType?>> GetResponseStreamWithSchemaInjection<ResponseType>(
+        List<DevGPTChatMessage> messages,
+        Action<string> onChunkReceived,
+        IToolsContext? toolsContext,
+        List<ImageData>? images,
+        CancellationToken cancel)
+        where ResponseType : ChatResponse<ResponseType>, new()
+    {
+        // Add JSON schema instruction
+        var messagesWithSchema = AddFormattingInstruction<ResponseType>(messages);
+
+        var chatHistory = messagesWithSchema.ToSemanticKernelChatHistory();
+        var executionSettings = CreateExecutionSettings(DevGPTChatResponseFormat.Json, toolsContext);
+
+        var tokenUsage = new TokenUsageInfo { ModelName = Config.Model };
+
+        // Register tools if present
+        RegisterToolsInKernel(toolsContext, messagesWithSchema, cancel);
+
+        // Partial JSON parser for incremental parsing
         var parser = new PartialJsonParser();
-        var parsed = parser.Parse<ResponseType>(response.Result);
+        var fullResponse = new System.Text.StringBuilder();
 
-        return new LLMResponse<ResponseType?>(parsed, response.TokenUsage);
+        // Wrapper callback for partial parsing attempts
+        Action<string> wrappedCallback = chunk =>
+        {
+            fullResponse.Append(chunk);
+
+            // Try partial parsing and invoke original callback
+            try
+            {
+                onChunkReceived?.Invoke(chunk);
+
+                // Optionally attempt partial parse (may fail until JSON is complete)
+                // This is useful for progress tracking but not required
+            }
+            catch
+            {
+                // Ignore partial parse failures - normal during streaming
+            }
+        };
+
+        try
+        {
+            var stream = _chatService.GetStreamingChatMessageContentsAsync(
+                chatHistory,
+                executionSettings,
+                _kernel,
+                cancel);
+
+            await _streamHandler.HandleStreamAsync(
+                stream,
+                wrappedCallback,
+                tokenUsage,
+                cancel);
+
+            // Calculate costs
+            CalculateCosts(tokenUsage);
+
+            // Parse complete JSON response
+            var parsed = parser.Parse<ResponseType>(fullResponse.ToString());
+
+            return new LLMResponse<ResponseType?>(parsed, tokenUsage);
+        }
+        catch (Exception ex)
+        {
+            LogError("GetResponseStreamWithSchemaInjection", ex);
+            throw;
+        }
     }
 
     #endregion
