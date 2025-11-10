@@ -10,5 +10,5 @@ public abstract class ChatResponse<T> where T : ChatResponse<T>, new()
     public abstract string _signature { get; }
     public static string Signature => new T()._signature;
 
-    protected ChatResponse() { }
+    public ChatResponse() { }
 }
