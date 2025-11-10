@@ -16,8 +16,8 @@
     <PackageTags>rag;document-store;retrieval;storage;chunking;embeddings;semantic-search</PackageTags>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\\EmbeddingStore\\DevGPT.Store.EmbeddingStore.csproj" />
-    <ProjectReference Include="..\\..\\LLMs\\Helpers\\DevGPT.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\EmbeddingStore\DevGPT.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\..\LLMs\Helpers\DevGPT.LLMs.Helpers.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="8.0.3" />

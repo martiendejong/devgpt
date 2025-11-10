@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DevGPT.DynamicAPI\DevGPT.DynamicAPI.csproj" />
+    <ProjectReference Include="..\..\Libraries\DevGPT.DynamicAPI\DevGPT.DynamicAPI.csproj" />
   </ItemGroup>
 
 </Project>

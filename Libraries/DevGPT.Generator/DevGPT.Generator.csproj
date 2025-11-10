@@ -16,7 +16,7 @@
     <PackageTags>rag;document-generation;llm-orchestration;context-injection;streaming</PackageTags>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\\Store\\DocumentStore\\DevGPT.Store.DocumentStore.csproj" />
-    <ProjectReference Include="..\\LLMs\\OpenAI\\DevGPT.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\Store\DocumentStore\DevGPT.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\LLMs\OpenAI\DevGPT.LLMs.OpenAI.csproj" />
   </ItemGroup>
 </Project>

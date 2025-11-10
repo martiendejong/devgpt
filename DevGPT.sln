@@ -33,7 +33,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Store.EmbeddingStore
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generator", "Generator", "{3FA0F85F-A7C6-0754-1E55-9BD5D403A7D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Generator", "DevGPT.Generator\DevGPT.Generator.csproj", "{F87A097B-24FF-4A81-99ED-076C0FEC1EB6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Generator", "Libraries\DevGPT.Generator\DevGPT.Generator.csproj", "{F87A097B-24FF-4A81-99ED-076C0FEC1EB6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.ChatShared", "Libraries\ChatShared\DevGPT.ChatShared.csproj", "{A76D6CAB-DC7B-4FDE-B997-8A13EA5088D3}"
 EndProject

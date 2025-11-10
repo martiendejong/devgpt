@@ -16,8 +16,8 @@
     <PackageTags>embeddings;vector-store;semantic-search;pgvector;postgresql;rag;similarity</PackageTags>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\\..\\LLMs\\Helpers\\DevGPT.LLMs.Helpers.csproj" />
-    <ProjectReference Include="..\\..\\LLMs\\Client\\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\LLMs\Helpers\DevGPT.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\..\LLMs\Client\DevGPT.LLMs.Client.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="8.0.3" />

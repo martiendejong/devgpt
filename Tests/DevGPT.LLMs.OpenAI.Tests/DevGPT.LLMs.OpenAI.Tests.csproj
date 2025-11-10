@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\LLMs\OpenAI\DevGPT.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\OpenAI\DevGPT.LLMs.OpenAI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

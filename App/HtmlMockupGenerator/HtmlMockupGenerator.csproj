@@ -16,8 +16,8 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\DevGPT.Generator\DevGPT.Generator.csproj" />
-    <ProjectReference Include="..\\..\\DevGPT.AgentFactory\\DevGPT.AgentFactory.csproj" />
-    <ProjectReference Include="..\\..\\LLMs\\OpenAI\\DevGPT.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\..\Libraries\DevGPT.Generator\DevGPT.Generator.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\DevGPT.AgentFactory\\DevGPT.AgentFactory.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\OpenAI\\DevGPT.LLMs.OpenAI.csproj" />
   </ItemGroup>
 </Project>

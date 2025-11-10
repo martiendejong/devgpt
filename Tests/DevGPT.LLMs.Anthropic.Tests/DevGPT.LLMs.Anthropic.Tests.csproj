@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\LLMs\Anthropic\DevGPT.LLMs.Anthropic.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\Anthropic\DevGPT.LLMs.Anthropic.csproj" />
   </ItemGroup>
 
 </Project>

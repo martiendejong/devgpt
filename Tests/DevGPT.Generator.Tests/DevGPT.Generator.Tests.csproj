@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DevGPT.Generator\DevGPT.Generator.csproj" />
+    <ProjectReference Include="..\..\Libraries\DevGPT.Generator\DevGPT.Generator.csproj" />
   </ItemGroup>
 
 </Project>

@@ -8,10 +8,10 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\LLMs\OpenAI\DevGPT.LLMs.OpenAI.csproj" />
-    <ProjectReference Include="..\..\LLMs\Classes\DevGPT.LLMs.Classes.csproj" />
-    <ProjectReference Include="..\..\LLMs\Helpers\DevGPT.LLMs.Helpers.csproj" />
-    <ProjectReference Include="..\..\LLMs\Client\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\OpenAI\DevGPT.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\Classes\DevGPT.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\Helpers\DevGPT.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\Client\DevGPT.LLMs.Client.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="appsettings.json">

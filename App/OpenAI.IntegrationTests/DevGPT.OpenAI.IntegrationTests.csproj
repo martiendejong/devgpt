@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\\..\\LLMs\\OpenAI\\DevGPT.LLMs.OpenAI.csproj" />
-    <ProjectReference Include="..\\..\\LLMs\\Classes\\DevGPT.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\OpenAI\\DevGPT.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\Classes\\DevGPT.LLMs.Classes.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>

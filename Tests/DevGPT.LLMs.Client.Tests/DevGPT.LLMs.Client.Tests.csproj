@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\LLMs\Client\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\Client\DevGPT.LLMs.Client.csproj" />
   </ItemGroup>
 
 </Project>

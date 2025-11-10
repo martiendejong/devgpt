@@ -9,9 +9,9 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\\..\\Store\\DocumentStore\\DevGPT.Store.DocumentStore.csproj" />
-    <ProjectReference Include="..\\..\\Store\\EmbeddingStore\\DevGPT.Store.EmbeddingStore.csproj" />
-    <ProjectReference Include="..\\..\\LLMs\\Client\\DevGPT.LLMs.Client.csproj" />
-    <ProjectReference Include="..\\..\\LLMs\\Helpers\\DevGPT.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\Store\\DocumentStore\\DevGPT.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\Store\\EmbeddingStore\\DevGPT.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\Client\\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\Helpers\\DevGPT.LLMs.Helpers.csproj" />
   </ItemGroup>
 </Project>
