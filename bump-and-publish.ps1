@@ -6,7 +6,7 @@ param(
     [string]$Source = "https://api.nuget.org/v3/index.json",
     [switch]$SkipBuild,
     [switch]$Yes,
-    [string]$Solution = "DevGPT.sln"
+    [string]$Solution = "Libraries/DevGPT.NuGet.sln"
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,7 +20,7 @@ function Write-Header($title) {
 
 function Get-BaselineVersion {
     # Prefer a known anchor project if present
-    $anchor = Join-Path $PSScriptRoot "LLMs/Classes/DevGPT.LLMs.Classes.csproj"
+    $anchor = Join-Path $PSScriptRoot "Libraries/LLMs/Classes/DevGPT.LLMs.Classes.csproj"
     $csprojs = @()
     if (Test-Path $anchor) { $csprojs += Get-Item $anchor }
     $csprojs += Get-ChildItem -Path $PSScriptRoot -Recurse -Filter *.csproj | Where-Object { $_.FullName -ne $anchor }

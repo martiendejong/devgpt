@@ -5,37 +5,37 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LLMs", "LLMs", "{165A751F-EFC0-41ED-DABE-41C1AA8C0163}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Classes", "LLMs\Classes\DevGPT.LLMs.Classes.csproj", "{B641DD2C-4081-4C81-8776-18689C814E1E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Classes", "Libraries\LLMs\Classes\DevGPT.LLMs.Classes.csproj", "{B641DD2C-4081-4C81-8776-18689C814E1E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Helpers", "LLMs\Helpers\DevGPT.LLMs.Helpers.csproj", "{169D9EF6-99D0-40A5-AB75-126A863A41A1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Helpers", "Libraries\LLMs\Helpers\DevGPT.LLMs.Helpers.csproj", "{169D9EF6-99D0-40A5-AB75-126A863A41A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Client", "LLMs\Client\DevGPT.LLMs.Client.csproj", "{A58FE5DC-B9A6-4570-84A5-CE2D6A85E8F1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Client", "Libraries\LLMs\Client\DevGPT.LLMs.Client.csproj", "{A58FE5DC-B9A6-4570-84A5-CE2D6A85E8F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.OpenAI", "LLMs\OpenAI\DevGPT.LLMs.OpenAI.csproj", "{6A4FC682-859F-445D-8FE7-9ECB49BE9A14}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.OpenAI", "Libraries\LLMs\OpenAI\DevGPT.LLMs.OpenAI.csproj", "{6A4FC682-859F-445D-8FE7-9ECB49BE9A14}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Anthropic", "LLMs\Anthropic\DevGPT.LLMs.Anthropic.csproj", "{488881DE-16C7-4CE0-B4BF-F4F91102D831}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Anthropic", "Libraries\LLMs\Anthropic\DevGPT.LLMs.Anthropic.csproj", "{488881DE-16C7-4CE0-B4BF-F4F91102D831}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.HuggingFace", "LLMs\HuggingFace\DevGPT.LLMs.HuggingFace.csproj", "{D8C8CA56-6A77-4A71-84A0-1297AC4ED916}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.HuggingFace", "Libraries\LLMs\HuggingFace\DevGPT.LLMs.HuggingFace.csproj", "{D8C8CA56-6A77-4A71-84A0-1297AC4ED916}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gemini", "Gemini", "{20F6A1A0-3F0C-4C2D-A14F-9B0F68B6B7C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Gemini", "LLMs\Gemini\DevGPT.LLMs.Gemini.csproj", "{7B0B8A1F-9E8C-4D1A-9F2E-8E0AF9BB1E1A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Gemini", "Libraries\LLMs\Gemini\DevGPT.LLMs.Gemini.csproj", "{7B0B8A1F-9E8C-4D1A-9F2E-8E0AF9BB1E1A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mistral", "Mistral", "{BC9E3C35-9DAD-4715-BE87-19A0EC0F1D9B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Mistral", "LLMs\Mistral\DevGPT.LLMs.Mistral.csproj", "{5E3B7B0A-4D1A-4A80-A4A0-69B4A6B1E3B1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.Mistral", "Libraries\LLMs\Mistral\DevGPT.LLMs.Mistral.csproj", "{5E3B7B0A-4D1A-4A80-A4A0-69B4A6B1E3B1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Store", "Store", "{1A90F332-D69A-5E52-9B2B-53CAB93E69BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Store.DocumentStore", "Store\DocumentStore\DevGPT.Store.DocumentStore.csproj", "{2865D352-CFF9-47CD-BEFD-C7A82C03B383}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Store.DocumentStore", "Libraries\Store\DocumentStore\DevGPT.Store.DocumentStore.csproj", "{2865D352-CFF9-47CD-BEFD-C7A82C03B383}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Store.EmbeddingStore", "Store\EmbeddingStore\DevGPT.Store.EmbeddingStore.csproj", "{45577AB2-B3EF-4EBC-92CE-E4AC80DFE927}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Store.EmbeddingStore", "Libraries\Store\EmbeddingStore\DevGPT.Store.EmbeddingStore.csproj", "{45577AB2-B3EF-4EBC-92CE-E4AC80DFE927}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generator", "Generator", "{3FA0F85F-A7C6-0754-1E55-9BD5D403A7D0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Generator", "DevGPT.Generator\DevGPT.Generator.csproj", "{F87A097B-24FF-4A81-99ED-076C0FEC1EB6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.ChatShared", "App\ChatShared\DevGPT.ChatShared.csproj", "{A76D6CAB-DC7B-4FDE-B997-8A13EA5088D3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.ChatShared", "Libraries\ChatShared\DevGPT.ChatShared.csproj", "{A76D6CAB-DC7B-4FDE-B997-8A13EA5088D3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "App", "App", "{F95F473B-E98A-ACD6-1986-755F447BE36F}"
 EndProject
@@ -63,13 +63,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Windows", "App\Windows\Wind
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClaudeCode", "App\ClaudeCode\ClaudeCode.csproj", "{8E62C8F5-0E9D-4C8A-8F3B-4EAC485F4F1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMClientTools", "LLMs\ClientTools\DevGPT.LLMClientTools.csproj", "{F6D7B610-3463-C406-B883-D2C06AF94D92}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMClientTools", "Libraries\LLMs\ClientTools\DevGPT.LLMClientTools.csproj", "{F6D7B610-3463-C406-B883-D2C06AF94D92}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AgentFactory", "AgentFactory", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.AgentFactory", "DevGPT.AgentFactory\DevGPT.AgentFactory.csproj", "{0320DE56-E7A7-9211-3248-58EEB855E262}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.AgentFactory", "Libraries\DevGPT.AgentFactory\DevGPT.AgentFactory.csproj", "{0320DE56-E7A7-9211-3248-58EEB855E262}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.DynamicAPI", "DevGPT.DynamicAPI\DevGPT.DynamicAPI.csproj", "{9382AE61-11CC-43EA-8B33-E269F851C92B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.DynamicAPI", "Libraries\DevGPT.DynamicAPI\DevGPT.DynamicAPI.csproj", "{9382AE61-11CC-43EA-8B33-E269F851C92B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
@@ -95,7 +95,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.Store.EmbeddingStore
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SemanticKernel", "SemanticKernel", "{45B1004C-442D-47BC-B584-BAD1AF5FB533}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.SemanticKernel", "LLMs\SemanticKernel\DevGPT.LLMs.SemanticKernel.csproj", "{665AE2AB-E2D1-4428-A617-C355A460FB27}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.LLMs.SemanticKernel", "Libraries\LLMs\SemanticKernel\DevGPT.LLMs.SemanticKernel.csproj", "{665AE2AB-E2D1-4428-A617-C355A460FB27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
