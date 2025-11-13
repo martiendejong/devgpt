@@ -1,4 +1,4 @@
-﻿using HtmlMockupGenerator.Data;
+using HtmlMockupGenerator.Data;
 using HtmlMockupGenerator.Models;
 using Microsoft.EntityFrameworkCore;
 

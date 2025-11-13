@@ -1,4 +1,4 @@
-﻿namespace HtmlMockupGenerator.Models;
+namespace HtmlMockupGenerator.Models;
 
 public class AppSettings
 {

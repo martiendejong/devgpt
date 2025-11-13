@@ -8,4 +8,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PostgresDemo\PostgresDemo.csproj" />
+  </ItemGroup>
 </Project>
