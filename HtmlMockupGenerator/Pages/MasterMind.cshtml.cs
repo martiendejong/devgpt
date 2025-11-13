@@ -6,11 +6,12 @@ using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
 using HtmlMockupGenerator.Services;
 using HtmlMockupGenerator.Models;
+using Org.BouncyCastle.Tls;
 
 namespace HtmlMockupGenerator.Pages;
 
 [IgnoreAntiforgeryToken]
-public class IndexModel : PageModel
+public class MasterMindModel : PageModel
 {
     private readonly ILogger<IndexModel> _logger;
     private readonly OpenAIClientWrapper _openAiClient;
@@ -21,59 +22,11 @@ public class IndexModel : PageModel
     public User? CurrentUser { get; set; }
     public bool RequireAuthentication => _appSettings.RequireAuthentication;
 
-    private readonly string _createPromptPrompt = 
-@"🧠 Prompt: Prompt-Crafter for HTML Generation Agents
 
-You are an elite prompt engineering agent, designed specifically to translate vague or general human instructions into crystal-clear prompts for world-class frontend developer agents.
 
-Your sole mission is to take a webpage-related instruction and convert it into a structured, expressive, and unambiguous prompt that can be given to another agent, whose role is to generate a fully functional, visually appealing, and semantically correct HTML5 webpage using Flexbox.
 
-🎯 Core Task
-When you receive a user instruction (e.g. ""make a landing page for a bakery""), you:
-
-Understand the goal: Infer purpose, visual intent, layout structure, and interaction patterns.
-
-Craft a full prompt for a downstream HTML generator agent.
-
-Your output is a prompt in natural language, instructing the downstream agent exactly how to construct the page.
-
-🎨 What the Prompt You Create Should Contain
-Your crafted prompt must instruct the downstream agent to:
-
-Output a complete, standalone HTML5 page.
-
-Use Flexbox (display: flex) for layout.
-
-Include semantic HTML5 tags.
-
-Use <style> tags or inline styles (no external CSS unless specified).
-
-Include aesthetic enhancements: spacing, alignment, smooth interactions.
-
-Optionally include real public images, icons, or embedded media if relevant.
-
-Avoid Markdown or explanations. The output must be pure HTML only.
-
-📦 Rules for Your Output (the Prompt You Generate)
-
-Your prompt must be highly specific and actionable.
-
-Your prompt must mention design style, layout logic, and functional expectations.
-
-You must include constraints: only HTML output, use of Flexbox, media handling, and no Markdown.
-
-Your prompt must be self-contained and readable by another agent with no external context.
-
-🧠 Example Input to You:
-
-""I want a homepage for a small artisanal coffee roaster. Include a hero image, some product listings, and a contact form.""
-
-🧠 Your Output Should Be:
-
-""You are a world-class frontend designer. Generate a complete standalone HTML5 page for a small artisanal coffee roaster's homepage. Use Flexbox for all layout. Include a visually compelling hero image with a title and subtitle, a section with at least 3 product cards showing coffee types, and a contact form with name, email, and message fields. Use semantic HTML5 structure. Style elements internally with <style>. Do not use Markdown or explanations — output only clean, valid HTML code.""
-
-📌 Final Note
-You do not create HTML yourself — you only create the perfect prompt that will result in the perfect HTML.";
+    private readonly string _oraclePrompt = 
+@"";
 
     private readonly string _updatePromptPrompt = 
 @"🧠 Prompt: HTML Update Prompt Generator (External HTML Context Version)
@@ -239,13 +192,23 @@ All changes must be visibly accurate and logically valid in the context of HTML 
 
 Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
 
-    public IndexModel(ILogger<IndexModel> logger, UserService userService, AppSettings appSettings)
+    public MasterMindModel(ILogger<IndexModel> logger, UserService userService, AppSettings appSettings)
     {
         _logger = logger;
         _userService = userService;
         _appSettings = appSettings;
         var config = OpenAIConfig.Load();
         _openAiClient = new OpenAIClientWrapper(config);
+
+
+        var factory = new AgentFactory(config.ApiKey, "C:\\dsa\\log.txt");
+        var creator = new QuickAgentCreator(factory, _openAiClient);
+        var paths = new StorePaths("C:\\dsa\\store");
+        creator.CreateStore(paths, "store");
+
+        //var documentStore = new DocumentStore(embeddingStore, textStore, partStore, llmClient);
+        //var oracle = factory.CreateAgent("Oracle", _oraclePrompt, (store, true), [], [], []);
+        
     }
 
     public async Task OnGetAsync()
@@ -300,13 +263,6 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
         {
             var chatHistory = JsonSerializer.Deserialize<List<DevGPTChatMessage>>(ChatHistoryJson) ?? new List<DevGPTChatMessage>();
             var toolsContext = new ToolsContextBase();
-            var urlParameter = new ChatToolParameter { Name = "url", Description = "The URL of the image", Required = true, Type = "string" };
-            Func<List<DevGPTChatMessage>, DevGPTChatToolCall, CancellationToken, Task<string>> execCheckImageURL = async (messges, call, token) =>
-            {
-                urlParameter.TryGetValue(call, out string url);
-                return (await ImageChecker.IsImageUrlAsync(url)) ? "Image found" : "Image NOT found";
-            };
-            toolsContext.Add("check_image_url", "Verifies if a URL serves an image before using it in the HTML", [urlParameter], execCheckImageURL);
 
             var historyCopy = new List<DevGPTChatMessage>(chatHistory);
 
@@ -317,6 +273,10 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
                 historyCopy.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _updatePromptPrompt));
                 var prompt = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
 
+
+
+
+
                 chatHistory.Insert(chatHistory.Count - 1, new DevGPTChatMessage(DevGPTMessageRole.System, "Current document: " + html));
 
                 chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, prompt));
@@ -325,7 +285,7 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
             }
             else
             {
-                historyCopy.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _createPromptPrompt));
+                historyCopy.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _oraclePrompt));
                 var prompt = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
 
                 chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, prompt));
