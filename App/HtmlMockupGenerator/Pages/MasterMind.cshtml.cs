@@ -279,18 +279,18 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
 
                 chatHistory.Insert(chatHistory.Count - 1, new DevGPTChatMessage(DevGPTMessageRole.System, "Current document: " + html));
 
-                chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, prompt));
+                chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, prompt.Result));
                 chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _updateSystemPrompt));
-                html = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
+                html = (await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None)).Result;
             }
             else
             {
                 historyCopy.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _oraclePrompt));
                 var prompt = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
 
-                chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, prompt));
+                chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, prompt.Result));
                 chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _createSystemPrompt));
-                html = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
+                html = (await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None)).Result;
             }
 
             return new JsonResult(new { html });
