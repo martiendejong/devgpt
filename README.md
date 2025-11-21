@@ -324,3 +324,72 @@ To make DevGPT drop‑in for typical Visual Studio projects:
 ## License
 
 Add an OSS license of your choice if you plan to publish. If this remains private, clarify usage restrictions in your organization.
+
+---
+
+## Consumer Projects and Multi-Repository Setup
+
+This DevGPT repository is part of a multi-repository development environment. Consumer projects reference these libraries either as NuGet packages (production) or as local project references (development).
+
+### Known Consumer Projects
+
+#### Client Manager (DevGPTStoreAPI)
+- **Location**: `C:\projects\client-manager`
+- **Purpose**: .NET 8 API application for AI-powered content generation and management
+- **Integration**: Uses DevGPT LLM libraries (Classes, Helpers, Client, OpenAI, Anthropic, etc.) along with DevGPTTools libraries
+
+The client-manager project demonstrates two integration patterns:
+
+1. **Production Pattern** (`ClientManager.sln`):
+   - Uses published NuGet packages
+   - Suitable for CI/CD and production deployments
+   - Cannot step through library source code when debugging
+
+2. **Development Pattern** (`ClientManager.local.sln`):
+   - Uses local project references to this repository
+   - Full debugging support with symbols
+   - Ideal for library development and troubleshooting
+
+### Local Development Workflow
+
+When working on DevGPT libraries with a consumer project:
+
+1. **Directory Structure**:
+   ```
+   C:\projects\
+   ├── devgpt\              (this repository)
+   ├── devgpttools\         (companion tools repository)
+   └── client-manager\      (consumer API project)
+   ```
+
+2. **Making Changes**:
+   - Make changes to DevGPT libraries in `C:\projects\devgpt`
+   - Open consumer project using its `.local.sln` file
+   - Rebuild the consumer solution - changes are immediately reflected
+   - Debug with full symbol support
+
+3. **Publishing Updates**:
+   ```bash
+   cd C:\projects\devgpt
+   # Update version numbers in .csproj files
+   ./bump-and-publish.ps1  # Windows
+   ```
+   
+   Then update consumer project's `packages.config` or `.csproj` to use new versions.
+
+### Debugging Symbol Loading
+
+**Important**: Consumer projects must use the `.local.sln` solution file to debug into DevGPT library code. The standard `.sln` file references NuGet packages which don't include full debugging symbols or source code.
+
+**Symptom**: "Symbols not loaded" message when trying to step into DevGPT methods during debugging.
+
+**Solution**: Open the consumer project's `.local.sln` file in Visual Studio, rebuild, and start debugging.
+
+### Related Repositories
+
+- **DevGPT** (this repo): Core agentic framework, LLM clients, stores, and generator
+- **DevGPTTools**: Content generation services, BigQuery integration, WordPress, etc.
+- **Client Manager**: Consumer API that integrates both DevGPT and DevGPTTools
+
+See `C:\projects\client-manager\README.md` for detailed documentation on the multi-repository development workflow.
+
