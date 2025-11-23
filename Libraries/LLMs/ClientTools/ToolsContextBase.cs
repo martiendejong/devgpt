@@ -20,4 +20,7 @@ public class ToolsContextBase : IToolsContext
     {
         Add(new DevGPTChatTool(name, description, parameters, execute));
     }
+
+    public static ChatToolParameter CreateParameter(string name, string description, string type, bool required)
+        => new() { Name = name, Description = description, Type = type, Required = required };
 }
