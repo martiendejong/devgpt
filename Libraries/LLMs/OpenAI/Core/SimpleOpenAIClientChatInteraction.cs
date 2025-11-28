@@ -162,6 +162,24 @@ public partial class SimpleOpenAIClientChatInteraction
             requiresAction = await HandleFinishReason(requiresAction, finishMessage, toolCalls, finishReason, cancellationToken);
         } while (requiresAction && i < maxToolCalls);
 
+        // Track token usage
+        if (ToolsContext?.OnTokensUsed != null && ToolsContext?.ProjectId != null && completion?.Usage != null)
+        {
+            try
+            {
+                ToolsContext.OnTokensUsed(
+                    ToolsContext.ProjectId,
+                    completion.Usage.InputTokenCount,
+                    completion.Usage.OutputTokenCount,
+                    "gpt-4" // Model name - could be passed through config if needed
+                );
+            }
+            catch
+            {
+                // Silently fail token tracking to not disrupt main flow
+            }
+        }
+
         return completion;
     }
 
