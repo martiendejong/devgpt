@@ -82,6 +82,11 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
 
     public async Task StoreEmbeddingsFile()
     {
+        var directory = Path.GetDirectoryName(EmbeddingsFilePath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
         await File.WriteAllTextAsync(EmbeddingsFilePath, JsonSerializer.Serialize(Embeddings));
     }
 
