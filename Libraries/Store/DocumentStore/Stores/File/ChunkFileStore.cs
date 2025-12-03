@@ -25,6 +25,11 @@ public class ChunkFileStore : IChunkStore
 
     public void StoreChunksFile()
     {
+        var directory = Path.GetDirectoryName(ChunksFilePath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
         var data = JsonSerializer.Serialize(Chunks);
         File.WriteAllText(ChunksFilePath, data);
     }
