@@ -25,6 +25,11 @@ public class DocumentPartFileStore : IDocumentPartStore
 
     public void StorePartsFile()
     {
+        var directory = Path.GetDirectoryName(PartsFilePath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
         var data = JsonSerializer.Serialize(Parts);
         File.WriteAllText(PartsFilePath, data);
     }
