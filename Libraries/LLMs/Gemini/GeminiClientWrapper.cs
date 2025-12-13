@@ -49,7 +49,7 @@ public class GeminiClientWrapper : ILLMClient
         {
             if (m.Role == DevGPTMessageRole.System || m.Role.Role == DevGPTMessageRole.System.Role)
                 continue;
-            var role = (m.Role == DevGPTMessageRole.Assistant || m.Role.Role == DevGPTMessageRole.Assistant.Role) ? "model" : "user";
+            var role = (m.Role == DevGPTMessageRole.Assistant || m.Role.Role == DevGPTMessageRole.Assistant.Role) ? "model" : "REGULAR";
             mapped.Add(new GeminiContent(role, [ new GeminiPart(m.Text) ]));
         }
         return (system, mapped);

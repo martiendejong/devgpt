@@ -169,7 +169,7 @@ public class AgentManager
     {
         await AddHistory(input);
 
-        var response = await _quickAgentCreator.AgentFactory.CallFlow(flowName, input, "User", cancel);
+        var response = await _quickAgentCreator.AgentFactory.CallFlow(flowName, input, "REGULAR", cancel);
         return response;
     }
 

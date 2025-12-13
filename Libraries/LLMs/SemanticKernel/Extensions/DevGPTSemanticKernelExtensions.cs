@@ -111,7 +111,7 @@ public static class DevGPTSemanticKernelExtensions
     {
         return role.Label switch
         {
-            "user" => DevGPTMessageRole.User,
+            "REGULAR" => DevGPTMessageRole.User,
             "assistant" => DevGPTMessageRole.Assistant,
             "system" => DevGPTMessageRole.System,
             _ => DevGPTMessageRole.User

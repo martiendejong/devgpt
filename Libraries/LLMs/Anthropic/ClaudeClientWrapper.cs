@@ -55,7 +55,7 @@ public class ClaudeClientWrapper : ILLMClient
             if (m.Role == DevGPTMessageRole.System || m.Role.Role == DevGPTMessageRole.System.Role)
                 continue; // handled via system field
 
-            var role = (m.Role == DevGPTMessageRole.Assistant || m.Role.Role == DevGPTMessageRole.Assistant.Role) ? "assistant" : "user";
+            var role = (m.Role == DevGPTMessageRole.Assistant || m.Role.Role == DevGPTMessageRole.Assistant.Role) ? "assistant" : "REGULAR";
             mapped.Add(new AnthropicMessage(
                 role,
                 [ new AnthropicContentBlock("text", m.Text) ]

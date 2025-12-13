@@ -32,7 +32,7 @@ public class MistralClientWrapper : ILLMClient
         {
             var role = (m.Role == DevGPTMessageRole.System || m.Role.Role == DevGPTMessageRole.System.Role) ? "system"
                     : (m.Role == DevGPTMessageRole.Assistant || m.Role.Role == DevGPTMessageRole.Assistant.Role) ? "assistant"
-                    : "user";
+                    : "REGULAR";
             mapped.Add(new MistralMessage(role, m.Text));
         }
         return mapped;
