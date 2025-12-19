@@ -213,7 +213,7 @@ public partial class OpenAIClientWrapper : ILLMClient
         {
             try
             {
-                using (FileStream stream = new FileStream(Config.LogPath, FileMode.Append, FileAccess.Write, FileShare.None))
+                using (FileStream stream = new FileStream(Config.LogPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
                 using (StreamWriter writer = new StreamWriter(stream))
                 {
                     writer.WriteLine(message);
